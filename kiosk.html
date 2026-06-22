@@ -2782,16 +2782,6 @@
                 <div class="bh-env-val" style="color:var(--cyan);">58<small>%</small></div>
                 <div class="bh-env-lbl">상대 습도</div>
               </div>
-              <div class="bh-env-card">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#00E58A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-                <div class="bh-env-val" style="color:var(--green);">28.1<small>°C</small></div>
-                <div class="bh-env-lbl">체감 온도</div>
-              </div>
-              <div class="bh-env-card">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#FFB800" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-7 4 14 2-7h7"/></svg>
-                <div class="bh-env-val" style="color:var(--amber);">76<small>dB</small></div>
-                <div class="bh-env-lbl">소음 레벨</div>
-              </div>
             </div>
           </div>
 
@@ -4068,6 +4058,338 @@
       </div>`;
     document.getElementById('msdsOverlay').classList.add('open');
   }
+</script>
+
+<!-- ============================================================= -->
+<!-- Kiosk Main Server (PORT 8080) 연동 스크립트                    -->
+<!-- 백엔드가 켜져 있으면 실데이터로 채우고, 오프라인이면 기존        -->
+<!-- 하드코딩 데이터를 그대로 유지(graceful fallback)한다.           -->
+<!-- ============================================================= -->
+<script>
+(function () {
+  'use strict';
+
+  // ----- API base -----
+  const API = (() => {
+    const qs = new URLSearchParams(location.search);
+    if (qs.get('api')) return qs.get('api').replace(/\/$/, '');
+    if (location.protocol === 'file:' || !location.hostname) return 'http://localhost:8080';
+    return location.protocol + '//' + location.hostname + ':8080';
+  })();
+
+  const GRADE_CLASS  = { '위험': 'red', '주의': 'amber', '정상': 'green' };
+  const STATUS_CLS   = { '위험': 'danger', '주의': 'warn', '정상': '' };
+
+  async function apiGet(path) {
+    const r = await fetch(API + path, { cache: 'no-store' });
+    if (!r.ok) throw new Error('GET ' + path + ' -> ' + r.status);
+    return r.json();
+  }
+  async function apiPost(path, body) {
+    const r = await fetch(API + path, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {})
+    });
+    if (!r.ok) throw new Error('POST ' + path + ' -> ' + r.status);
+    return r.json();
+  }
+
+  function currentCode() {
+    const sel = document.getElementById('bhProcSelect');
+    const m = /(PRC-\d+)/.exec(sel ? sel.value : '');
+    return m ? m[1] : 'PRC-19';
+  }
+
+  // ----- Connection badge -----
+  const badge = document.createElement('div');
+  badge.id = 'connBadge';
+  badge.style.cssText =
+    'position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:2000;' +
+    'font:600 12px Pretendard,sans-serif;padding:6px 14px;border-radius:20px;' +
+    'background:rgba(7,16,31,.85);border:1px solid rgba(0,217,255,.2);color:#A8BCD6;' +
+    'backdrop-filter:blur(8px);white-space:nowrap;cursor:default;';
+  function setConn(ok, msg) {
+    const col = ok ? '#00E58A' : '#FF3B47';
+    badge.innerHTML =
+      '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' +
+      col + ';box-shadow:0 0 8px ' + col + ';margin-right:7px;vertical-align:middle;"></span>' +
+      (ok ? '백엔드 연결됨' : '백엔드 오프라인') + ' · :8080' + (msg ? ' · ' + msg : '');
+  }
+  setConn(false, '연결 시도 중…');
+  if (document.body) document.body.appendChild(badge);
+
+  // ========== GET /space-name : 공정·불안전행동·온습도 ==========
+  async function hydrateSpace(code) {
+    const data = await apiGet('/space-name' + (code ? '?process_code=' + encodeURIComponent(code) : ''));
+    window.__space = data;
+
+    // 불안전행동 신호등 (slide 0)
+    const list = document.querySelector('.bh-slide[data-slide="0"] .behavior-list');
+    if (list && Array.isArray(data.behaviors)) {
+      list.innerHTML = data.behaviors.map(b => {
+        const c = GRADE_CLASS[b.grade] || 'green';
+        return '<div class="behavior-item">' +
+          '<span class="bh-lamp ' + c + '"></span>' +
+          '<span class="bh-name">' + b.name +
+          ' <span style="opacity:.55;font-size:13px;font-weight:600;">· 누적 ' + b.count + '</span></span>' +
+          '<span class="bh-grade ' + c + '">' + b.grade + '</span>' +
+          '</div>';
+      }).join('');
+    }
+
+    // 온습도 (메인 환경 카드 + slide 1)
+    const th = data.temp_humid;
+    if (th) {
+      const numEl = document.querySelector('.env-temp .env-num');
+      if (numEl) numEl.textContent = th.temp;
+      const metrics = document.querySelectorAll('.env-temp .env-metric .em-val');
+      if (metrics[0]) metrics[0].innerHTML = th.humidity + '<small>%</small>';
+      if (metrics[1] && th.dust != null) metrics[1].innerHTML = th.dust + '<small>㎍</small>';
+      const sub = document.querySelector('.env-temp .env-sub');
+      if (sub && th.feels_like != null && sub.firstChild) sub.firstChild.nodeValue = '체감 ' + th.feels_like + '°C ';
+      const sv = document.querySelectorAll('.bh-slide[data-slide="1"] .bh-env-val');
+      if (sv[0]) sv[0].innerHTML = th.temp + '<small>°C</small>';
+      if (sv[1]) sv[1].innerHTML = th.humidity + '<small>%</small>';
+    }
+    return data;
+  }
+
+  // ========== GET /sensor/temp-humid : 센서 상세 ==========
+  let SENSORS = {};
+  async function loadSensors() {
+    const d = await apiGet('/sensor/temp-humid');
+    SENSORS = {};
+    d.readings.forEach(r => { SENSORS[r.sensor_id] = r; });
+  }
+  window.openEnvDetail = function (sensorId, zone) {
+    const sub = document.getElementById('envDetailSub');
+    if (sub) sub.textContent = sensorId + ' · ' + zone;
+    const r = SENSORS[sensorId];
+    const temp = r ? r.temp : (26 + Math.random() * 3).toFixed(1);
+    const hum  = r ? r.humidity : Math.floor(52 + Math.random() * 12);
+    document.getElementById('envDetailTemp').innerHTML = temp + '<small>°C</small>';
+    document.getElementById('envDetailHum').innerHTML = hum + '<small>%</small>';
+    document.getElementById('envDetailOverlay').classList.add('open');
+  };
+
+  // ========== GET /sensor/watch : 심박 ==========
+  let WATCH = [];
+  const _origOpenHeartRate = window.openHeartRate;
+  const _origOpenWatchWorker = window.openWatchWorker;
+  async function loadWatch() {
+    const d = await apiGet('/sensor/watch');
+    WATCH = d.workers || [];
+    window.__watchRegion = d.region;
+  }
+  function watchCardHtml(w, span2) {
+    const cls = STATUS_CLS[w.status] || '';
+    return '<div class="hr-worker ' + cls + '"' + (span2 ? ' style="grid-column:1 / 3;"' : '') + '>' +
+      '<div class="hr-avatar">' + (w.name || '?').charAt(0) + '</div>' +
+      '<div class="hr-worker-info">' +
+        '<div class="hr-worker-name">' + (w.name || w.watch_id) + '</div>' +
+        '<div class="hr-worker-meta">' + w.watch_id + ' · ' + (w.device || 'Galaxy Watch') +
+          (w.zone ? ' · ' + w.zone : '') + '</div>' +
+        '<span class="hr-status-badge">' + w.status + '</span>' +
+      '</div>' +
+      '<div style="text-align:right;"><div class="hr-bpm">' +
+        '<svg class="hr-pulse-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 5 4-12 2 7h6"/></svg>' +
+        '<span class="hr-bpm-val">' + w.hr + '</span><span class="hr-bpm-unit">BPM</span>' +
+      '</div></div></div>';
+  }
+  window.openHeartRate = function (region, count) {
+    if (!WATCH.length) return _origOpenHeartRate && _origOpenHeartRate(region, count);
+    const n = Math.min(count || WATCH.length, WATCH.length, 8);
+    document.getElementById('hrSub').textContent =
+      (region || window.__watchRegion || '사업장') + ' · 스마트워치 착용자 ' + n + '명';
+    document.getElementById('hrGrid').innerHTML = WATCH.slice(0, n).map(w => watchCardHtml(w, false)).join('');
+    document.getElementById('hrOverlay').classList.add('open');
+  };
+  window.openWatchWorker = function (name, watchId, proc) {
+    const w = WATCH.find(x => x.watch_id === watchId) || WATCH.find(x => x.name === name);
+    if (!w) return _origOpenWatchWorker && _origOpenWatchWorker(name, watchId, proc);
+    document.getElementById('hrSub').textContent = proc + ' · ' + (w.name || name);
+    document.getElementById('hrGrid').innerHTML = watchCardHtml(w, true);
+    document.getElementById('hrOverlay').classList.add('open');
+  };
+
+  // ========== GET /modal/msds ==========
+  let MSDS_MAP = {};
+  const _origOpenMSDS = window.openMSDS;
+  window.openMSDSList = async function () {
+    try {
+      const d = await apiGet('/modal/msds');
+      MSDS_MAP = {};
+      const sub = document.querySelector('#msdsListOverlay .modal-head-sub');
+      if (sub) sub.textContent = d.site + ' · 화학물질 ' + d.count + '종 · 클릭하여 상세 조회';
+      const wrap = document.querySelector('#msdsListOverlay .msds-list');
+      if (wrap) {
+        wrap.innerHTML = d.chemicals.map(c => {
+          MSDS_MAP[c.key] = c;
+          const key = c.key.replace(/'/g, "\\'");
+          return '<div class="msds-list-item" onclick="closeModal(\'msdsListOverlay\'); openMSDS(\'' + key + '\')">' +
+            '<div class="msds-list-ghs">⚠</div>' +
+            '<div class="msds-list-info"><div class="msds-list-name">' + c.name + '</div>' +
+            '<div class="msds-list-cas">CAS ' + c.cas + ' · ' + c.formula + ' · ' + c.un + '</div></div>' +
+            '<div class="msds-list-sig">' + c.signal + '</div></div>';
+        }).join('');
+      }
+      setConn(true, 'MSDS ' + d.count + '종');
+    } catch (e) { /* keep static list */ }
+    document.getElementById('msdsListOverlay').classList.add('open');
+  };
+  window.openMSDS = function (key) {
+    const m = MSDS_MAP[key];
+    if (!m) return _origOpenMSDS && _origOpenMSDS(key);
+    document.getElementById('msdsSub').textContent = m.name;
+    document.getElementById('msdsBody').innerHTML =
+      '<div class="msds-title-row"><span class="msds-cas">CAS ' + m.cas + '</span>' +
+      '<span class="msds-name">' + m.name + '</span></div>' +
+      '<div class="ghs-row">' +
+        '<div class="ghs-pic" title="부식성"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l5 5M3 9l4 1 2-3M15 4l-2 6 6-1M20 11l-4 7h-3"/><path d="M6 20h5M14 20h4"/></svg></div>' +
+        '<div class="ghs-pic" title="유해/위험"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></div>' +
+      '</div>' +
+      '<div class="msds-section"><div class="msds-section-title">기본 정보</div>' +
+        '<dl class="msds-grid"><dt>화학식</dt><dd>' + m.formula + '</dd>' +
+        '<dt>UN 번호</dt><dd>' + m.un + '</dd>' +
+        '<dt>신호어</dt><dd style="color:var(--red);font-weight:700;">' + m.signal + '</dd></dl></div>' +
+      '<div class="msds-section"><div class="msds-section-title">유해·위험 문구 (H-code)</div>' +
+        '<div class="msds-hazard-list">' + (m.hazard || []).map(h => '<div class="msds-hazard">⚠ ' + h + '</div>').join('') + '</div></div>' +
+      '<div class="msds-section"><div class="msds-section-title">취급 및 저장</div>' +
+        '<dl class="msds-grid"><dt>취급</dt><dd>' + m.handling + '</dd>' +
+        '<dt>저장</dt><dd>' + m.storage + '</dd></dl></div>';
+    document.getElementById('msdsOverlay').classList.add('open');
+  };
+
+  // ========== GET /modal/risk ==========
+  window.openRisk = async function () {
+    try {
+      const code = currentCode();
+      const d = await apiGet('/modal/risk?process_code=' + encodeURIComponent(code));
+      const sub = document.querySelector('#riskOverlay .modal-head-sub');
+      if (sub) sub.textContent = d.process + ' (' + d.process_code + ') · 평가일 ' + d.assessment_date + ' · ' + d.method + ' 기법';
+      const vals = document.querySelectorAll('#riskOverlay .risk-sum-val');
+      if (vals.length >= 4) {
+        vals[0].textContent = d.summary.high;
+        vals[1].textContent = d.summary.mid;
+        vals[2].textContent = d.summary.low;
+        vals[3].textContent = d.summary.total;
+      }
+      const tb = document.querySelector('#riskOverlay .risk-table tbody');
+      if (tb) {
+        tb.innerHTML = d.rows.map(r =>
+          '<tr><td>' + r.hazard + '</td><td>' + r.likelihood + '</td><td>' + r.severity + '</td>' +
+          '<td><span class="risk-badge ' + r.risk_level + '">' + r.risk_label + '</span></td>' +
+          '<td>' + r.control + '</td></tr>').join('');
+      }
+      setConn(true, '위험성평가 ' + d.process_code);
+    } catch (e) { /* 해당 공정 평가 없음 -> 기존 표 유지 */ }
+    document.getElementById('riskOverlay').classList.add('open');
+  };
+
+  // ========== GET /cctv/frame : Shared Dir 프레임 ==========
+  let lastObjUrl = null;
+  function injectCctvImg() {
+    const sc = document.querySelector('#cctvOverlay .cctv-screen');
+    if (sc && !document.getElementById('cctvBackendImg')) {
+      const img = document.createElement('img');
+      img.id = 'cctvBackendImg';
+      img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;display:none;';
+      sc.appendChild(img);
+    }
+  }
+  async function pollCctv() {
+    try {
+      const r = await fetch(API + '/cctv/frame', { cache: 'no-store' });
+      const src = r.headers.get('X-Frame-Source');
+      const blob = await r.blob();
+      const img = document.getElementById('cctvBackendImg');
+      if (img && src === 'shared_dir') {
+        if (lastObjUrl) URL.revokeObjectURL(lastObjUrl);
+        lastObjUrl = URL.createObjectURL(blob);
+        img.src = lastObjUrl; img.style.display = 'block';
+      } else if (img) {
+        img.style.display = 'none';   // placeholder -> 데모 영상(iframe) 노출
+      }
+      setConn(true, 'CCTV ' + (src || '?'));
+    } catch (e) {
+      const img = document.getElementById('cctvBackendImg');
+      if (img) img.style.display = 'none';
+    }
+  }
+
+  // ========== POST /vlm/infer : 위험장면 분석 파이프라인 ==========
+  const _origOpenAISite = window.openAISite;
+  window.openAISite = function () {
+    if (_origOpenAISite) _origOpenAISite();
+    injectVlmPanel();
+  };
+  function injectVlmPanel() {
+    const body = document.querySelector('#aiSiteOverlay .modal-body');
+    if (!body || document.getElementById('vlmPanel')) return;
+    const div = document.createElement('div');
+    div.id = 'vlmPanel';
+    div.style.cssText = 'margin-bottom:16px;padding:16px 18px;background:rgba(0,217,255,.05);border:1px solid rgba(0,217,255,.18);border-radius:14px;';
+    div.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">' +
+        '<div style="font-weight:800;color:#EAF4FF;font-size:16px;">VLM 실시간 위험장면 분석 · /vlm/infer</div>' +
+        '<button id="vlmRunBtn" style="cursor:pointer;border:1px solid rgba(0,217,255,.4);background:rgba(0,217,255,.12);color:#00D9FF;font-weight:800;padding:10px 18px;border-radius:10px;font-size:14px;">분석 실행 ▶</button>' +
+      '</div>' +
+      '<div id="vlmResult" style="margin-top:12px;color:#A8BCD6;font-size:14px;line-height:1.6;">버튼을 눌러 연결된 카메라의 위험장면을 분석합니다.</div>';
+    body.insertBefore(div, body.firstChild);
+    document.getElementById('vlmRunBtn').addEventListener('click', runVlm);
+  }
+  async function runVlm() {
+    const btn = document.getElementById('vlmRunBtn');
+    const out = document.getElementById('vlmResult');
+    btn.disabled = true; out.textContent = '분석 중…';
+    try {
+      const code = currentCode();
+      const cam = (window.__space && window.__space.cameras && window.__space.cameras[0] && window.__space.cameras[0].cam_id) || 'CAM-03';
+      const d = await apiPost('/vlm/infer', { camera_id: cam, process_code: code });
+      const beh = (d.behaviors || []).map(b => b.name + ' (누적 ' + b.count + ')').join(', ') || '해당 카테고리 없음';
+      const wl = d.warning_light || {};
+      out.innerHTML =
+        '<div><b style="color:#00D9FF;">탐지</b> · ' + (d.detection || '-') + ' <span style="opacity:.6;">(' + d.source + ')</span></div>' +
+        '<div style="margin-top:6px;"><b style="color:#FFB800;">경고</b> · ' + (d.warning_text || '-') + '</div>' +
+        '<div style="margin-top:6px;"><b style="color:#00E58A;">DB 반영</b> · ' + beh + '</div>' +
+        '<div style="margin-top:6px;"><b style="color:#FF3B47;">경광등</b> · ' + (wl.label || '-') +
+          ' <span style="opacity:.6;">(count ' + (wl.trigger_count != null ? wl.trigger_count : '-') + ')</span>' +
+          ' · TTS ' + (d.tts ? d.tts.status : '-') + '</div>';
+      // 카운트가 증가했으니 신호등 카드 갱신
+      hydrateSpace(code).catch(() => {});
+      setConn(true, 'VLM ' + d.source);
+    } catch (e) {
+      out.textContent = '분석 실패 · 백엔드 연결을 확인하세요 (' + e.message + ')';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ========== 초기화 ==========
+  async function init() {
+    injectCctvImg();
+    const sel = document.getElementById('bhProcSelect');
+    if (sel) sel.addEventListener('change', () => { hydrateSpace(currentCode()).catch(() => {}); });
+
+    try {
+      await hydrateSpace(currentCode());
+      await loadSensors();
+      await loadWatch();
+      setConn(true, '데이터 동기화 완료');
+    } catch (e) {
+      setConn(false, e.message);
+    }
+
+    // CCTV 모달이 열려 있는 동안 프레임 폴링
+    setInterval(() => {
+      const ov = document.getElementById('cctvOverlay');
+      if (ov && ov.classList.contains('open')) pollCctv();
+    }, 1000);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
 </script>
 
 </body>

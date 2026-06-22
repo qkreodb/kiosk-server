@@ -1,0 +1,30 @@
+{
+  "PRC-19": {
+    "process": "정밀가공 공정",
+    "process_code": "PRC-19",
+    "assessment_date": "2026-05-12",
+    "method": "4M",
+    "rows": [
+      { "hazard": "고속 회전체 협착·말림",      "likelihood": 3, "severity": 5, "control": "방호덮개 설치·연동장치" },
+      { "hazard": "화학물질(염산) 누출 노출",     "likelihood": 3, "severity": 5, "control": "국소배기·내산 PPE" },
+      { "hazard": "절삭칩 비산 안구 손상",        "likelihood": 4, "severity": 3, "control": "보안경 착용 의무화" },
+      { "hazard": "소음(76dB) 청력 영향",         "likelihood": 3, "severity": 3, "control": "귀마개·소음원 격리" },
+      { "hazard": "고소작업 추락",                "likelihood": 2, "severity": 4, "control": "안전대·작업발판" },
+      { "hazard": "중량물 취급 근골격계",          "likelihood": 3, "severity": 2, "control": "운반보조구·작업순환" },
+      { "hazard": "전기 감전",                    "likelihood": 2, "severity": 3, "control": "접지·누전차단기" }
+    ]
+  },
+  "PRC-07": {
+    "process": "용접 공정",
+    "process_code": "PRC-07",
+    "assessment_date": "2026-05-12",
+    "method": "4M",
+    "rows": [
+      { "hazard": "용접 흄·유해가스 흡입",        "likelihood": 4, "severity": 4, "control": "국소배기·방진마스크" },
+      { "hazard": "아크광 안구 손상",             "likelihood": 4, "severity": 3, "control": "차광보안면 착용" },
+      { "hazard": "불티 비산 화재",               "likelihood": 3, "severity": 5, "control": "불티방지포·화기감시자" },
+      { "hazard": "고온 표면 화상",               "likelihood": 3, "severity": 3, "control": "내열장갑·격리" },
+      { "hazard": "전격(감전)",                   "likelihood": 2, "severity": 4, "control": "자동전격방지기" }
+    ]
+  }
+}

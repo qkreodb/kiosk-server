@@ -1,0 +1,9 @@
+[
+  { "cam_id": "CAM-03", "label": "정밀가공 라인", "location": "정밀가공 공정 (PRC-19) · 도장작업실", "process_code": "PRC-19", "online": true },
+  { "cam_id": "CAM-04", "label": "절단기 작업존", "location": "정밀가공 공정 (PRC-19) · 절단기 작업존", "process_code": "PRC-19", "online": true },
+  { "cam_id": "CAM-05", "label": "밀폐내부 작업존", "location": "정밀가공 공정 (PRC-19) · 밀폐내부 작업존", "process_code": "PRC-19", "online": true },
+  { "cam_id": "CAM-07", "label": "용접 부스", "location": "용접 공정 (PRC-07) · 절단·용접 시연존", "process_code": "PRC-07", "online": true },
+  { "cam_id": "CAM-12", "label": "도장 부스", "location": "도장 공정 (PRC-12) · 스프레이 도장실", "process_code": "PRC-12", "online": true },
+  { "cam_id": "CAM-23", "label": "조립 라인", "location": "조립 공정 (PRC-23) · 메인 조립 라인", "process_code": "PRC-23", "online": true },
+  { "cam_id": "CAM-31", "label": "하역장", "location": "물류·하역 공정 (PRC-31) · 입출고 하역장", "process_code": "PRC-31", "online": false }
+]

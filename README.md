@@ -1,93 +1,114 @@
-# Kiosk Frontend
+# Kiosk Main Server (PORT 8080)
 
+FastAPI backend for the industrial **safety & health monitoring kiosk** — the
+**"Kiosk Back section (PORT 8080)"** from the architecture diagram (`001.png`).
 
+It serves the existing 1080×1920 kiosk frontend (`kiosk.html`) by:
 
-## Getting started
+1. Querying the **Shared DB** (mocked here, behind a swappable repository interface).
+2. Reading the latest **30fps frame** from the **Shared Dir** (written by the Hardware Server).
+3. Calling the external **VLM Server** `/infer` endpoint and post-processing the result
+   (**TTS → speaker** + **DB count → warning-light control signal**).
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+> This repo implements **only** the Kiosk Main Server. The Hardware Server (8081) and
+> VLM Server (8000) are external — only a **client** to the VLM `/infer` endpoint exists here.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+---
 
-## Add your files
+## Quick start
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+```bash
+# 1) Create a venv and install deps
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt   # Windows
+# source .venv/bin/activate && pip install -r requirements.txt   # macOS/Linux
+
+# 2) (optional) copy env defaults
+copy .env.example .env        # Windows
+# cp .env.example .env         # macOS/Linux
+
+# 3) Run on PORT 8080
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8080
+# or: python -m app.main
+```
+
+- Swagger UI: <http://localhost:8080/docs>
+- Health:     <http://localhost:8080/health>
+
+### Smoke test (no external servers needed)
+
+```bash
+.\.venv\Scripts\python.exe smoke_test.py
+```
+
+Runs every endpoint through FastAPI's `TestClient` using the **offline VLM mock**
+(`KIOSK_VLM_FORCE_MOCK=true`) and prints a `[PASS]` line per endpoint.
+
+---
+
+## Endpoints
+
+| Method | Path                  | Purpose |
+|--------|-----------------------|---------|
+| GET    | `/health`             | Liveness + active config summary |
+| GET    | `/space-name`         | 공정 정보: 이름/코드, 4개 불안전행동 카운트, 온습도, CCTV (`?process_code=PRC-19`) |
+| GET    | `/sensor/temp-humid`  | 온습도 센서 데이터 (`?process_code=` optional) |
+| GET    | `/sensor/watch`       | 갤럭시워치 심박 데이터 (정상/주의/위험) |
+| GET    | `/modal/msds`         | MSDS 화학물질 목록 + 상세 |
+| GET    | `/modal/risk`         | 위험성평가 표 + 요약 (`?process_code=PRC-19`) |
+| GET    | `/cctv/frame`         | Shared Dir 최신 프레임 (JPEG). 없으면 placeholder |
+| GET    | `/cctv/stream`        | 연속 MJPEG-over-HTTP 스트림 (보너스) |
+| POST   | `/vlm/infer`          | VLM 위험장면 분석 파이프라인 |
+
+### `POST /vlm/infer` pipeline
+
+`{ "camera_id": "CAM-03", "process_code": "PRC-19" }` →
+
+1. Call VLM Server `/infer` (offline → built-in mock).
+2. **Branch A**: `위험 경고 텍스트` → Edge TTS → speaker actuator (stubbed playback).
+3. **Branch B**: `탐지` → parse into the 4 불안전행동 categories → increment DB counts →
+   read resulting count → generate **경광등** control signal from thresholds → dispatch.
+4. Return detection, labels, warning text, behavior deltas+counts, warning-light signal, TTS status.
+
+Example: when a category's cumulative count reaches the caution threshold (default **3**),
+the signal becomes **`노란색 볼 깜빡임`** (yellow beacon blinking) — matching the diagram.
+
+---
+
+## Architecture
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.duegosafer.com/rnd/kiosk/kiosk-frontend.git
-git branch -M main
-git push -uf origin main
+router → Pydantic validation → service → repository / integration → response DTO
 ```
 
-## Integrate with your tools
+```
+app/
+  main.py                 # app factory, CORS, routers, lifespan, /health
+  core/config.py          # all settings from env/.env (one place)
+  core/logging.py
+  domain/constants.py     # 4 불안전행동 categories, 경광등 states
+  schemas/                # Pydantic DTOs per domain
+  repositories/           # base interface + mock impl + factory (DB seam)
+  integrations/           # vlm_client, tts, shared_dir, actuators (all stubbable)
+  services/               # business logic incl. VLM pipeline orchestration
+  api/routers/            # space, sensor, modal, cctv, vlm, health
+mock_data/                # JSON fixtures simulating Shared DB rows
+docs/진행상황.md          # Korean progress document
+```
 
-- [ ] [Set up project integrations](https://gitlab.duegosafer.com/rnd/kiosk/kiosk-frontend/-/settings/integrations)
+## What is mocked (and where the real piece plugs in)
 
-## Collaborate with your team
+| Concern        | Mock today                                   | Real swap-in point |
+|----------------|----------------------------------------------|--------------------|
+| Shared DB      | `repositories/mock_repository.py` (+fixtures) | Implement `KioskRepository`, select it in `repositories/factory.py` |
+| VLM Server     | `integrations/vlm_client.py` offline stub    | Set `KIOSK_VLM_BASE_URL`; client posts to real `/infer` |
+| TTS playback   | Edge TTS file synth; speaker = log stub       | `integrations/actuators.py::SpeakerActuator.play` |
+| Warning light  | `actuators.py::WarningLightActuator` log stub | GPIO/relay/serial write |
+| Shared Dir     | placeholder JPEG when empty                   | Point `KIOSK_SHARED_DIR` at the real frame dir |
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+All configuration lives in `app/core/config.py` (env prefix `KIOSK_`); see `.env.example`.
 
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+> **Note on TTS in offline/headless environments:** when `KIOSK_TTS_ENABLED=true`, the
+> server attempts real Edge TTS synthesis (needs internet). With no network it reports
+> `tts.status = "failed"` and the pipeline still completes — set `KIOSK_TTS_ENABLED=false`
+> to skip synthesis entirely (`"stubbed"`).
