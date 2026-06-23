@@ -67,7 +67,7 @@ class Settings(BaseSettings):
     db_port: int = 3306
     db_user: str = "root"
     db_password: str = ""
-    db_name: str = "ON_SAFE"
+    db_name: str = "dasol"
     db_charset: str = "utf8mb4"
     db_connect_timeout: int = 5
 

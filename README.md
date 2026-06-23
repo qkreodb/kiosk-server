@@ -46,7 +46,7 @@ $env:KIOSK_DB_HOST="127.0.0.1"
 $env:KIOSK_DB_PORT="3306"
 $env:KIOSK_DB_USER="root"
 $env:KIOSK_DB_PASSWORD="ekthf123"
-$env:KIOSK_DB_NAME="ON_SAFE"
+$env:KIOSK_DB_NAME="dasol"
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8080
 ```
 

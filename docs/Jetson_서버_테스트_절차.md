@@ -3,8 +3,10 @@
 Jetson(Thor, aarch64 Ubuntu)에서 kiosk-server를 **git에서 내려받아** 직접 띄우고,
 브라우저로 키오스크 웹을 열어 실제 동작을 확인하는 전체 절차.
 
+> **이 Jetson IP = `172.16.0.62`**, **DB명 = `dasol`** (아래 명령/URL에 반영됨).
+
 > 한눈 요약: **clone → venv+설치 → .env 작성 → (DB/LED/TTS 준비) → uvicorn 실행 →
-> 브라우저로 `http://<JETSON-IP>:8080/kiosk.html`**. 프론트는 백엔드가 직접 서빙하므로
+> 브라우저로 `http://172.16.0.62:8080/kiosk.html`**. 프론트는 백엔드가 직접 서빙하므로
 > 별도 정적 서버가 필요 없다.
 
 권장: **2단계로 진행**한다.
@@ -22,7 +24,7 @@ Jetson(Thor, aarch64 Ubuntu)에서 kiosk-server를 **git에서 내려받아** �
 | VLM 서버 | `curl -s http://localhost:8000/health` | Jetson에서 이미 구동 중이어야 함(`/analyze` 보유 빌드) |
 | 경광등(LED) | `lsusb \| grep -i 04d8` | `04d8:e73c` 보이면 연결됨 |
 | 스피커 | 유선 연결 | TTS는 **이 Jetson의 오디오 출력**으로 나온다 |
-| DB(선택) | `mysql -uroot -p -e "SHOW DATABASES;"` | `ON_SAFE` 사용 시. 없으면 mock 폴백 |
+| DB(선택) | `mysql -uroot -p -e "SHOW DATABASES;"` | `dasol` 사용 시. 없으면 mock 폴백 |
 
 ---
 
@@ -78,7 +80,7 @@ KIOSK_DB_HOST=127.0.0.1
 KIOSK_DB_PORT=3306
 KIOSK_DB_USER=root
 KIOSK_DB_PASSWORD=ekthf123          # 실제 비밀번호 (이 파일은 git에 안 올라감)
-KIOSK_DB_NAME=ON_SAFE
+KIOSK_DB_NAME=dasol
 
 # 공유 프레임 폴더(라이브 CCTV용)
 KIOSK_SHARED_DIR=../kiosk-hardware/frames
@@ -138,12 +140,12 @@ TTS(Edge TTS)는 **인터넷 연결**이 필요하다(Microsoft 서버 합성).
 
 ## 6. (mysql 모드) DB 준비 — 2단계에서만
 
-`KIOSK_REPOSITORY=mysql` 로 쓸 때만. ON_SAFE DB가 이미 있으면 생략.
+`KIOSK_REPOSITORY=mysql` 로 쓸 때만. dasol DB가 이미 있으면 생략.
 
 ```bash
 # 스키마/시드 적재(처음 한 번)
-mysql -uroot -p ON_SAFE < db/schema.sql
-mysql -uroot -p ON_SAFE < db/seed.sql
+mysql -uroot -p dasol < db/schema.sql
+mysql -uroot -p dasol < db/seed.sql
 # 연결 점검
 python db_check.py
 ```
@@ -169,7 +171,7 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8080
 ## 8. 브라우저로 웹 확인
 
 - **Jetson 본체**: `http://localhost:8080/kiosk.html`
-- **다른 PC/태블릿**: `http://<JETSON-IP>:8080/kiosk.html`  (예: `http://172.16.0.62:8080/kiosk.html`)
+- **다른 PC/태블릿**: `http://172.16.0.62:8080/kiosk.html`  (이 Jetson IP)
 
 > 프론트는 접속한 호스트의 `:8080` 을 API로 자동 인식하므로, IP로 열면 그 IP의 백엔드를 부른다.
 > 별도 포트(:8090) 정적 서버 필요 없음.
