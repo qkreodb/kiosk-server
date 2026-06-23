@@ -77,6 +77,14 @@ class Settings(BaseSettings):
     light_caution_threshold: int = Field(default=3, ge=1)
     light_danger_threshold: int = Field(default=5, ge=1)
 
+    # --- Warning light LED (실물 경광등, ST80EL-USB HID) ---
+    # ``led_dry_run=False`` 이면 실제 HID 장치로 전송을 시도하고, hidapi 미설치/
+    # 장치 미연결이면 자동으로 시뮬레이션(simulated) 응답으로 폴백한다. Jetson에
+    # 장치가 연결돼 있으면 별도 설정 없이 그대로 실물 LED가 동작한다.
+    led_dry_run: bool = False
+    led_vendor_id: int = 0x04D8
+    led_product_id: int = 0xE73C
+
     # --- Logging ---
     log_level: str = "INFO"
 

@@ -17,6 +17,7 @@ from app.integrations.vlm_client import VlmClient
 from app.repositories.base import KioskRepository
 from app.repositories.factory import get_repository
 from app.services.cctv_service import CctvService
+from app.services.led_service import LedService
 from app.services.modal_service import ModalService
 from app.services.sensor_service import SensorService
 from app.services.space_service import SpaceService
@@ -79,6 +80,10 @@ def get_vlm_service() -> VlmService:
         warning_light=_warning_light(),
         settings=get_settings(),
     )
+
+
+def get_led_service() -> LedService:
+    return LedService(get_settings())
 
 
 def get_app_settings() -> Settings:

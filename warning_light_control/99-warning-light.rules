@@ -1,0 +1,12 @@
+# ST80EL-USB 경광등 HID 장치 접근 권한 (udev 규칙)
+# sudo 없이 /dev/hidraw* 에 접근할 수 있도록 모드를 0666 으로 연다.
+#
+# 설치 (Jetson / Ubuntu):
+#   sudo cp warning_light_control/99-warning-light.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+#   # 장치를 USB에서 뽑았다 다시 꽂으면 규칙이 확실히 적용됩니다.
+#
+# VID=0x04D8, PID=0xE73C (hid_controller.py 기본값과 일치)
+
+KERNEL=="hidraw*", ATTRS{idVendor}=="04d8", ATTRS{idProduct}=="e73c", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="04d8", ATTRS{idProduct}=="e73c", MODE="0666"
