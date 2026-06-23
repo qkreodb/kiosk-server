@@ -29,6 +29,15 @@ class SpaceService:
         processes = self._repo.get_processes()
         return processes[0]["code"] if processes else ""
 
+    def reset_behaviors(self, process_code: str) -> None:
+        """지정 공정의 모든 불안전행동 count를 0으로 초기화한다."""
+        process = self._repo.get_process(process_code)
+        if process is None:
+            raise HTTPException(
+                status_code=404, detail=f"알 수 없는 공정 코드: {process_code}"
+            )
+        self._repo.reset_behavior_counts(process_code)
+
     def get_space_name(self, process_code: str | None = None) -> SpaceNameResponse:
         all_processes = self._repo.get_processes()
         code = process_code or self._default_process_code()

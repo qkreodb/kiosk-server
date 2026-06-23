@@ -27,6 +27,13 @@ class BehaviorCount(BaseModel):
     count: int = Field(description="누적 감지 횟수", examples=[3])
 
 
+class BehaviorResetResponse(BaseModel):
+    """POST /behavior/reset 응답."""
+
+    reset: bool = True
+    process_code: str = Field(examples=["PRC-19"])
+
+
 class SpaceNameResponse(BaseModel):
     """Everything the 불안전행동 감시 신호등 card needs for one process."""
 

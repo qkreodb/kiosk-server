@@ -61,3 +61,7 @@ class KioskRepository(ABC):
     @abstractmethod
     def increment_behavior(self, process_code: str, behavior_id: str, delta: int = 1) -> int:
         """Add ``delta`` to one counter and return the new total."""
+
+    @abstractmethod
+    def reset_behavior_counts(self, process_code: str) -> None:
+        """모든 불안전행동 카운터를 0으로 초기화한다."""

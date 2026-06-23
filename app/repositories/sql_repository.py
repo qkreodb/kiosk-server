@@ -291,6 +291,18 @@ class SqlRepository(KioskRepository):
             UnsafeBehavior.LADDER_ALONE.value: int(row["ladder_alone_count"]),
         }
 
+    def reset_behavior_counts(self, process_code: str) -> None:
+        pid = _pid(process_code)
+        if pid is None:
+            return
+        cols = ", ".join(f"{c} = 0" for c in BEHAVIOR_COLUMN.values())
+        with self._lock:
+            self._execute(
+                f"UPDATE unstable_behavior SET {cols} "
+                "WHERE behavior_id = (SELECT behavior_id FROM process WHERE process_id=%s)",
+                (pid,),
+            )
+
     def increment_behavior(self, process_code: str, behavior_id: str, delta: int = 1) -> int:
         col = BEHAVIOR_COLUMN.get(behavior_id)
         if col is None:

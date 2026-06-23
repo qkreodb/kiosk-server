@@ -107,3 +107,9 @@ class MockRepository(KioskRepository):
             counts = self._ensure_process(process_code)
             counts[behavior_id] = counts.get(behavior_id, 0) + delta
             return counts[behavior_id]
+
+    def reset_behavior_counts(self, process_code: str) -> None:
+        with self._lock:
+            counts = self._ensure_process(process_code)
+            for key in counts:
+                counts[key] = 0

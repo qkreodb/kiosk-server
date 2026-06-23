@@ -5,10 +5,27 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query
 
 from app.api.deps import get_space_service
-from app.schemas.space import SpaceNameResponse
+from app.schemas.space import BehaviorResetResponse, SpaceNameResponse
 from app.services.space_service import SpaceService
 
 router = APIRouter(tags=["space"])
+
+
+@router.post(
+    "/behavior/reset",
+    response_model=BehaviorResetResponse,
+    summary="불안전행동 카운트 초기화",
+)
+async def reset_behavior(
+    process_code: str = Query(
+        description="초기화할 공정 코드 (예: PRC-19)",
+        examples=["PRC-19"],
+    ),
+    service: SpaceService = Depends(get_space_service),
+) -> BehaviorResetResponse:
+    """지정 공정의 불안전행동 카운트를 전부 0으로 초기화하고 경광등을 녹색(초기) 상태로 되돌린다."""
+    service.reset_behaviors(process_code)
+    return BehaviorResetResponse(reset=True, process_code=process_code)
 
 
 @router.get("/space-name", response_model=SpaceNameResponse, summary="공정 정보 조회")
