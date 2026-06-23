@@ -486,6 +486,59 @@
   .cctv-close:active { transform: scale(0.92); }
   .cctv-close svg { width: 24px; height: 24px; }
 
+  /* [TTS] 버튼 — [분석] 버튼 왼쪽 */
+  .cctv-tts-btn {
+    display: flex; align-items: center; gap: 7px;
+    padding: 0 18px;
+    height: 48px;
+    border-radius: 10px;
+    background: rgba(255, 184, 0, 0.10);
+    border: 1px solid rgba(255, 184, 0, 0.35);
+    color: var(--amber);
+    font-size: 15px; font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .cctv-tts-btn:hover { background: rgba(255, 184, 0, 0.22); border-color: var(--amber); }
+  .cctv-tts-btn:active { transform: scale(0.95); }
+  .cctv-tts-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+  .cctv-tts-btn svg { width: 20px; height: 20px; }
+
+  /* [분석] 버튼 — 닫기 버튼 왼쪽 */
+  .cctv-analyze-btn {
+    display: flex; align-items: center; gap: 7px;
+    padding: 0 18px;
+    height: 48px;
+    border-radius: 10px;
+    background: rgba(0, 217, 255, 0.10);
+    border: 1px solid rgba(0, 217, 255, 0.35);
+    color: var(--cyan);
+    font-size: 15px; font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .cctv-analyze-btn:hover { background: rgba(0, 217, 255, 0.2); border-color: var(--cyan); }
+  .cctv-analyze-btn:active { transform: scale(0.95); }
+  .cctv-analyze-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+  .cctv-analyze-btn svg { width: 20px; height: 20px; }
+
+  /* VLM 분석 결과 오버레이 (CCTV 화면 위 반투명) */
+  .cctv-vlm-overlay {
+    display: none;
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(0deg, rgba(3,7,15,0.92) 60%, transparent);
+    padding: 20px 20px 16px;
+    z-index: 5;
+    pointer-events: none;
+  }
+  .cctv-vlm-overlay.show { display: block; }
+  .cctv-vlm-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; font-size: 14px; line-height: 1.5; }
+  .cctv-vlm-label { font-weight: 700; white-space: nowrap; }
+  .cctv-vlm-val { color: var(--t-2); }
+
   .cctv-body { padding: 24px 28px 28px; }
   .cctv-screen {
     position: relative;
@@ -2335,7 +2388,7 @@
     display: flex; align-items: center; justify-content: space-between;
     position: relative; z-index: 1;
   }
-  .behavior-head-left { display: flex; flex-direction: column; gap: 3px; }
+  .behavior-head-left { display: flex; flex-direction: row; align-items: center; gap: 14px; flex-wrap: wrap; }
   .behavior-head-right { display: flex; align-items: center; gap: 12px; }
   .behavior-title {
     font-size: 21px; font-weight: 800; color: var(--t-1);
@@ -2344,18 +2397,18 @@
   .behavior-proc-select {
     font-size: 13px; color: var(--cyan);
     font-family: 'JetBrains Mono', monospace;
-    letter-spacing: 0.3px; font-weight: 600;
+    letter-spacing: 0px; font-weight: 600;
     background: rgba(0,217,255,0.08);
     border: 1px solid rgba(0,217,255,0.3);
     border-radius: 7px;
-    padding: 5px 30px 5px 12px;
+    padding: 5px 26px 5px 10px;
     cursor: pointer;
+    width: auto; max-width: 160px;
     appearance: none; -webkit-appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2300D9FF' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 10px center;
+    background-position: right 8px center;
     transition: all 0.15s;
-    margin-top: 2px;
   }
   .behavior-proc-select:hover { background-color: rgba(0,217,255,0.14); border-color: var(--cyan); }
   .behavior-proc-select:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(0,217,255,0.2); }
@@ -2379,6 +2432,134 @@
     cursor: pointer;
   }
   .bh-dot.active { background: var(--cyan); box-shadow: 0 0 12px var(--cyan); width: 34px; border-radius: 7px; }
+
+  /* 통일 헤더 버튼 스타일 (CCTV 버튼 + 초기화 버튼 동일) */
+  .bh-cctv-btns { display: flex; gap: 6px; }
+  .bh-head-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    height: 34px;
+    font-size: 13px; font-weight: 700; color: var(--t-2);
+    padding: 0 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px; cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Pretendard', sans-serif;
+    white-space: nowrap;
+  }
+  .bh-head-btn:hover { background: rgba(0,217,255,0.1); color: var(--cyan); border-color: var(--cyan); }
+  .bh-head-btn:active { transform: scale(0.95); }
+  .bh-head-btn svg { width: 15px; height: 15px; }
+  /* CCTV 버튼 활성(선택) 상태 */
+  .cctv-btn-item.active {
+    background: var(--cyan); color: var(--bg-void);
+    border-color: var(--cyan);
+  }
+  .cctv-btn-item.active:hover { color: var(--bg-void); }
+  /* CCTV LIVE 모니터링 인디케이터 (현재 신호등을 대변하는 CCTV) */
+  .cctv-live-ind {
+    width: 0; height: 0; border-radius: 50%;
+    background: var(--red);
+    opacity: 0;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .cctv-btn-item.monitoring {
+    border-color: var(--red);
+    color: var(--t-1);
+    background: rgba(255,59,71,0.08);
+  }
+  .cctv-btn-item.monitoring .cctv-live-ind {
+    width: 8px; height: 8px;
+    opacity: 1;
+    box-shadow: 0 0 8px var(--red);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  .cctv-btn-item.monitoring:hover {
+    background: rgba(255,59,71,0.15);
+    color: var(--t-1);
+    border-color: var(--red);
+  }
+  /* 활성(영상 열림) + 모니터링 동시 상태: 활성 우선 */
+  .cctv-btn-item.active.monitoring {
+    background: var(--cyan); color: var(--bg-void); border-color: var(--cyan);
+  }
+  .cctv-btn-item.active.monitoring .cctv-live-ind { background: var(--bg-void); box-shadow: none; }
+
+  /* ===== 신호등 행렬 ===== */
+  .bh-matrix {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .bh-matrix-head, .bh-matrix-row {
+    display: grid;
+    grid-template-columns: 1fr 90px 90px 90px 90px;
+    align-items: center; gap: 10px;
+  }
+  .bh-matrix-head {
+    padding: 4px 16px 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .bhm-col-name { font-size: 13px; font-weight: 700; color: var(--t-3); }
+  .bhm-col-lamp { font-size: 13px; font-weight: 700; color: var(--t-3); text-align: center; }
+  .bh-matrix-row {
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+  }
+  .bhm-name { font-size: 16px; font-weight: 600; color: var(--t-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bhm-lamp {
+    width: 26px; height: 26px; border-radius: 50%;
+    justify-self: center;
+    border: 2px solid rgba(0,0,0,0.35);
+    background: #1a2433;
+    position: relative;
+    transition: all 0.3s;
+  }
+  /* 비활성 (꺼진 램프) */
+  /* 비활성 (꺼진 램프) */
+  .bhm-lamp.interest { background: #18342a; }
+  .bhm-lamp.caution { background: #33311a; }
+  .bhm-lamp.warning { background: #33271a; }
+  .bhm-lamp.danger { background: #331a1d; }
+  /* 활성 (켜진 램프) — 관심:초록 / 주의:노랑 / 경고:오렌지 / 위험:빨강, 모두 깜빡임 */
+  .bhm-lamp.interest.on { background: radial-gradient(circle at 35% 30%, #80ffc0, var(--green)); box-shadow: 0 0 16px var(--green); animation: blink 1.1s ease-in-out infinite; }
+  .bhm-lamp.caution.on { background: radial-gradient(circle at 35% 30%, #ffe97a, var(--amber)); box-shadow: 0 0 16px var(--amber); animation: blink 1.1s ease-in-out infinite; }
+  .bhm-lamp.warning.on { background: radial-gradient(circle at 35% 30%, #ffb066, var(--orange)); box-shadow: 0 0 16px var(--orange); animation: blink 1.1s ease-in-out infinite; }
+  .bhm-lamp.danger.on { background: radial-gradient(circle at 35% 30%, #ff8088, var(--red)); box-shadow: 0 0 18px var(--red); animation: blink 1.1s ease-in-out infinite; }
+
+  /* ===== 사업장 온습도 현황 카드 ===== */
+  .site-env-section { flex-shrink: 0; }
+  .site-env-card {
+    display: flex; flex-direction: column; gap: 14px;
+    padding: 22px 26px;
+  }
+  .site-env-sub {
+    font-size: 12px; color: var(--cyan);
+    font-family: 'JetBrains Mono', monospace; font-weight: 600;
+  }
+  .site-view-toggle {
+    display: flex; gap: 0;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line-strong);
+    border-radius: 9px; overflow: hidden;
+  }
+  .sv-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 13px; font-weight: 700; color: var(--t-3);
+    padding: 8px 16px; background: transparent; border: none; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .sv-btn svg { width: 17px; height: 17px; }
+  .sv-btn.active { background: var(--cyan); color: var(--bg-void); }
+  .sv-btn:not(.active):hover { color: var(--t-1); background: rgba(255,255,255,0.04); }
+  .site-blueprint {
+    border-radius: var(--r-md); overflow: hidden;
+    border: 1px solid rgba(120,190,255,0.3);
+    background: #0a2540;
+  }
+  .site-blueprint svg { width: 100%; height: auto; display: block; }
 
   /* 슬라이드 컨테이너 */
   .behavior-slides {
@@ -2527,6 +2708,48 @@
   .fac-aed::before    { background: var(--amber); }
   .fac-aed .facility-icon { color: var(--amber); }
 
+  /* 관리 기능 버튼 (공정관리 / 현장 특이사항) */
+  .mgmt-menu {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 42px;
+    height: 110px; flex-shrink: 0;
+  }
+  .mgmt-btn {
+    border-radius: var(--r-md);
+    border: 1px solid var(--line);
+    display: flex; flex-direction: row; align-items: center; justify-content: center;
+    gap: 16px; cursor: pointer; position: relative; overflow: hidden;
+    transition: all 0.2s ease;
+    background: linear-gradient(180deg, var(--bg-elev), var(--bg-base));
+  }
+  .mgmt-btn::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .mgmt-btn:active { transform: scale(0.98); border-color: var(--line-strong); }
+  .mgmt-icon { width: 40px; height: 40px; flex-shrink: 0; }
+  .mgmt-label { font-size: 23px; font-weight: 700; color: var(--t-1); letter-spacing: -0.3px; }
+  .mgmt-process::before { background: var(--violet); }
+  .mgmt-process .mgmt-icon { color: var(--violet); }
+  .mgmt-issue::before { background: var(--orange); }
+  .mgmt-issue .mgmt-icon { color: var(--orange); }
+
+  /* 현장 특이사항 리스트 */
+  .issue-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .issue-item {
+    display: flex; align-items: center; gap: 16px;
+    padding: 14px 18px; background: rgba(255,255,255,0.02);
+    border: 1px solid var(--line); border-radius: var(--r-md);
+    border-left: 3px solid var(--line-strong);
+  }
+  .issue-item.sev-high { border-left-color: var(--red); }
+  .issue-item.sev-mid { border-left-color: var(--amber); }
+  .issue-item.sev-low { border-left-color: var(--green); }
+  .issue-time { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: var(--cyan); flex-shrink: 0; width: 50px; }
+  .issue-body { flex: 1; min-width: 0; }
+  .issue-title { font-size: 16px; font-weight: 700; color: var(--t-1); }
+  .issue-desc { font-size: 13px; color: var(--t-3); margin-top: 3px; }
+  .issue-badge { font-size: 13px; font-weight: 800; padding: 5px 12px; border-radius: 6px; flex-shrink: 0; white-space: nowrap; }
+  .issue-badge.high { background: rgba(255,59,71,0.15); color: #ff7080; }
+  .issue-badge.mid { background: rgba(255,184,0,0.18); color: #ffd066; }
+  .issue-badge.low { background: rgba(0,229,138,0.15); color: #66f5b8; }
+
   /* ============== AI 현장 상황 패널 ============== */
   .ai-panel {
     flex-shrink: 0;
@@ -2629,22 +2852,22 @@
   /* ============== 하단 우측 정책 버튼 ============== */
   .policy-bottom {
     display: flex; justify-content: flex-end; gap: 24px;
-    height: 137px;
+    height: 68px;
     flex-shrink: 0;
     margin-top: auto;
   }
   .policy-mini {
     width: 360px; height: 100%;
-    border-radius: var(--r-lg);
+    border-radius: var(--r-md);
     border: 1px solid var(--line);
     background: linear-gradient(180deg, var(--bg-elev), var(--bg-base));
-    display: flex; align-items: center; justify-content: center; gap: 24px;
+    display: flex; align-items: center; justify-content: center; gap: 16px;
     cursor: pointer; transition: all 0.2s;
     color: var(--cyan);
   }
   .policy-mini:active { transform: scale(0.97); border-color: var(--line-strong); }
-  .policy-mini svg { width: 64px; height: 64px; flex-shrink: 0; }
-  .policy-mini span { font-size: 28px; font-weight: 700; color: var(--t-1); line-height: 1.25; }
+  .policy-mini svg { width: 36px; height: 36px; flex-shrink: 0; }
+  .policy-mini span { font-size: 20px; font-weight: 700; color: var(--t-1); line-height: 1.2; }
 </style>
 </head>
 <body>
@@ -2687,134 +2910,244 @@
   <main class="main">
 
     <!-- Environment row: 온도 + 불안전행동 감시 신호등 -->
-    <section class="env-row">
-      <div class="card env-card env-temp">
-        <div class="env-temp-main">
-          <div class="env-icon-wrap">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#FF6F2C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 4a2 2 0 0 0-4 0v10.5a4 4 0 1 0 4 0V4z"/>
-              <circle cx="12" cy="17" r="2.2" fill="#FF6F2C"/>
-            </svg>
-          </div>
-          <div class="env-body">
-            <div class="env-label">현재 경기도 고양시</div>
-            <div class="env-value">
-              <span class="env-num">27.4</span>
-              <span class="env-unit">°C</span>
-            </div>
-            <div class="env-sub">
-              체감 28.1°C
-              <span class="env-trend">▲ 0.3°C</span>
-            </div>
-          </div>
-        </div>
-        <div class="env-metrics">
-          <div class="env-metric">
-            <span class="em-label">습도</span>
-            <span class="em-val" style="color:var(--cyan);">58<small>%</small></span>
-          </div>
-          <div class="env-metric">
-            <span class="em-label">미세먼지</span>
-            <span class="em-val" style="color:var(--green);">42<small>㎍</small></span>
-          </div>
-        </div>
-      </div>
-
-      <div class="card env-card env-behavior">
+    <!-- 불안전행동 감시 신호등 (전체폭) -->
+    <section class="behavior-section">
+      <div class="card env-behavior">
         <div class="behavior-head">
           <div class="behavior-head-left">
-            <span class="behavior-title" id="bhSlideTitle">불안전행동 감시 신호등</span>
+            <span class="behavior-title">불안전행동 감시 신호등</span>
             <select class="behavior-proc-select" id="bhProcSelect">
-              <option value="정밀가공 공정 · PRC-19">정밀가공 공정 · PRC-19</option>
-              <option value="용접 공정 · PRC-07">용접 공정 · PRC-07</option>
-              <option value="도장 공정 · PRC-12">도장 공정 · PRC-12</option>
-              <option value="조립 공정 · PRC-23">조립 공정 · PRC-23</option>
-              <option value="물류·하역 공정 · PRC-31">물류·하역 공정 · PRC-31</option>
+              <option value="정밀가공 공정 · PRC-19">정밀가공 · PRC-19</option>
+              <option value="용접 공정 · PRC-07">용접 · PRC-07</option>
+              <option value="도장 공정 · PRC-12">도장 · PRC-12</option>
             </select>
           </div>
           <div class="behavior-head-right">
-            <span class="behavior-ai-tag" id="bhSlideTag">AI VISION</span>
-            <div class="behavior-dots">
-              <span class="bh-dot active" data-slide="0"></span>
-              <span class="bh-dot" data-slide="1"></span>
-              <span class="bh-dot" data-slide="2"></span>
+            <span class="behavior-ai-tag">AI VISION</span>
+            <div class="bh-cctv-btns">
+              <button class="bh-head-btn cctv-btn-item monitoring" data-cctv="1" onclick="bhSelectCctv('1', this)"><span class="cctv-live-ind"></span>CCTV-1</button>
+              <button class="bh-head-btn cctv-btn-item" data-cctv="2" onclick="bhSelectCctv('2', this)"><span class="cctv-live-ind"></span>CCTV-2</button>
+              <button class="bh-head-btn cctv-btn-item" data-cctv="3" onclick="bhSelectCctv('3', this)"><span class="cctv-live-ind"></span>CCTV-3</button>
+            </div>
+            <button class="bh-head-btn bh-reset-btn" onclick="resetBehavior()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+              초기화
+            </button>
+          </div>
+        </div>
+
+        <!-- 신호등 행렬 -->
+        <div class="bh-matrix" id="bhMatrix">
+          <div class="bh-matrix-head">
+            <span class="bhm-col-name">감시 항목</span>
+            <span class="bhm-col-lamp" style="color:var(--green);">관심</span>
+            <span class="bhm-col-lamp" style="color:var(--amber);">주의</span>
+            <span class="bhm-col-lamp" style="color:var(--orange);">경고</span>
+            <span class="bhm-col-lamp" style="color:var(--red);">위험</span>
+          </div>
+          <div class="bh-matrix-row" data-active="3">
+            <span class="bhm-name">모자(안전모) 벗는 행동</span>
+            <span class="bhm-lamp interest"></span>
+            <span class="bhm-lamp caution"></span>
+            <span class="bhm-lamp warning"></span>
+            <span class="bhm-lamp danger on"></span>
+          </div>
+          <div class="bh-matrix-row" data-active="1">
+            <span class="bhm-name">스피커(설비) 만지는 행동</span>
+            <span class="bhm-lamp interest"></span>
+            <span class="bhm-lamp caution on"></span>
+            <span class="bhm-lamp warning"></span>
+            <span class="bhm-lamp danger"></span>
+          </div>
+          <div class="bh-matrix-row" data-active="0">
+            <span class="bhm-name">위험지역 무단횡단 행동</span>
+            <span class="bhm-lamp interest on"></span>
+            <span class="bhm-lamp caution"></span>
+            <span class="bhm-lamp warning"></span>
+            <span class="bhm-lamp danger"></span>
+          </div>
+          <div class="bh-matrix-row" data-active="2">
+            <span class="bhm-name">사다리 혼자 올라가는 행동</span>
+            <span class="bhm-lamp interest"></span>
+            <span class="bhm-lamp caution"></span>
+            <span class="bhm-lamp warning on"></span>
+            <span class="bhm-lamp danger"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 사업장(현장) 온습도 현황 (전체폭) -->
+    <section class="site-env-section">
+      <div class="card site-env-card">
+        <div class="behavior-head">
+          <div class="behavior-head-left">
+            <span class="behavior-title">사업장(현장) 온습도 현황</span>
+            <span class="site-env-sub">전시 부스 11m × 6m · TOP VIEW</span>
+          </div>
+          <div class="behavior-head-right">
+            <div class="site-view-toggle">
+              <button class="sv-btn active" data-view="env" onclick="switchSiteView('env', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4a2 2 0 0 0-4 0v10.5a4 4 0 1 0 4 0V4z"/><circle cx="12" cy="17" r="2.2" fill="currentColor"/></svg>
+                온습도계
+              </button>
+              <button class="sv-btn" data-view="cctv" onclick="switchSiteView('cctv', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l13-3 1.5 5.5L3.5 12.5 2 7z"/><circle cx="8" cy="9" r="1.4" fill="currentColor" stroke="none"/><path d="M5 13v3a2 2 0 0 0 2 2h2"/></svg>
+                CCTV
+              </button>
+              <button class="sv-btn" data-view="hr" onclick="switchSiteView('hr', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 5 4-12 2 7h6"/></svg>
+                심박
+              </button>
             </div>
           </div>
         </div>
 
-        <div class="behavior-slides">
-          <!-- Slide 0: 불안전행동 신호등 -->
-          <div class="bh-slide active" data-slide="0">
-            <div class="behavior-list">
-              <div class="behavior-item">
-                <span class="bh-lamp red"></span>
-                <span class="bh-name">모자(안전모) 벗는 행동</span>
-                <span class="bh-grade red">위험</span>
-              </div>
-              <div class="behavior-item">
-                <span class="bh-lamp amber"></span>
-                <span class="bh-name">스피커(설비) 만지는 행동</span>
-                <span class="bh-grade amber">주의</span>
-              </div>
-              <div class="behavior-item">
-                <span class="bh-lamp green"></span>
-                <span class="bh-name">위험지역 무단횡단 행동</span>
-                <span class="bh-grade green">정상</span>
-              </div>
-              <div class="behavior-item">
-                <span class="bh-lamp green"></span>
-                <span class="bh-name">사다리 혼자 올라가는 행동</span>
-                <span class="bh-grade green">정상</span>
-              </div>
-            </div>
-          </div>
+        <div class="site-blueprint">
+          <svg viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="site-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                <path d="M30 0H0V30" fill="none" stroke="rgba(120,190,255,0.12)" stroke-width="1"/>
+              </pattern>
+              <pattern id="site-grid-lg" width="150" height="150" patternUnits="userSpaceOnUse">
+                <path d="M150 0H0V150" fill="none" stroke="rgba(120,190,255,0.2)" stroke-width="1.2"/>
+              </pattern>
+            </defs>
 
-          <!-- Slide 1: 온습도 정보 -->
-          <div class="bh-slide" data-slide="1">
-            <div class="bh-env-grid">
-              <div class="bh-env-card">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#FF6F2C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4a2 2 0 0 0-4 0v10.5a4 4 0 1 0 4 0V4z"/><circle cx="12" cy="17" r="2.2" fill="#FF6F2C"/></svg>
-                <div class="bh-env-val" style="color:var(--orange);">27.4<small>°C</small></div>
-                <div class="bh-env-lbl">작업장 온도</div>
-              </div>
-              <div class="bh-env-card">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#00D9FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>
-                <div class="bh-env-val" style="color:var(--cyan);">58<small>%</small></div>
-                <div class="bh-env-lbl">상대 습도</div>
-              </div>
-            </div>
-          </div>
+            <!-- 블루프린트 배경 (비상대피로와 동일) -->
+            <rect width="900" height="560" fill="#0a2540"/>
+            <rect width="900" height="560" fill="url(#site-grid)"/>
+            <rect width="900" height="560" fill="url(#site-grid-lg)"/>
 
-          <!-- Slide 2: 실시간 CCTV (카메라 2대) -->
-          <div class="bh-slide" data-slide="2">
-            <div class="bh-cctv-grid">
-              <div class="bh-cctv-cam" onclick="openCCTVFor('CAM-03 · 정밀가공 라인')">
-                <div class="bh-cam-live"><span class="bh-cam-dot"></span> LIVE</div>
-                <svg class="bh-cam-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M2 7l13-3 1.5 5.5L3.5 12.5 2 7z"/>
-                  <path d="M15 5.5l4-1 1 3.5-4 1"/>
-                  <circle cx="8" cy="9" r="1.5" fill="currentColor" stroke="none"/>
-                  <path d="M5 13v3a2 2 0 0 0 2 2h3"/>
-                  <path d="M10 18v2"/>
-                </svg>
-                <div class="bh-cam-name">CAM-03</div>
-                <div class="bh-cam-loc">정밀가공 라인</div>
-              </div>
-              <div class="bh-cctv-cam" onclick="openCCTVFor('CAM-04 · 절단기 작업존')">
-                <div class="bh-cam-live"><span class="bh-cam-dot"></span> LIVE</div>
-                <svg class="bh-cam-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M2 7l13-3 1.5 5.5L3.5 12.5 2 7z"/>
-                  <path d="M15 5.5l4-1 1 3.5-4 1"/>
-                  <circle cx="8" cy="9" r="1.5" fill="currentColor" stroke="none"/>
-                  <path d="M5 13v3a2 2 0 0 0 2 2h3"/>
-                  <path d="M10 18v2"/>
-                </svg>
-                <div class="bh-cam-name">CAM-04</div>
-                <div class="bh-cam-loc">절단기 작업존</div>
-              </div>
-            </div>
-          </div>
-        </div>
+            <!-- 외벽 -->
+            <rect x="60" y="50" width="780" height="460" fill="none" stroke="#9ecbff" stroke-width="3"/>
+
+            <!-- 내부 구획 (비상대피로와 동일) -->
+            <g stroke="#6fa8e0" stroke-width="1.6" fill="none">
+              <rect x="100" y="90" width="150" height="120"/>
+              <rect x="100" y="230" width="150" height="120"/>
+              <rect x="300" y="90" width="300" height="200"/>
+              <rect x="650" y="90" width="150" height="120"/>
+              <rect x="650" y="230" width="150" height="120"/>
+              <rect x="300" y="330" width="300" height="120"/>
+            </g>
+            <g fill="#6fa8e0" font-family="monospace" font-size="13" text-anchor="middle">
+              <text x="175" y="155">부스 A</text>
+              <text x="175" y="295">부스 B</text>
+              <text x="450" y="195">중앙 전시홀</text>
+              <text x="725" y="155">부스 C</text>
+              <text x="725" y="295">부스 D</text>
+              <text x="450" y="395">세미나실</text>
+            </g>
+
+            <!-- 현재 위치 (비상대피로와 동일) -->
+            <g>
+              <circle cx="450" cy="470" r="13" fill="#00D9FF" opacity="0.25">
+                <animate attributeName="r" values="10;20;10" dur="2s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0.4;0;0.4" dur="2s" repeatCount="indefinite"/>
+              </circle>
+              <circle cx="450" cy="470" r="8" fill="#00D9FF"/>
+              <text x="450" y="498" text-anchor="middle" fill="#00D9FF" font-family="Pretendard, sans-serif" font-size="14" font-weight="700">현재 위치</text>
+            </g>
+
+            <!-- 온습도계 뷰 (각 구역 벽면에 분산 배치) -->
+            <g id="siteEnvMarkers">
+              <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-01','부스 A · 정밀가공 시연존')">
+                <circle cx="175" cy="120" r="22" fill="#FF6F2C" opacity="0.15"/>
+                <circle cx="175" cy="120" r="18" fill="#0a2540" stroke="#FF6F2C" stroke-width="2"/>
+                <path d="M177 112a2 2 0 0 0-4 0v9a3.5 3.5 0 1 0 4 0z" fill="none" stroke="#FF6F2C" stroke-width="1.6"/>
+                <circle cx="175" cy="123" r="2.6" fill="#FF6F2C"/>
+              </g>
+              <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-02','부스 C · 절단·용접 시연존')">
+                <circle cx="775" cy="120" r="22" fill="#FF6F2C" opacity="0.15"/>
+                <circle cx="775" cy="120" r="18" fill="#0a2540" stroke="#FF6F2C" stroke-width="2"/>
+                <path d="M777 112a2 2 0 0 0-4 0v9a3.5 3.5 0 1 0 4 0z" fill="none" stroke="#FF6F2C" stroke-width="1.6"/>
+                <circle cx="775" cy="123" r="2.6" fill="#FF6F2C"/>
+              </g>
+              <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-03','중앙 전시홀')">
+                <circle cx="380" cy="160" r="22" fill="#FF6F2C" opacity="0.15"/>
+                <circle cx="380" cy="160" r="18" fill="#0a2540" stroke="#FF6F2C" stroke-width="2"/>
+                <path d="M382 152a2 2 0 0 0-4 0v9a3.5 3.5 0 1 0 4 0z" fill="none" stroke="#FF6F2C" stroke-width="1.6"/>
+                <circle cx="380" cy="163" r="2.6" fill="#FF6F2C"/>
+              </g>
+              <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-04','세미나실')">
+                <circle cx="540" cy="400" r="22" fill="#FF6F2C" opacity="0.15"/>
+                <circle cx="540" cy="400" r="18" fill="#0a2540" stroke="#FF6F2C" stroke-width="2"/>
+                <path d="M542 392a2 2 0 0 0-4 0v9a3.5 3.5 0 1 0 4 0z" fill="none" stroke="#FF6F2C" stroke-width="1.6"/>
+                <circle cx="540" cy="403" r="2.6" fill="#FF6F2C"/>
+              </g>
+            </g>
+
+            <!-- CCTV 뷰 (천장 모서리/요충지에 분산, 초기 숨김) -->
+            <g id="siteCctvMarkers" style="display:none;">
+              <g class="ai-marker" style="cursor:pointer;" onclick="openCCTVFor('CAM-03 · 부스 A 정밀가공')">
+                <circle cx="120" cy="105" r="20" fill="#00D9FF" opacity="0.15"/>
+                <circle cx="120" cy="105" r="16" fill="#0a2540" stroke="#00D9FF" stroke-width="2"/>
+                <g transform="translate(110,98) scale(0.6)" stroke="#00D9FF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l13-3 1.5 5.5L3.5 12.5 2 7z"/><circle cx="8" cy="9" r="1.4" fill="#00D9FF" stroke="none"/><path d="M5 13v3a2 2 0 0 0 2 2h2"/></g>
+              </g>
+              <g class="ai-marker" style="cursor:pointer;" onclick="openCCTVFor('CAM-04 · 부스 C 절단·용접')">
+                <circle cx="800" cy="105" r="20" fill="#00D9FF" opacity="0.15"/>
+                <circle cx="800" cy="105" r="16" fill="#0a2540" stroke="#00D9FF" stroke-width="2"/>
+                <g transform="translate(790,98) scale(0.6)" stroke="#00D9FF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l13-3 1.5 5.5L3.5 12.5 2 7z"/><circle cx="8" cy="9" r="1.4" fill="#00D9FF" stroke="none"/><path d="M5 13v3a2 2 0 0 0 2 2h2"/></g>
+              </g>
+              <g class="ai-marker" style="cursor:pointer;" onclick="openCCTVFor('CAM-05 · 중앙 전시홀')">
+                <circle cx="450" cy="105" r="20" fill="#00D9FF" opacity="0.15"/>
+                <circle cx="450" cy="105" r="16" fill="#0a2540" stroke="#00D9FF" stroke-width="2"/>
+                <g transform="translate(440,98) scale(0.6)" stroke="#00D9FF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l13-3 1.5 5.5L3.5 12.5 2 7z"/><circle cx="8" cy="9" r="1.4" fill="#00D9FF" stroke="none"/><path d="M5 13v3a2 2 0 0 0 2 2h2"/></g>
+              </g>
+              <g class="ai-marker" style="cursor:pointer;" onclick="openCCTVFor('CAM-06 · 세미나실 출입구')">
+                <circle cx="320" cy="345" r="20" fill="#00D9FF" opacity="0.15"/>
+                <circle cx="320" cy="345" r="16" fill="#0a2540" stroke="#00D9FF" stroke-width="2"/>
+                <g transform="translate(310,338) scale(0.6)" stroke="#00D9FF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l13-3 1.5 5.5L3.5 12.5 2 7z"/><circle cx="8" cy="9" r="1.4" fill="#00D9FF" stroke="none"/><path d="M5 13v3a2 2 0 0 0 2 2h2"/></g>
+              </g>
+            </g>
+
+            <!-- 심박 뷰 (작업자 위치 분산, 초기 숨김) -->
+            <g id="siteHrMarkers" style="display:none;">
+              <g class="ai-marker" style="cursor:pointer;" onclick="openWatchWorker('이*학','WATCH-01','부스 A · 정밀가공 시연존')">
+                <circle cx="200" cy="170" r="22" fill="#FF3B47" opacity="0.18"><animate attributeName="r" values="18;28;18" dur="1.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.35;0;0.35" dur="1.4s" repeatCount="indefinite"/></circle>
+                <circle cx="200" cy="170" r="18" fill="#0a2540" stroke="#FF3B47" stroke-width="2"/>
+                <path d="M191 170h3l2 5 3-10 2 5h3" fill="none" stroke="#FF3B47" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+              <g class="ai-marker" style="cursor:pointer;" onclick="openWatchWorker('전*조','WATCH-02','부스 C · 절단·용접 시연존')">
+                <circle cx="700" cy="175" r="22" fill="#FF3B47" opacity="0.18"><animate attributeName="r" values="18;28;18" dur="1.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.35;0;0.35" dur="1.4s" repeatCount="indefinite"/></circle>
+                <circle cx="700" cy="175" r="18" fill="#0a2540" stroke="#FF3B47" stroke-width="2"/>
+                <path d="M691 175h3l2 5 3-10 2 5h3" fill="none" stroke="#FF3B47" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+              <g class="ai-marker" style="cursor:pointer;" onclick="openWatchWorker('김*수','WATCH-03','중앙 전시홀')">
+                <circle cx="500" cy="155" r="22" fill="#FF3B47" opacity="0.18"><animate attributeName="r" values="18;28;18" dur="1.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.35;0;0.35" dur="1.4s" repeatCount="indefinite"/></circle>
+                <circle cx="500" cy="155" r="18" fill="#0a2540" stroke="#FF3B47" stroke-width="2"/>
+                <path d="M491 155h3l2 5 3-10 2 5h3" fill="none" stroke="#FF3B47" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+              <g class="ai-marker" style="cursor:pointer;" onclick="openWatchWorker('박*후','WATCH-04','부스 B · 자재 보관')">
+                <circle cx="160" cy="300" r="22" fill="#FF3B47" opacity="0.18"><animate attributeName="r" values="18;28;18" dur="1.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.35;0;0.35" dur="1.4s" repeatCount="indefinite"/></circle>
+                <circle cx="160" cy="300" r="18" fill="#0a2540" stroke="#FF3B47" stroke-width="2"/>
+                <path d="M151 300h3l2 5 3-10 2 5h3" fill="none" stroke="#FF3B47" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+              <g class="ai-marker" style="cursor:pointer;" onclick="openWatchWorker('최*재','WATCH-05','세미나실')">
+                <circle cx="450" cy="405" r="22" fill="#FF3B47" opacity="0.18"><animate attributeName="r" values="18;28;18" dur="1.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.35;0;0.35" dur="1.4s" repeatCount="indefinite"/></circle>
+                <circle cx="450" cy="405" r="18" fill="#0a2540" stroke="#FF3B47" stroke-width="2"/>
+                <path d="M441 405h3l2 5 3-10 2 5h3" fill="none" stroke="#FF3B47" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+            </g>
+
+            <!-- 범례 -->
+            <g font-family="Pretendard, sans-serif" font-size="12">
+              <circle cx="86" cy="535" r="7" fill="#FF6F2C"/>
+              <text x="98" y="539" fill="#9ecbff">온습도계</text>
+              <circle cx="186" cy="535" r="7" fill="#00D9FF"/>
+              <text x="198" y="539" fill="#9ecbff">현재 위치 / CCTV</text>
+              <circle cx="330" cy="535" r="7" fill="#FF3B47"/>
+              <text x="342" y="539" fill="#9ecbff">심박(작업자)</text>
+            </g>
+
+            <!-- 도면 정보 -->
+            <g>
+              <text x="75" y="80" fill="#9ecbff" font-family="monospace" font-size="11" opacity="0.7">DWG. NO. ENV-1F-001</text>
+              <text x="825" y="80" text-anchor="end" fill="#9ecbff" font-family="monospace" font-size="11" opacity="0.7">SCALE 1:200</text>
+            </g>
+          </svg>
+                </div>
       </div>
     </section>
 
@@ -2866,71 +3199,21 @@
       </button>
     </nav>
 
-    <!-- 메인 기능 2개 -->
-    <section class="actions">
-      <div class="action action-msds" onclick="openMSDSList()">
-        <div class="action-top">
-          <div class="action-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#00D9FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M10 2v6h6"/>
-              <path d="M10 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-              <circle cx="12" cy="15" r="2.5"/>
-              <path d="M12 12.5v-1M12 18.5v-1M9 15h-1M16 15h-1"/>
-            </svg>
-          </div>
-        </div>
-        <div class="action-bottom">
-          <div class="action-titlebar">
-            <div class="action-title">MSDS <span style="font-family:\'Pretendard\';font-size:40px;font-weight:800;">열람</span></div>
-            <div class="action-tag">CHEMICAL</div>
-          </div>
-          <div class="action-desc">물질안전보건자료 · 화학물질 정보 조회</div>
-          <div class="action-cta">조회 시작 →</div>
-        </div>
-      </div>
-
-      <div class="action action-risk" onclick="openRisk()">
-        <div class="action-top">
-          <div class="action-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#FF3B47" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M10.3 3.86L1.82 18a2 2 0 0 0 1.7 3h16.96a2 2 0 0 0 1.7-3L13.7 3.86a2 2 0 0 0-3.4 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13"/>
-              <circle cx="12" cy="17" r="1" fill="#FF3B47"/>
-            </svg>
-          </div>
-        </div>
-        <div class="action-bottom">
-          <div class="action-titlebar">
-            <div class="action-title ko">위험성평가 결과 열람</div>
-            <div class="action-tag">RISK</div>
-          </div>
-          <div class="action-desc">유해 · 위험요인 평가 결과 조회</div>
-          <div class="action-cta">결과 보기 →</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- AI 현장 상황 정보 열람 (대형 버튼) -->
-    <button class="action action-ai" onclick="openAISite()">
-      <div class="action-top">
-        <div class="action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#00E58A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="4" y="7" width="16" height="13" rx="2"/><path d="M9 7V4h6v3"/>
-            <circle cx="9" cy="13" r="1.3" fill="currentColor"/><circle cx="15" cy="13" r="1.3" fill="currentColor"/>
-            <path d="M9 17h6"/><line x1="12" y1="2" x2="12" y2="4"/>
-          </svg>
-        </div>
-      </div>
-      <div class="action-bottom">
-        <div class="action-titlebar">
-          <div class="action-title ko">AI 현장 상황 정보 열람</div>
-          <div class="action-tag">AI VISION</div>
-        </div>
-        <div class="action-desc">VLM · 실시간 영상 분석 · 위험행동 자동 감지</div>
-        <div class="action-cta">실시간 분석 보기 →</div>
-      </div>
-      <div class="ai-live-badge"><span class="ai-dot"></span> AI 분석 중 · 2 CH</div>
-    </button>
+    <!-- 관리 기능 버튼 2개 (공정관리 / 현장 특이사항) -->
+    <nav class="mgmt-menu">
+      <button class="mgmt-btn mgmt-process" onclick="openProcessMgmt()">
+        <svg class="mgmt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 7h18M3 12h18M3 17h18"/><circle cx="8" cy="7" r="1.6" fill="currentColor" stroke="none"/><circle cx="14" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="10" cy="17" r="1.6" fill="currentColor" stroke="none"/>
+        </svg>
+        <span class="mgmt-label">공정(작업)관리</span>
+      </button>
+      <button class="mgmt-btn mgmt-issue" onclick="openIssueMgmt()">
+        <svg class="mgmt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.3 3.86L1.82 18a2 2 0 0 0 1.7 3h16.96a2 2 0 0 0 1.7-3L13.7 3.86a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="1" fill="currentColor"/>
+        </svg>
+        <span class="mgmt-label">현장 특이사항 관리</span>
+      </button>
+    </nav>
 
     <!-- 하단 우측 정책 버튼 2개 -->
     <div class="policy-bottom">
@@ -2989,11 +3272,28 @@
           <div class="cctv-head-sub" id="cctvHeadSub">정밀가공 공정 · PRC-19</div>
         </div>
       </div>
-      <button class="cctv-close" onclick="closeCCTV()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="cctv-tts-btn" id="cctvTtsBtn" onclick="playTtsDemo()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+          </svg>
+          TTS
+        </button>
+        <button class="cctv-analyze-btn" id="cctvAnalyzeBtn" onclick="analyzeCurrentCam()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            <path d="M11 8v6M8 11h6"/>
+          </svg>
+          분석
+        </button>
+        <button class="cctv-close" onclick="closeCCTV()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
     </div>
     <div class="cctv-body">
       <div class="cctv-screen">
@@ -3002,6 +3302,12 @@
         <div class="cctv-loc-overlay">
           <div class="cctv-loc-name" id="cctvLocName">CAM-03 · 정밀가공 라인</div>
           <div class="cctv-loc-proc" id="cctvLocProc">정밀가공 공정 (PRC-19) · 도장작업실</div>
+        </div>
+        <!-- VLM 분석 결과 오버레이 -->
+        <div class="cctv-vlm-overlay" id="cctvVlmOverlay">
+          <div class="cctv-vlm-row"><span class="cctv-vlm-label" style="color:var(--cyan);">탐지</span><span class="cctv-vlm-val" id="vlmDetection">—</span></div>
+          <div class="cctv-vlm-row"><span class="cctv-vlm-label" style="color:var(--amber);">경고</span><span class="cctv-vlm-val" id="vlmWarning">—</span></div>
+          <div class="cctv-vlm-row"><span class="cctv-vlm-label" style="color:var(--red);">경광등</span><span class="cctv-vlm-val" id="vlmLight">—</span></div>
         </div>
         <!-- Fallback (영상 로드 전/실패 시 표시) -->
         <div class="cctv-fallback">
@@ -3383,26 +3689,26 @@
           <div class="contact-section">
             <div class="contact-section-title">안전보건 관리조직<span class="contact-section-meta">8 PERSON · ALL ACTIVE</span></div>
             <div class="contact-scroll">
-              <div class="org-card lead"><div class="org-avatar role-lead">총괄</div><div class="org-info"><div class="org-role">안전보건 총괄책임자</div><div class="org-name">박정훈<span class="pos">상무 · 공장장</span></div></div><div class="qr-call" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
-              <div class="org-card"><div class="org-avatar role-safe">안전</div><div class="org-info"><div class="org-role">안전관리자 (선임)</div><div class="org-name">김선우<span class="pos">팀장</span></div></div><div class="qr-call" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
-              <div class="org-card"><div class="org-avatar role-health">보건</div><div class="org-info"><div class="org-role">보건관리자 · 산업간호사</div><div class="org-name">이수민<span class="pos">팀장</span></div></div><div class="qr-call" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
-              <div class="org-card"><div class="org-avatar role-fire">소방</div><div class="org-info"><div class="org-role">소방안전관리자</div><div class="org-name">최영진<span class="pos">과장</span></div></div><div class="qr-call" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
-              <div class="org-card"><div class="org-avatar role-chem">화학</div><div class="org-info"><div class="org-role">화학물질 · MSDS 담당</div><div class="org-name">정해린<span class="pos">과장</span></div></div><div class="qr-call" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
-              <div class="org-card"><div class="org-avatar role-elec">전기</div><div class="org-info"><div class="org-role">전기안전관리자</div><div class="org-name">조태범<span class="pos">과장</span></div></div><div class="qr-call" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
-              <div class="org-card"><div class="org-avatar role-fac">설비</div><div class="org-info"><div class="org-role">설비 · 시설 관리</div><div class="org-name">한도윤<span class="pos">팀장</span></div></div><div class="qr-call" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
-              <div class="org-card"><div class="org-avatar role-env">환경</div><div class="org-info"><div class="org-role">환경 · 폐기물 관리</div><div class="org-name">윤가영<span class="pos">대리</span></div></div><div class="qr-call" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
+              <div class="org-card lead"><div class="org-avatar role-lead">총괄</div><div class="org-info"><div class="org-role">안전보건 총괄책임자</div><div class="org-name">박*훈<span class="pos">상무 · 공장장</span></div></div><div class="qr-call" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
+              <div class="org-card"><div class="org-avatar role-safe">안전</div><div class="org-info"><div class="org-role">안전관리자 (선임)</div><div class="org-name">김*우<span class="pos">팀장</span></div></div><div class="qr-call" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
+              <div class="org-card"><div class="org-avatar role-health">보건</div><div class="org-info"><div class="org-role">보건관리자 · 산업간호사</div><div class="org-name">이*민<span class="pos">팀장</span></div></div><div class="qr-call" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
+              <div class="org-card"><div class="org-avatar role-fire">소방</div><div class="org-info"><div class="org-role">소방안전관리자</div><div class="org-name">최*진<span class="pos">과장</span></div></div><div class="qr-call" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
+              <div class="org-card"><div class="org-avatar role-chem">화학</div><div class="org-info"><div class="org-role">화학물질 · MSDS 담당</div><div class="org-name">정*린<span class="pos">과장</span></div></div><div class="qr-call" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
+              <div class="org-card"><div class="org-avatar role-elec">전기</div><div class="org-info"><div class="org-role">전기안전관리자</div><div class="org-name">조*범<span class="pos">과장</span></div></div><div class="qr-call" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
+              <div class="org-card"><div class="org-avatar role-fac">설비</div><div class="org-info"><div class="org-role">설비 · 시설 관리</div><div class="org-name">한*윤<span class="pos">팀장</span></div></div><div class="qr-call" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
+              <div class="org-card"><div class="org-avatar role-env">환경</div><div class="org-info"><div class="org-role">환경 · 폐기물 관리</div><div class="org-name">윤*영<span class="pos">대리</span></div></div><div class="qr-call" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
             </div>
           </div>
           <div class="contact-section">
             <div class="contact-section-title">상황별 비상연락망<span class="contact-section-meta">7 SCENARIOS · P1~P3</span></div>
             <div class="contact-scroll">
-              <div class="scenario-card priority-p1"><div class="scenario-icon fire"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14a8 8 0 0 0 16 0c0-4.16-2-7.86-6.5-13.33zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"/></svg></div><div class="scenario-meta"><div class="scenario-title">화재 · 폭발</div><div class="scenario-priority p1">P1 · 즉시</div></div><div class="scenario-contacts"><span class="scenario-contact"><span class="order">1</span><span class="ext">119</span></span><span class="scenario-contact"><span class="order">2</span><span class="nm">최영진</span><span class="role">소방</span></span><span class="scenario-contact"><span class="order">3</span><span class="nm">박정훈</span><span class="role">총괄</span></span></div><div class="scenario-qr" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
-              <div class="scenario-card priority-p1"><div class="scenario-icon chem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6.5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2"/><path d="M8 2h8"/><line x1="7" y1="14" x2="17" y2="14"/></svg></div><div class="scenario-meta"><div class="scenario-title">화학물질 누출</div><div class="scenario-priority p1">P1 · 즉시</div></div><div class="scenario-contacts"><span class="scenario-contact"><span class="order">1</span><span class="nm">정해린</span><span class="role">MSDS</span></span><span class="scenario-contact"><span class="order">2</span><span class="nm">김선우</span><span class="role">안전</span></span><span class="scenario-contact"><span class="order">3</span><span class="role">화학안전원 QR 연결</span></span></div><div class="scenario-qr" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
-              <div class="scenario-card priority-p1"><div class="scenario-icon fall"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="2"/><path d="M14 8l-3 6 3 4M11 14l-4 1"/></svg></div><div class="scenario-meta"><div class="scenario-title">추락 · 중대재해</div><div class="scenario-priority p1">P1 · 즉시</div></div><div class="scenario-contacts"><span class="scenario-contact"><span class="order">1</span><span class="ext">119</span><span class="role">/</span><span class="ext">1339</span></span><span class="scenario-contact"><span class="order">2</span><span class="nm">이수민</span><span class="role">간호사</span></span><span class="scenario-contact"><span class="order">3</span><span class="nm">김선우</span><span class="role">안전</span></span></div><div class="scenario-qr" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
-              <div class="scenario-card priority-p1"><div class="scenario-icon gas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 12c0 4-2 6-2 6s-2-2-2-6 2-9 2-9 2 5 2 9z"/><circle cx="12" cy="18" r="4"/></svg></div><div class="scenario-meta"><div class="scenario-title">가스 누출 · 유독성</div><div class="scenario-priority p1">P1 · 즉시</div></div><div class="scenario-contacts"><span class="scenario-contact"><span class="order">1</span><span class="role">가스안전공사 QR</span></span><span class="scenario-contact"><span class="order">2</span><span class="nm">한도윤</span><span class="role">설비</span></span><span class="scenario-contact"><span class="order">3</span><span class="nm">이수민</span><span class="role">보건</span></span></div><div class="scenario-qr" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
-              <div class="scenario-card priority-p1"><div class="scenario-icon sealed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="3" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="21"/></svg></div><div class="scenario-meta"><div class="scenario-title">밀폐공간 사고</div><div class="scenario-priority p1">P1 · 즉시</div></div><div class="scenario-contacts"><span class="scenario-contact"><span class="order">1</span><span class="ext">119</span></span><span class="scenario-contact"><span class="order">2</span><span class="nm">김선우</span><span class="role">안전</span></span><span class="scenario-contact"><span class="order">3</span><span class="nm">이수민</span><span class="role">간호사</span></span></div><div class="scenario-qr" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
-              <div class="scenario-card"><div class="scenario-icon medical"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div><div class="scenario-meta"><div class="scenario-title">의료 응급상황</div><div class="scenario-priority p2">P2 · 신속</div></div><div class="scenario-contacts"><span class="scenario-contact"><span class="order">1</span><span class="ext">119</span><span class="role">/</span><span class="ext">1339</span></span><span class="scenario-contact"><span class="order">2</span><span class="nm">이수민</span><span class="role">간호사</span></span><span class="scenario-contact"><span class="order">3</span><span class="role">인근 응급실</span></span></div><div class="scenario-qr" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
-              <div class="scenario-card"><div class="scenario-icon power"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div><div class="scenario-meta"><div class="scenario-title">정전 · 설비 중단</div><div class="scenario-priority p3">P3 · 일반</div></div><div class="scenario-contacts"><span class="scenario-contact"><span class="order">1</span><span class="nm">조태범</span><span class="role">전기</span></span><span class="scenario-contact"><span class="order">2</span><span class="nm">한도윤</span><span class="role">설비</span></span><span class="scenario-contact"><span class="order">3</span><span class="role">한전</span><span class="ext">123</span></span></div><div class="scenario-qr" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
+              <div class="scenario-card priority-p1"><div class="scenario-icon fire"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14a8 8 0 0 0 16 0c0-4.16-2-7.86-6.5-13.33zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"/></svg></div><div class="scenario-meta"><div class="scenario-title">화재 · 폭발</div><div class="scenario-priority p1">P1 · 즉시</div></div><div class="scenario-contacts"><span class="scenario-contact"><span class="order">1</span><span class="ext">119</span></span><span class="scenario-contact"><span class="order">2</span><span class="nm">최*진</span><span class="role">소방</span></span><span class="scenario-contact"><span class="order">3</span><span class="nm">박*훈</span><span class="role">총괄</span></span></div><div class="scenario-qr" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
+              <div class="scenario-card priority-p1"><div class="scenario-icon chem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6.5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2"/><path d="M8 2h8"/><line x1="7" y1="14" x2="17" y2="14"/></svg></div><div class="scenario-meta"><div class="scenario-title">화학물질 누출</div><div class="scenario-priority p1">P1 · 즉시</div></div><div class="scenario-contacts"><span class="scenario-contact"><span class="order">1</span><span class="nm">정*린</span><span class="role">MSDS</span></span><span class="scenario-contact"><span class="order">2</span><span class="nm">김*우</span><span class="role">안전</span></span><span class="scenario-contact"><span class="order">3</span><span class="role">화학안전원 QR 연결</span></span></div><div class="scenario-qr" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
+              <div class="scenario-card priority-p1"><div class="scenario-icon fall"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="2"/><path d="M14 8l-3 6 3 4M11 14l-4 1"/></svg></div><div class="scenario-meta"><div class="scenario-title">추락 · 중대재해</div><div class="scenario-priority p1">P1 · 즉시</div></div><div class="scenario-contacts"><span class="scenario-contact"><span class="order">1</span><span class="ext">119</span><span class="role">/</span><span class="ext">1339</span></span><span class="scenario-contact"><span class="order">2</span><span class="nm">이*민</span><span class="role">간호사</span></span><span class="scenario-contact"><span class="order">3</span><span class="nm">김*우</span><span class="role">안전</span></span></div><div class="scenario-qr" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
+              <div class="scenario-card priority-p1"><div class="scenario-icon gas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 12c0 4-2 6-2 6s-2-2-2-6 2-9 2-9 2 5 2 9z"/><circle cx="12" cy="18" r="4"/></svg></div><div class="scenario-meta"><div class="scenario-title">가스 누출 · 유독성</div><div class="scenario-priority p1">P1 · 즉시</div></div><div class="scenario-contacts"><span class="scenario-contact"><span class="order">1</span><span class="role">가스안전공사 QR</span></span><span class="scenario-contact"><span class="order">2</span><span class="nm">한*윤</span><span class="role">설비</span></span><span class="scenario-contact"><span class="order">3</span><span class="nm">이*민</span><span class="role">보건</span></span></div><div class="scenario-qr" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
+              <div class="scenario-card priority-p1"><div class="scenario-icon sealed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="3" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="21"/></svg></div><div class="scenario-meta"><div class="scenario-title">밀폐공간 사고</div><div class="scenario-priority p1">P1 · 즉시</div></div><div class="scenario-contacts"><span class="scenario-contact"><span class="order">1</span><span class="ext">119</span></span><span class="scenario-contact"><span class="order">2</span><span class="nm">김*우</span><span class="role">안전</span></span><span class="scenario-contact"><span class="order">3</span><span class="nm">이*민</span><span class="role">간호사</span></span></div><div class="scenario-qr" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
+              <div class="scenario-card"><div class="scenario-icon medical"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div><div class="scenario-meta"><div class="scenario-title">의료 응급상황</div><div class="scenario-priority p2">P2 · 신속</div></div><div class="scenario-contacts"><span class="scenario-contact"><span class="order">1</span><span class="ext">119</span><span class="role">/</span><span class="ext">1339</span></span><span class="scenario-contact"><span class="order">2</span><span class="nm">이*민</span><span class="role">간호사</span></span><span class="scenario-contact"><span class="order">3</span><span class="role">인근 응급실</span></span></div><div class="scenario-qr" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
+              <div class="scenario-card"><div class="scenario-icon power"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div><div class="scenario-meta"><div class="scenario-title">정전 · 설비 중단</div><div class="scenario-priority p3">P3 · 일반</div></div><div class="scenario-contacts"><span class="scenario-contact"><span class="order">1</span><span class="nm">조*범</span><span class="role">전기</span></span><span class="scenario-contact"><span class="order">2</span><span class="nm">한*윤</span><span class="role">설비</span></span><span class="scenario-contact"><span class="order">3</span><span class="role">한전</span><span class="ext">123</span></span></div><div class="scenario-qr" title="QR 스캔하여 전화 연결"><svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="27" height="27" fill="#fff"/><path fill="#0a1828" d="M1 1h7v1h-7zM10 1h1v1h-1zM13 1h1v1h-1zM16 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h2v1h-2zM14 2h2v1h-2zM17 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM13 3h2v1h-2zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h3v1h-3zM17 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM11 6h3v1h-3zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h2v1h-2zM18 9h2v1h-2zM22 9h3v1h-3zM1 10h2v1h-2zM4 10h2v1h-2zM8 10h1v1h-1zM10 10h2v1h-2zM13 10h2v1h-2zM17 10h2v1h-2zM21 10h2v1h-2zM1 11h3v1h-3zM6 11h2v1h-2zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM21 11h2v1h-2zM24 11h2v1h-2zM2 12h1v1h-1zM5 12h1v1h-1zM8 12h3v1h-3zM14 12h1v1h-1zM16 12h2v1h-2zM19 12h1v1h-1zM24 12h2v1h-2zM2 13h2v1h-2zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h3v1h-3zM16 13h1v1h-1zM18 13h2v1h-2zM25 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM16 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM12 15h2v1h-2zM16 15h1v1h-1zM18 15h2v1h-2zM21 15h5v1h-5zM1 16h1v1h-1zM5 16h1v1h-1zM8 16h2v1h-2zM12 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM1 17h1v1h-1zM3 17h2v1h-2zM6 17h4v1h-4zM12 17h1v1h-1zM16 17h6v1h-6zM23 17h3v1h-3zM9 18h1v1h-1zM13 18h5v1h-5zM21 18h1v1h-1zM24 18h1v1h-1zM1 19h7v1h-7zM12 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM1 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h2v1h-2zM17 20h1v1h-1zM21 20h1v1h-1zM24 20h1v1h-1zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h7v1h-7zM23 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM15 22h1v1h-1zM19 22h2v1h-2zM23 22h1v1h-1zM25 22h1v1h-1zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM11 23h3v1h-3zM16 23h1v1h-1zM18 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM15 24h3v1h-3zM25 24h1v1h-1zM1 25h7v1h-7zM9 25h2v1h-2zM14 25h4v1h-4zM19 25h3v1h-3zM25 25h1v1h-1z"/></svg></div></div>
             </div>
           </div>
         </div>
@@ -3569,13 +3875,13 @@
           </g>
 
           <!-- 심박 아이콘 2개 (작업자 위치) -->
-          <g class="ai-marker" style="cursor:pointer;" onclick="openWatchWorker('이정학','WATCH-01','정밀가공 시연존')">
+          <g class="ai-marker" style="cursor:pointer;" onclick="openWatchWorker('이*학','WATCH-01','정밀가공 시연존')">
             <circle cx="300" cy="200" r="20" fill="#FF3B47" opacity="0.18"><animate attributeName="r" values="17;26;17" dur="1.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.35;0;0.35" dur="1.4s" repeatCount="indefinite"/></circle>
             <circle cx="300" cy="200" r="17" fill="#0a2540" stroke="#FF3B47" stroke-width="2"/>
             <path d="M291 200h3l2 4 3-8 2 4h3" fill="none" stroke="#FF3B47" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <text x="300" y="237" text-anchor="middle" fill="#FF3B47" font-family="Pretendard, sans-serif" font-size="12" font-weight="700">심박 W-01</text>
           </g>
-          <g class="ai-marker" style="cursor:pointer;" onclick="openWatchWorker('전병조','WATCH-02','절단·용접 시연존')">
+          <g class="ai-marker" style="cursor:pointer;" onclick="openWatchWorker('전*조','WATCH-02','절단·용접 시연존')">
             <circle cx="600" cy="200" r="20" fill="#FF3B47" opacity="0.18"><animate attributeName="r" values="17;26;17" dur="1.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.35;0;0.35" dur="1.4s" repeatCount="indefinite"/></circle>
             <circle cx="600" cy="200" r="17" fill="#0a2540" stroke="#FF3B47" stroke-width="2"/>
             <path d="M591 200h3l2 4 3-8 2 4h3" fill="none" stroke="#FF3B47" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -3648,6 +3954,108 @@
   </div>
 </div>
 
+<!-- ============== 공정(작업)관리 MODAL ============== -->
+<div class="modal-overlay" id="processOverlay">
+  <div class="modal-box" style="max-width: 960px;">
+    <div class="modal-head">
+      <div class="modal-head-left">
+        <div class="modal-head-icon" style="background:rgba(139,124,255,0.12);border:1px solid rgba(139,124,255,0.3);color:var(--violet);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18M3 12h18M3 17h18"/><circle cx="8" cy="7" r="1.6" fill="currentColor" stroke="none"/><circle cx="14" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="10" cy="17" r="1.6" fill="currentColor" stroke="none"/></svg>
+        </div>
+        <div>
+          <div class="modal-head-title">공정(작업)관리</div>
+          <div class="modal-head-sub">고양시사업장 · 금일 작업 현황 · PROCESS MANAGEMENT</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal('processOverlay')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="risk-summary">
+        <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--cyan);">5</div><div class="risk-sum-lbl">진행중 공정</div></div>
+        <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--green);">3</div><div class="risk-sum-lbl">완료</div></div>
+        <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--amber);">2</div><div class="risk-sum-lbl">대기</div></div>
+        <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--violet);">28</div><div class="risk-sum-lbl">투입 인원</div></div>
+      </div>
+      <table class="risk-table">
+        <thead><tr><th>공정코드</th><th>공정명</th><th>담당</th><th>인원</th><th>상태</th></tr></thead>
+        <tbody>
+          <tr><td>PRC-19</td><td>정밀가공 라인</td><td>이*학</td><td>6</td><td><span class="risk-badge low">진행중</span></td></tr>
+          <tr><td>PRC-07</td><td>절단·용접 작업</td><td>전*조</td><td>5</td><td><span class="risk-badge low">진행중</span></td></tr>
+          <tr><td>PRC-12</td><td>도장 작업</td><td>김*수</td><td>4</td><td><span class="risk-badge mid">대기</span></td></tr>
+          <tr><td>PRC-23</td><td>조립 라인</td><td>박*후</td><td>8</td><td><span class="risk-badge low">진행중</span></td></tr>
+          <tr><td>PRC-31</td><td>물류·하역</td><td>최*재</td><td>5</td><td><span class="risk-badge low">진행중</span></td></tr>
+        </tbody>
+      </table>
+      <div class="evac-note" style="background:rgba(139,124,255,0.06);border-color:rgba(139,124,255,0.25);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v5l3 2"/></svg>
+        <span style="color:var(--t-2);">금일 작업 계획 대비 <b style="color:var(--violet);">진행률 62%</b> · 작업허가서(PTW) 발급 5건 · 위험작업 2건은 안전관리자 입회 하에 진행 중입니다.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== 현장 특이사항 관리 MODAL ============== -->
+<div class="modal-overlay" id="issueOverlay">
+  <div class="modal-box" style="max-width: 960px;">
+    <div class="modal-head">
+      <div class="modal-head-left">
+        <div class="modal-head-icon" style="background:rgba(255,111,44,0.12);border:1px solid rgba(255,111,44,0.3);color:var(--orange);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.86L1.82 18a2 2 0 0 0 1.7 3h16.96a2 2 0 0 0 1.7-3L13.7 3.86a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>
+        </div>
+        <div>
+          <div class="modal-head-title">현장 특이사항 관리</div>
+          <div class="modal-head-sub">고양시사업장 · 금일 특이사항 · SITE ISSUE LOG</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal('issueOverlay')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="issue-list">
+        <div class="issue-item sev-high">
+          <div class="issue-time">09:24</div>
+          <div class="issue-body">
+            <div class="issue-title">정밀가공 라인 안전모 미착용 감지</div>
+            <div class="issue-desc">AI VISION이 PRC-19 구역에서 안전모 미착용 1건 감지 · 안전관리자 현장 조치 완료</div>
+          </div>
+          <span class="issue-badge high">조치완료</span>
+        </div>
+        <div class="issue-item sev-mid">
+          <div class="issue-time">10:47</div>
+          <div class="issue-body">
+            <div class="issue-title">절단·용접존 국소배기 풍량 저하</div>
+            <div class="issue-desc">2번 후드 풍량 기준치 85% · 설비팀 점검 요청 접수</div>
+          </div>
+          <span class="issue-badge mid">처리중</span>
+        </div>
+        <div class="issue-item sev-low">
+          <div class="issue-time">11:30</div>
+          <div class="issue-body">
+            <div class="issue-title">중앙 통로 자재 적치 정리</div>
+            <div class="issue-desc">관람객 통로 일부 자재 적치 → 즉시 정리 완료</div>
+          </div>
+          <span class="issue-badge low">완료</span>
+        </div>
+        <div class="issue-item sev-mid">
+          <div class="issue-time">13:15</div>
+          <div class="issue-body">
+            <div class="issue-title">작업자 심박 일시 상승 (W-02)</div>
+            <div class="issue-desc">절단·용접존 작업자 심박 128bpm 일시 도달 · 휴식 후 정상 회복</div>
+          </div>
+          <span class="issue-badge mid">모니터링</span>
+        </div>
+      </div>
+      <div class="evac-note" style="background:rgba(255,111,44,0.06);border-color:rgba(255,111,44,0.25);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.86L1.82 18a2 2 0 0 0 1.7 3h16.96a2 2 0 0 0 1.7-3L13.7 3.86a2 2 0 0 0-3.4 0z"/></svg>
+        <span style="color:var(--t-2);">금일 특이사항 <b style="color:var(--orange);">4건</b> · 조치완료 2건 · 처리중 2건 · 모든 사항은 실시간으로 안전상황실에 공유됩니다.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   // Live clock
   const KO_DAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -3669,9 +4077,6 @@
     // CCTV timestamp
     const ts = document.getElementById('cctvTime');
     if (ts) ts.textContent = dateDash + ' ' + hms;
-    // AI panel timestamp
-    const aiTs = document.getElementById('aiTime');
-    if (aiTs) aiTs.textContent = dateDash + ' ' + hms;
     // Photo timestamp
     const pt = document.getElementById('photoTime');
     if (pt) pt.textContent = dateDash + ' ' + hm;
@@ -3725,78 +4130,71 @@
     }, 5000);
   }
 
-  // ===== 불안전행동 신호등 카드 3슬라이드 (10초 자동 + 스와이프) =====
-  const bhSlides = Array.from(document.querySelectorAll('.bh-slide'));
-  const bhDots = Array.from(document.querySelectorAll('.bh-dot'));
-  const bhTitles = ['불안전행동 감시 신호등', '실시간 온습도 정보', '실시간 CCTV 영상'];
-  const bhTags = ['AI VISION', 'IoT SENSOR', 'LIVE CCTV'];
-  let bhCurrent = 0;
-  let bhTimer = null;
-
-  function bhGoTo(idx) {
-    if (bhSlides.length < 2) return;
-    bhSlides[bhCurrent].classList.remove('active');
-    bhDots[bhCurrent].classList.remove('active');
-    bhCurrent = (idx + bhSlides.length) % bhSlides.length;
-    bhSlides[bhCurrent].classList.add('active');
-    bhDots[bhCurrent].classList.add('active');
-    const titleEl = document.getElementById('bhSlideTitle');
-    const tagEl = document.getElementById('bhSlideTag');
-    if (titleEl) titleEl.textContent = bhTitles[bhCurrent];
-    if (tagEl) tagEl.textContent = bhTags[bhCurrent];
-  }
-  function bhNext() { bhGoTo(bhCurrent + 1); }
-  function bhPrev() { bhGoTo(bhCurrent - 1); }
-
-  function bhStartAuto() {
-    if (bhTimer) clearInterval(bhTimer);
-    bhTimer = setInterval(bhNext, 10000);
-  }
-  // 사용자 조작 후 자동 롤링 재시작 (타이머 리셋)
-  function bhResetAuto() { bhStartAuto(); }
-
-  if (bhSlides.length > 1) {
-    bhStartAuto();
-
-    // 도트 클릭으로도 이동
-    bhDots.forEach((dot, i) => {
-      dot.addEventListener('click', () => { bhGoTo(i); bhResetAuto(); });
+  // ===== 불안전행동 신호등 행렬 =====
+  // 각 라인의 초기 활성 등급 저장 (0:관심 1:주의 2:경고 3:위험)
+  const bhInitial = [];
+  document.querySelectorAll('.bh-matrix-row').forEach(row => {
+    bhInitial.push(parseInt(row.dataset.active, 10));
+  });
+  // 초기화: 모든 라인을 "관심(정상)" 상태로 리셋
+  function resetBehavior() {
+    document.querySelectorAll('.bh-matrix-row').forEach(row => {
+      const lamps = row.querySelectorAll('.bhm-lamp');
+      lamps.forEach(l => l.classList.remove('on'));
+      lamps[0].classList.add('on'); // 관심 등급만 켜기
+      row.dataset.active = '0';
     });
+  }
 
-    // 스와이프 (터치 + 마우스 드래그)
-    const slideArea = document.querySelector('.behavior-slides');
-    let startX = null, startY = null, dragging = false;
-    const SWIPE_THRESHOLD = 45;
+  // 공정 콤보박스: 슬라이드 전환 방해 방지
+  const bhProcSelect = document.getElementById('bhProcSelect');
+  if (bhProcSelect) {
+    bhProcSelect.addEventListener('click', e => e.stopPropagation());
+    // 공정 변경 시 해당 공정을 감시하는 CCTV를 모니터링 상태로 표시
+    bhProcSelect.addEventListener('change', () => {
+      const procToCctv = {
+        '정밀가공 공정 · PRC-19': '1',
+        '용접 공정 · PRC-07': '2',
+        '도장 공정 · PRC-12': '3'
+      };
+      setMonitoringCctv(procToCctv[bhProcSelect.value] || '1');
+    });
+  }
 
-    function onStart(x, y) { startX = x; startY = y; dragging = true; }
-    function onEnd(x, y) {
-      if (!dragging || startX === null) return;
-      const dx = x - startX, dy = y - startY;
-      // 가로 스와이프가 세로보다 클 때만 처리
-      if (Math.abs(dx) > SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(dy)) {
-        if (dx < 0) bhNext(); else bhPrev();
-        bhResetAuto();
-      }
-      dragging = false; startX = null; startY = null;
-    }
+  // 현재 신호등을 대변하는 CCTV를 모니터링(LIVE) 상태로 표시
+  function setMonitoringCctv(val) {
+    document.querySelectorAll('.cctv-btn-item').forEach(b => {
+      b.classList.toggle('monitoring', b.dataset.cctv === val);
+    });
+  }
 
-    // Touch
-    slideArea.addEventListener('touchstart', e => {
-      const t = e.changedTouches[0]; onStart(t.clientX, t.clientY);
-    }, { passive: true });
-    slideArea.addEventListener('touchend', e => {
-      const t = e.changedTouches[0]; onEnd(t.clientX, t.clientY);
-    }, { passive: true });
+  // 신호등 헤더 CCTV 선택 (1/2/3) → 해당 CCTV 영상 팝업 + 모니터링 표시 이동
+  function bhSelectCctv(val, btn) {
+    const map = {
+      '1': 'CAM-03 · 정밀가공 라인',
+      '2': 'CAM-04 · 절단기 작업존',
+      '3': 'CAM-05 · 관람객 통로'
+    };
+    // 클릭한 버튼으로 모니터링(활성) 표시 이동
+    setMonitoringCctv(val);
+    openCCTVFor(map[val] || map['1']);
+  }
 
-    // Mouse drag
-    slideArea.addEventListener('mousedown', e => onStart(e.clientX, e.clientY));
-    slideArea.addEventListener('mouseup', e => onEnd(e.clientX, e.clientY));
-    slideArea.addEventListener('mouseleave', () => { dragging = false; startX = null; });
+  // ===== 사업장 온습도 현황: 온습도계/CCTV/심박 뷰 전환 =====
+  function switchSiteView(view, btn) {
+    document.querySelectorAll('.sv-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const envG = document.getElementById('siteEnvMarkers');
+    const cctvG = document.getElementById('siteCctvMarkers');
+    const hrG = document.getElementById('siteHrMarkers');
+    if (envG) envG.style.display = (view === 'env') ? '' : 'none';
+    if (cctvG) cctvG.style.display = (view === 'cctv') ? '' : 'none';
+    if (hrG) hrG.style.display = (view === 'hr') ? '' : 'none';
   }
 
   // ===== Generic modal control =====
   function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-  ['hrOverlay','msdsOverlay','photoOverlay','evacOverlay','facilityOverlay','contactOverlay','msdsListOverlay','riskOverlay','aiSiteOverlay','envDetailOverlay'].forEach(id => {
+  ['hrOverlay','msdsOverlay','photoOverlay','evacOverlay','facilityOverlay','contactOverlay','msdsListOverlay','riskOverlay','aiSiteOverlay','envDetailOverlay','processOverlay','issueOverlay'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('click', e => {
       if (e.target.id === id) closeModal(id);
@@ -3829,15 +4227,8 @@
   function openMSDSList() { document.getElementById('msdsListOverlay').classList.add('open'); }
   function openRisk() { document.getElementById('riskOverlay').classList.add('open'); }
   function openAISite() { document.getElementById('aiSiteOverlay').classList.add('open'); }
-
-  // 불안전행동 신호등 공정 콤보박스 (선택 시 공정명 반영, 자동롤링 방해 방지)
-  const bhProcSelect = document.getElementById('bhProcSelect');
-  if (bhProcSelect) {
-    bhProcSelect.addEventListener('click', e => e.stopPropagation());
-    bhProcSelect.addEventListener('change', () => {
-      // 선택된 공정을 CCTV 위치명 등에 반영할 수 있음 (현재는 표시값만 유지)
-    });
-  }
+  function openProcessMgmt() { document.getElementById('processOverlay').classList.add('open'); }
+  function openIssueMgmt() { document.getElementById('issueOverlay').classList.add('open'); }
 
   // ===== 시설 위치 안내도 (응급구급함/소화기/AED 공용) =====
   const FACILITY = {
@@ -3930,7 +4321,7 @@
   }
 
   // ===== 심박 모니터링 =====
-  const krNames = ['김도현','이서준','박지후','최민재','정우진','강하준','조시우','윤예성','임준호','한태경','오성민','신유찬'];
+  const krNames = ['김*현','이*준','박*후','최*재','정*진','강*준','조*우','윤*성','임*호','한*경','오*민','신*찬'];
   function openHeartRate(region, count) {
     const sub = document.getElementById('hrSub');
     const grid = document.getElementById('hrGrid');
@@ -4022,6 +4413,97 @@
       hazard:['극인화성 에어로졸 (H222)','가열 시 폭발 위험 (H229)','졸음 또는 현기증 유발 가능 (H336)'],
       handling:'화기 엄금, 환기되는 곳에서 사용, 방독마스크 착용', storage:'50°C 이하, 직사광선 피함, 점화원과 격리' },
   };
+  // ===== TTS 데모 재생 (CCTV 모달 [TTS] 버튼) =====
+  async function playTtsDemo() {
+    const btn = document.getElementById('cctvTtsBtn');
+    if (!btn) return;
+    btn.disabled = true;
+    btn.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/>' +
+      '</svg> 재생 중…';
+    try {
+      const API = window.__API_BASE || 'http://localhost:8080';
+      const resp = await fetch(API + '/tts/demo', { method: 'POST' });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const d = await resp.json();
+      // 재생 완료 후 잠깐 상태 표시
+      btn.style.borderColor = 'var(--green)';
+      btn.style.color = 'var(--green)';
+      btn.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<polyline points="20 6 9 17 4 12"/>' +
+        '</svg> 완료';
+      setTimeout(() => {
+        btn.style.borderColor = '';
+        btn.style.color = '';
+        btn.innerHTML =
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>' +
+          '<path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>' +
+          '<path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>' +
+          '</svg> TTS';
+        btn.disabled = false;
+      }, 1500);
+    } catch (e) {
+      btn.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>' +
+        '<path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>' +
+        '<path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>' +
+        '</svg> TTS';
+      btn.disabled = false;
+    }
+  }
+
+  // ===== VLM 분석 (CCTV 모달 [분석] 버튼) =====
+  async function analyzeCurrentCam() {
+    const btn = document.getElementById('cctvAnalyzeBtn');
+    const overlay = document.getElementById('cctvVlmOverlay');
+    if (!btn || !overlay) return;
+    btn.disabled = true;
+    btn.textContent = '분석 중…';
+    try {
+      // 현재 선택된 카메라 ID 파악 (cam-chip의 cam-id 텍스트)
+      const camEl = document.querySelector('.cctv-cam-chip.active .cctv-cam-id');
+      const camId = camEl ? camEl.textContent.trim() : 'CAM-03';
+      // 현재 공정 코드 (bhProcSelect에서 PRC-XX 추출)
+      const sel = document.getElementById('bhProcSelect');
+      const m = sel ? /(PRC-\d+)/.exec(sel.value) : null;
+      const processCode = m ? m[1] : 'PRC-19';
+
+      const API = window.__API_BASE || 'http://localhost:8080';
+      const resp = await fetch(API + '/vlm/infer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ camera_id: camId, process_code: processCode }),
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const d = await resp.json();
+
+      document.getElementById('vlmDetection').textContent = d.detection || '—';
+      document.getElementById('vlmWarning').textContent = d.warning_text || '—';
+      const wl = d.warning_light || {};
+      document.getElementById('vlmLight').textContent =
+        (wl.label || '—') + (wl.trigger_count != null ? ' (누적 ' + wl.trigger_count + '회)' : '');
+      overlay.classList.add('show');
+
+      // 행렬도 갱신
+      hydrateMatrix(processCode).catch(() => {});
+    } catch (e) {
+      document.getElementById('vlmDetection').textContent = '분석 실패: ' + e.message;
+      document.getElementById('vlmWarning').textContent = '백엔드 연결을 확인하세요';
+      document.getElementById('vlmLight').textContent = '—';
+      overlay.classList.add('show');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/>' +
+        '</svg> 분석';
+    }
+  }
+
   function openMSDS(key) {
     const m = MSDS[key];
     if (!m) return;
@@ -4060,331 +4542,118 @@
   }
 </script>
 
-<!-- ============================================================= -->
-<!-- Kiosk Main Server (PORT 8080) 연동 스크립트                    -->
-<!-- 백엔드가 켜져 있으면 실데이터로 채우고, 오프라인이면 기존        -->
-<!-- 하드코딩 데이터를 그대로 유지(graceful fallback)한다.           -->
-<!-- ============================================================= -->
+<!-- ================================================================== -->
+<!-- 백엔드(PORT 8080) 연동 스크립트                                      -->
+<!-- GET /space-name  → 신호등 행렬 갱신                                  -->
+<!-- POST /behavior/reset → 카운트 0 리셋 + 경광등 초록불                  -->
+<!-- POST /vlm/infer  → CCTV 모달 [분석] 버튼 결과 오버레이                -->
+<!-- ================================================================== -->
 <script>
 (function () {
   'use strict';
 
-  // ----- API base -----
-  const API = (() => {
+  // API base (파일 직접 열기, 또는 ?api=http://... 쿼리로 오버라이드 가능)
+  const API = (function () {
     const qs = new URLSearchParams(location.search);
     if (qs.get('api')) return qs.get('api').replace(/\/$/, '');
     if (location.protocol === 'file:' || !location.hostname) return 'http://localhost:8080';
     return location.protocol + '//' + location.hostname + ':8080';
   })();
+  window.__API_BASE = API; // analyzeCurrentCam()에서 참조
 
-  const GRADE_CLASS  = { '위험': 'red', '주의': 'amber', '정상': 'green' };
-  const STATUS_CLS   = { '위험': 'danger', '주의': 'warn', '정상': '' };
-
-  async function apiGet(path) {
-    const r = await fetch(API + path, { cache: 'no-store' });
-    if (!r.ok) throw new Error('GET ' + path + ' -> ' + r.status);
-    return r.json();
-  }
-  async function apiPost(path, body) {
-    const r = await fetch(API + path, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body || {})
-    });
-    if (!r.ok) throw new Error('POST ' + path + ' -> ' + r.status);
-    return r.json();
+  // count → 행렬 등급(0:관심 / 1:주의 / 2:경고 / 3:위험) 변환
+  function countToLevel(count) {
+    if (count <= 0) return 0;
+    if (count <= 2) return 1;
+    if (count <= 4) return 2;
+    return 3;
   }
 
-  function currentCode() {
-    const sel = document.getElementById('bhProcSelect');
-    const m = /(PRC-\d+)/.exec(sel ? sel.value : '');
-    return m ? m[1] : 'PRC-19';
-  }
+  // GET /space-name → #bhMatrix 행렬 업데이트
+  async function hydrateMatrix(processCode) {
+    const path = '/space-name' + (processCode ? '?process_code=' + encodeURIComponent(processCode) : '');
+    const resp = await fetch(API + path, { cache: 'no-store' });
+    if (!resp.ok) throw new Error('GET /space-name → ' + resp.status);
+    const data = await resp.json();
 
-  // ----- Connection badge -----
-  const badge = document.createElement('div');
-  badge.id = 'connBadge';
-  badge.style.cssText =
-    'position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:2000;' +
-    'font:600 12px Pretendard,sans-serif;padding:6px 14px;border-radius:20px;' +
-    'background:rgba(7,16,31,.85);border:1px solid rgba(0,217,255,.2);color:#A8BCD6;' +
-    'backdrop-filter:blur(8px);white-space:nowrap;cursor:default;';
-  function setConn(ok, msg) {
-    const col = ok ? '#00E58A' : '#FF3B47';
-    badge.innerHTML =
-      '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' +
-      col + ';box-shadow:0 0 8px ' + col + ';margin-right:7px;vertical-align:middle;"></span>' +
-      (ok ? '백엔드 연결됨' : '백엔드 오프라인') + ' · :8080' + (msg ? ' · ' + msg : '');
-  }
-  setConn(false, '연결 시도 중…');
-  if (document.body) document.body.appendChild(badge);
-
-  // ========== GET /space-name : 공정·불안전행동·온습도 ==========
-  async function hydrateSpace(code) {
-    const data = await apiGet('/space-name' + (code ? '?process_code=' + encodeURIComponent(code) : ''));
-    window.__space = data;
-
-    // 불안전행동 신호등 (slide 0)
-    const list = document.querySelector('.bh-slide[data-slide="0"] .behavior-list');
-    if (list && Array.isArray(data.behaviors)) {
-      list.innerHTML = data.behaviors.map(b => {
-        const c = GRADE_CLASS[b.grade] || 'green';
-        return '<div class="behavior-item">' +
-          '<span class="bh-lamp ' + c + '"></span>' +
-          '<span class="bh-name">' + b.name +
-          ' <span style="opacity:.55;font-size:13px;font-weight:600;">· 누적 ' + b.count + '</span></span>' +
-          '<span class="bh-grade ' + c + '">' + b.grade + '</span>' +
-          '</div>';
-      }).join('');
-    }
-
-    // 온습도 (메인 환경 카드 + slide 1)
-    const th = data.temp_humid;
-    if (th) {
-      const numEl = document.querySelector('.env-temp .env-num');
-      if (numEl) numEl.textContent = th.temp;
-      const metrics = document.querySelectorAll('.env-temp .env-metric .em-val');
-      if (metrics[0]) metrics[0].innerHTML = th.humidity + '<small>%</small>';
-      if (metrics[1] && th.dust != null) metrics[1].innerHTML = th.dust + '<small>㎍</small>';
-      const sub = document.querySelector('.env-temp .env-sub');
-      if (sub && th.feels_like != null && sub.firstChild) sub.firstChild.nodeValue = '체감 ' + th.feels_like + '°C ';
-      const sv = document.querySelectorAll('.bh-slide[data-slide="1"] .bh-env-val');
-      if (sv[0]) sv[0].innerHTML = th.temp + '<small>°C</small>';
-      if (sv[1]) sv[1].innerHTML = th.humidity + '<small>%</small>';
+    const rows = document.querySelectorAll('#bhMatrix .bh-matrix-row');
+    if (Array.isArray(data.behaviors)) {
+      data.behaviors.forEach((b, idx) => {
+        const row = rows[idx];
+        if (!row) return;
+        const level = countToLevel(b.count);
+        const lamps = row.querySelectorAll('.bhm-lamp');
+        lamps.forEach(l => l.classList.remove('on'));
+        if (lamps[level]) lamps[level].classList.add('on');
+        row.dataset.active = String(level);
+      });
     }
     return data;
   }
+  // 외부에서도 호출 가능하도록 전역 노출
+  window.hydrateMatrix = hydrateMatrix;
 
-  // ========== GET /sensor/temp-humid : 센서 상세 ==========
-  let SENSORS = {};
-  async function loadSensors() {
-    const d = await apiGet('/sensor/temp-humid');
-    SENSORS = {};
-    d.readings.forEach(r => { SENSORS[r.sensor_id] = r; });
-  }
-  window.openEnvDetail = function (sensorId, zone) {
-    const sub = document.getElementById('envDetailSub');
-    if (sub) sub.textContent = sensorId + ' · ' + zone;
-    const r = SENSORS[sensorId];
-    const temp = r ? r.temp : (26 + Math.random() * 3).toFixed(1);
-    const hum  = r ? r.humidity : Math.floor(52 + Math.random() * 12);
-    document.getElementById('envDetailTemp').innerHTML = temp + '<small>°C</small>';
-    document.getElementById('envDetailHum').innerHTML = hum + '<small>%</small>';
-    document.getElementById('envDetailOverlay').classList.add('open');
-  };
-
-  // ========== GET /sensor/watch : 심박 ==========
-  let WATCH = [];
-  const _origOpenHeartRate = window.openHeartRate;
-  const _origOpenWatchWorker = window.openWatchWorker;
-  async function loadWatch() {
-    const d = await apiGet('/sensor/watch');
-    WATCH = d.workers || [];
-    window.__watchRegion = d.region;
-  }
-  function watchCardHtml(w, span2) {
-    const cls = STATUS_CLS[w.status] || '';
-    return '<div class="hr-worker ' + cls + '"' + (span2 ? ' style="grid-column:1 / 3;"' : '') + '>' +
-      '<div class="hr-avatar">' + (w.name || '?').charAt(0) + '</div>' +
-      '<div class="hr-worker-info">' +
-        '<div class="hr-worker-name">' + (w.name || w.watch_id) + '</div>' +
-        '<div class="hr-worker-meta">' + w.watch_id + ' · ' + (w.device || 'Galaxy Watch') +
-          (w.zone ? ' · ' + w.zone : '') + '</div>' +
-        '<span class="hr-status-badge">' + w.status + '</span>' +
-      '</div>' +
-      '<div style="text-align:right;"><div class="hr-bpm">' +
-        '<svg class="hr-pulse-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 5 4-12 2 7h6"/></svg>' +
-        '<span class="hr-bpm-val">' + w.hr + '</span><span class="hr-bpm-unit">BPM</span>' +
-      '</div></div></div>';
-  }
-  window.openHeartRate = function (region, count) {
-    if (!WATCH.length) return _origOpenHeartRate && _origOpenHeartRate(region, count);
-    const n = Math.min(count || WATCH.length, WATCH.length, 8);
-    document.getElementById('hrSub').textContent =
-      (region || window.__watchRegion || '사업장') + ' · 스마트워치 착용자 ' + n + '명';
-    document.getElementById('hrGrid').innerHTML = WATCH.slice(0, n).map(w => watchCardHtml(w, false)).join('');
-    document.getElementById('hrOverlay').classList.add('open');
-  };
-  window.openWatchWorker = function (name, watchId, proc) {
-    const w = WATCH.find(x => x.watch_id === watchId) || WATCH.find(x => x.name === name);
-    if (!w) return _origOpenWatchWorker && _origOpenWatchWorker(name, watchId, proc);
-    document.getElementById('hrSub').textContent = proc + ' · ' + (w.name || name);
-    document.getElementById('hrGrid').innerHTML = watchCardHtml(w, true);
-    document.getElementById('hrOverlay').classList.add('open');
-  };
-
-  // ========== GET /modal/msds ==========
-  let MSDS_MAP = {};
-  const _origOpenMSDS = window.openMSDS;
-  window.openMSDSList = async function () {
-    try {
-      const d = await apiGet('/modal/msds');
-      MSDS_MAP = {};
-      const sub = document.querySelector('#msdsListOverlay .modal-head-sub');
-      if (sub) sub.textContent = d.site + ' · 화학물질 ' + d.count + '종 · 클릭하여 상세 조회';
-      const wrap = document.querySelector('#msdsListOverlay .msds-list');
-      if (wrap) {
-        wrap.innerHTML = d.chemicals.map(c => {
-          MSDS_MAP[c.key] = c;
-          const key = c.key.replace(/'/g, "\\'");
-          return '<div class="msds-list-item" onclick="closeModal(\'msdsListOverlay\'); openMSDS(\'' + key + '\')">' +
-            '<div class="msds-list-ghs">⚠</div>' +
-            '<div class="msds-list-info"><div class="msds-list-name">' + c.name + '</div>' +
-            '<div class="msds-list-cas">CAS ' + c.cas + ' · ' + c.formula + ' · ' + c.un + '</div></div>' +
-            '<div class="msds-list-sig">' + c.signal + '</div></div>';
-        }).join('');
-      }
-      setConn(true, 'MSDS ' + d.count + '종');
-    } catch (e) { /* keep static list */ }
-    document.getElementById('msdsListOverlay').classList.add('open');
-  };
-  window.openMSDS = function (key) {
-    const m = MSDS_MAP[key];
-    if (!m) return _origOpenMSDS && _origOpenMSDS(key);
-    document.getElementById('msdsSub').textContent = m.name;
-    document.getElementById('msdsBody').innerHTML =
-      '<div class="msds-title-row"><span class="msds-cas">CAS ' + m.cas + '</span>' +
-      '<span class="msds-name">' + m.name + '</span></div>' +
-      '<div class="ghs-row">' +
-        '<div class="ghs-pic" title="부식성"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l5 5M3 9l4 1 2-3M15 4l-2 6 6-1M20 11l-4 7h-3"/><path d="M6 20h5M14 20h4"/></svg></div>' +
-        '<div class="ghs-pic" title="유해/위험"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></div>' +
-      '</div>' +
-      '<div class="msds-section"><div class="msds-section-title">기본 정보</div>' +
-        '<dl class="msds-grid"><dt>화학식</dt><dd>' + m.formula + '</dd>' +
-        '<dt>UN 번호</dt><dd>' + m.un + '</dd>' +
-        '<dt>신호어</dt><dd style="color:var(--red);font-weight:700;">' + m.signal + '</dd></dl></div>' +
-      '<div class="msds-section"><div class="msds-section-title">유해·위험 문구 (H-code)</div>' +
-        '<div class="msds-hazard-list">' + (m.hazard || []).map(h => '<div class="msds-hazard">⚠ ' + h + '</div>').join('') + '</div></div>' +
-      '<div class="msds-section"><div class="msds-section-title">취급 및 저장</div>' +
-        '<dl class="msds-grid"><dt>취급</dt><dd>' + m.handling + '</dd>' +
-        '<dt>저장</dt><dd>' + m.storage + '</dd></dl></div>';
-    document.getElementById('msdsOverlay').classList.add('open');
-  };
-
-  // ========== GET /modal/risk ==========
-  window.openRisk = async function () {
-    try {
-      const code = currentCode();
-      const d = await apiGet('/modal/risk?process_code=' + encodeURIComponent(code));
-      const sub = document.querySelector('#riskOverlay .modal-head-sub');
-      if (sub) sub.textContent = d.process + ' (' + d.process_code + ') · 평가일 ' + d.assessment_date + ' · ' + d.method + ' 기법';
-      const vals = document.querySelectorAll('#riskOverlay .risk-sum-val');
-      if (vals.length >= 4) {
-        vals[0].textContent = d.summary.high;
-        vals[1].textContent = d.summary.mid;
-        vals[2].textContent = d.summary.low;
-        vals[3].textContent = d.summary.total;
-      }
-      const tb = document.querySelector('#riskOverlay .risk-table tbody');
-      if (tb) {
-        tb.innerHTML = d.rows.map(r =>
-          '<tr><td>' + r.hazard + '</td><td>' + r.likelihood + '</td><td>' + r.severity + '</td>' +
-          '<td><span class="risk-badge ' + r.risk_level + '">' + r.risk_label + '</span></td>' +
-          '<td>' + r.control + '</td></tr>').join('');
-      }
-      setConn(true, '위험성평가 ' + d.process_code);
-    } catch (e) { /* 해당 공정 평가 없음 -> 기존 표 유지 */ }
-    document.getElementById('riskOverlay').classList.add('open');
-  };
-
-  // ========== GET /cctv/frame : Shared Dir 프레임 ==========
-  let lastObjUrl = null;
-  function injectCctvImg() {
-    const sc = document.querySelector('#cctvOverlay .cctv-screen');
-    if (sc && !document.getElementById('cctvBackendImg')) {
-      const img = document.createElement('img');
-      img.id = 'cctvBackendImg';
-      img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;display:none;';
-      sc.appendChild(img);
-    }
-  }
-  async function pollCctv() {
-    try {
-      const r = await fetch(API + '/cctv/frame', { cache: 'no-store' });
-      const src = r.headers.get('X-Frame-Source');
-      const blob = await r.blob();
-      const img = document.getElementById('cctvBackendImg');
-      if (img && src === 'shared_dir') {
-        if (lastObjUrl) URL.revokeObjectURL(lastObjUrl);
-        lastObjUrl = URL.createObjectURL(blob);
-        img.src = lastObjUrl; img.style.display = 'block';
-      } else if (img) {
-        img.style.display = 'none';   // placeholder -> 데모 영상(iframe) 노출
-      }
-      setConn(true, 'CCTV ' + (src || '?'));
-    } catch (e) {
-      const img = document.getElementById('cctvBackendImg');
-      if (img) img.style.display = 'none';
-    }
-  }
-
-  // ========== POST /vlm/infer : 위험장면 분석 파이프라인 ==========
-  const _origOpenAISite = window.openAISite;
-  window.openAISite = function () {
-    if (_origOpenAISite) _origOpenAISite();
-    injectVlmPanel();
-  };
-  function injectVlmPanel() {
-    const body = document.querySelector('#aiSiteOverlay .modal-body');
-    if (!body || document.getElementById('vlmPanel')) return;
-    const div = document.createElement('div');
-    div.id = 'vlmPanel';
-    div.style.cssText = 'margin-bottom:16px;padding:16px 18px;background:rgba(0,217,255,.05);border:1px solid rgba(0,217,255,.18);border-radius:14px;';
-    div.innerHTML =
-      '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">' +
-        '<div style="font-weight:800;color:#EAF4FF;font-size:16px;">VLM 실시간 위험장면 분석 · /vlm/infer</div>' +
-        '<button id="vlmRunBtn" style="cursor:pointer;border:1px solid rgba(0,217,255,.4);background:rgba(0,217,255,.12);color:#00D9FF;font-weight:800;padding:10px 18px;border-radius:10px;font-size:14px;">분석 실행 ▶</button>' +
-      '</div>' +
-      '<div id="vlmResult" style="margin-top:12px;color:#A8BCD6;font-size:14px;line-height:1.6;">버튼을 눌러 연결된 카메라의 위험장면을 분석합니다.</div>';
-    body.insertBefore(div, body.firstChild);
-    document.getElementById('vlmRunBtn').addEventListener('click', runVlm);
-  }
-  async function runVlm() {
-    const btn = document.getElementById('vlmRunBtn');
-    const out = document.getElementById('vlmResult');
-    btn.disabled = true; out.textContent = '분석 중…';
-    try {
-      const code = currentCode();
-      const cam = (window.__space && window.__space.cameras && window.__space.cameras[0] && window.__space.cameras[0].cam_id) || 'CAM-03';
-      const d = await apiPost('/vlm/infer', { camera_id: cam, process_code: code });
-      const beh = (d.behaviors || []).map(b => b.name + ' (누적 ' + b.count + ')').join(', ') || '해당 카테고리 없음';
-      const wl = d.warning_light || {};
-      out.innerHTML =
-        '<div><b style="color:#00D9FF;">탐지</b> · ' + (d.detection || '-') + ' <span style="opacity:.6;">(' + d.source + ')</span></div>' +
-        '<div style="margin-top:6px;"><b style="color:#FFB800;">경고</b> · ' + (d.warning_text || '-') + '</div>' +
-        '<div style="margin-top:6px;"><b style="color:#00E58A;">DB 반영</b> · ' + beh + '</div>' +
-        '<div style="margin-top:6px;"><b style="color:#FF3B47;">경광등</b> · ' + (wl.label || '-') +
-          ' <span style="opacity:.6;">(count ' + (wl.trigger_count != null ? wl.trigger_count : '-') + ')</span>' +
-          ' · TTS ' + (d.tts ? d.tts.status : '-') + '</div>';
-      // 카운트가 증가했으니 신호등 카드 갱신
-      hydrateSpace(code).catch(() => {});
-      setConn(true, 'VLM ' + d.source);
-    } catch (e) {
-      out.textContent = '분석 실패 · 백엔드 연결을 확인하세요 (' + e.message + ')';
-    } finally {
-      btn.disabled = false;
-    }
-  }
-
-  // ========== 초기화 ==========
-  async function init() {
-    injectCctvImg();
+  // 현재 선택된 공정 코드(PRC-XX) 추출
+  function currentProcessCode() {
     const sel = document.getElementById('bhProcSelect');
-    if (sel) sel.addEventListener('change', () => { hydrateSpace(currentCode()).catch(() => {}); });
+    const m = sel ? /(PRC-\d+)/.exec(sel.value) : null;
+    return m ? m[1] : 'PRC-19';
+  }
 
+  // 초기화 버튼: 기존 클라이언트 초기화 + 백엔드 count 0 리셋
+  window.resetBehavior = async function () {
+    const processCode = currentProcessCode();
+
+    // 즉시 UI 초기화 (관심 등급)
+    document.querySelectorAll('#bhMatrix .bh-matrix-row').forEach(row => {
+      const lamps = row.querySelectorAll('.bhm-lamp');
+      lamps.forEach(l => l.classList.remove('on'));
+      if (lamps[0]) lamps[0].classList.add('on');
+      row.dataset.active = '0';
+    });
+
+    // 백엔드 count 리셋 (실패해도 UI는 이미 초기화)
     try {
-      await hydrateSpace(currentCode());
-      await loadSensors();
-      await loadWatch();
-      setConn(true, '데이터 동기화 완료');
+      await fetch(API + '/behavior/reset?process_code=' + encodeURIComponent(processCode), {
+        method: 'POST',
+      });
+    } catch (_) { /* 오프라인이면 무시 */ }
+  };
+
+  // 연결 상태 배지
+  const badge = document.createElement('div');
+  badge.id = 'connBadge';
+  badge.style.cssText =
+    'position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:9999;' +
+    'font:600 12px Pretendard,sans-serif;padding:5px 14px;border-radius:20px;' +
+    'background:rgba(7,16,31,.88);border:1px solid rgba(0,217,255,.2);color:#A8BCD6;' +
+    'backdrop-filter:blur(8px);white-space:nowrap;pointer-events:none;';
+  function setConn(ok, msg) {
+    const col = ok ? '#00E58A' : '#FF3B47';
+    badge.innerHTML =
+      '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;' +
+      'background:' + col + ';box-shadow:0 0 8px ' + col + ';margin-right:7px;vertical-align:middle;"></span>' +
+      (ok ? '백엔드 연결됨' : '백엔드 오프라인') + ' · :8080' + (msg ? ' · ' + msg : '');
+  }
+  setConn(false, '연결 중…');
+  document.body.appendChild(badge);
+
+  // 초기화: 페이지 로드 시 신호등 행렬 갱신
+  async function init() {
+    try {
+      await hydrateMatrix(currentProcessCode());
+      setConn(true, '신호등 동기화 완료');
     } catch (e) {
       setConn(false, e.message);
     }
 
-    // CCTV 모달이 열려 있는 동안 프레임 폴링
-    setInterval(() => {
-      const ov = document.getElementById('cctvOverlay');
-      if (ov && ov.classList.contains('open')) pollCctv();
-    }, 1000);
+    // 공정 드롭다운 변경 시 행렬 갱신
+    const sel = document.getElementById('bhProcSelect');
+    if (sel) {
+      sel.addEventListener('change', () => {
+        hydrateMatrix(currentProcessCode()).catch(() => {});
+      });
+    }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
