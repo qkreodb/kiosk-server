@@ -22,4 +22,5 @@ async def infer(
         camera_id=req.camera_id,
         process_code=req.process_code,
         frame_ref=req.frame_ref,
+        frame_dir=req.frame_dir,
     )

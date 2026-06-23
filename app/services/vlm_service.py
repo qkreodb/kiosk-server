@@ -1,10 +1,10 @@
 """Orchestrates the full POST /vlm/infer pipeline (right side of 001.png).
 
 Flow:
-  1. Call the external VLM Server (client + offline mock fallback).
-  2. BRANCH A — TTS: "위험 경고 텍스트" -> Edge TTS -> speaker (actuator).
-  3. BRANCH B — DB:  "탐지" -> parse into unsafe-behavior categories ->
-     increment counts in the (mocked) DB -> read resulting count ->
+  1. Call the external VLM Server's /analyze (client + offline mock fallback).
+  2. BRANCH A — TTS: ``tts_message`` -> Edge TTS -> speaker (actuator).
+  3. BRANCH B — DB:  ``action`` 키 -> 불안전행동 카테고리로 매핑 ->
+     increment counts in the DB -> read resulting count ->
      generate a warning-light control signal from configurable thresholds ->
      dispatch to the warning light (actuator).
   4. Combine everything into one response DTO.
@@ -19,6 +19,7 @@ from app.core.logging import get_logger
 from app.domain.constants import (
     BEHAVIOR_CATEGORIES,
     CATEGORY_BY_ID,
+    VLM_ACTION_KEY_MAP,
     WARNING_LIGHT_LABEL,
     UnsafeBehavior,
     WarningLightState,
@@ -45,11 +46,31 @@ def split_detection(detection: str) -> list[str]:
     return [p.strip() for p in _SPLIT_RE.split(detection or "") if p.strip()]
 
 
-def match_categories(labels: list[str]) -> list[tuple[UnsafeBehavior, str]]:
-    """Map each label to an unsafe-behavior category via keyword matching.
+def categories_from_action_keys(
+    action_keys: list[str],
+) -> list[tuple[UnsafeBehavior, str]]:
+    """Map VLM /analyze ``action`` keys directly to categories.
 
-    Returns a list of (category_id, matched_label). A label that matches no
-    category is ignored (logged). Each category counts at most once per call.
+    Returns (category_id, matched_label) pairs. ``matched_label`` is the
+    category's Korean name. Each category counts at most once per call.
+    """
+    matched: list[tuple[UnsafeBehavior, str]] = []
+    seen: set[UnsafeBehavior] = set()
+    for key in action_keys:
+        cat_id = VLM_ACTION_KEY_MAP.get(key)
+        if cat_id is None or cat_id in seen:
+            continue
+        matched.append((cat_id, CATEGORY_BY_ID[cat_id].name))
+        seen.add(cat_id)
+    return matched
+
+
+def match_categories(labels: list[str]) -> list[tuple[UnsafeBehavior, str]]:
+    """Fallback: map free-text labels to categories via keyword matching.
+
+    Used only when the VLM returns no structured ``action`` keys (e.g. legacy
+    /infer text or an unexpected response). Returns (category_id, matched_label)
+    pairs; an unmatched label is ignored (logged). Each category counts once.
     """
     matched: list[tuple[UnsafeBehavior, str]] = []
     seen: set[UnsafeBehavior] = set()
@@ -98,21 +119,28 @@ class VlmService:
         camera_id: str,
         process_code: str | None = None,
         frame_ref: str | None = None,
+        frame_dir: str | None = None,
     ) -> VlmInferResponse:
         code = process_code or "PRC-19"
 
-        # 1) Call the VLM Server (or offline mock).
-        vlm = await self._vlm.infer(camera_id, code, frame_ref)
-        labels = split_detection(vlm.detection)
+        # 1) Call the VLM Server's /analyze (or offline mock).
+        vlm = await self._vlm.analyze(frame_dir)
 
         # 2) BRANCH A — TTS -> speaker.
+        #    재생은 백그라운드 스레드(fire-and-forget)로 — 오디오 재생 시간 동안
+        #    /vlm/infer 응답과 이벤트 루프가 막히지 않도록 한다(실시간 재생 유지).
         tts_result = await self._tts.synthesize(vlm.warning_text)
         if tts_result.status in {"synthesized", "stubbed"}:
-            self._speaker.play(tts_result.audio_path, tts_result.text)
+            self._speaker.play_async(tts_result.audio_path, tts_result.text)
         tts = TtsDispatch(**tts_result.model_dump())
 
-        # 3) BRANCH B — parse & DB-increment, then read resulting counts.
-        matches = match_categories(labels)
+        # 3) BRANCH B — map detected behaviors & DB-increment, read resulting counts.
+        #    구조화된 action 키가 있으면 직접 매핑, 없으면 자유텍스트 키워드 폴백.
+        if vlm.action_keys:
+            matches = categories_from_action_keys(vlm.action_keys)
+        else:
+            matches = match_categories(split_detection(vlm.detection))
+        labels = [label for _, label in matches]
         deltas: list[BehaviorDelta] = []
         for cat_id, matched_label in matches:
             new_count = self._repo.increment_behavior(code, cat_id.value, 1)
@@ -152,6 +180,7 @@ class VlmService:
             source=vlm.source,
             detection=vlm.detection,
             detection_labels=labels,
+            scene_description=vlm.scene_description,
             warning_text=vlm.warning_text,
             behaviors=deltas,
             warning_light=warning_light,

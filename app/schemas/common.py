@@ -10,7 +10,7 @@ class HealthResponse(BaseModel):
     service: str
     version: str
     repository: str = Field(description="Active data-source implementation.")
-    vlm_infer_url: str
+    vlm_url: str = Field(description="실제 호출하는 VLM 엔드포인트(/analyze)")
     shared_dir: str
 
 

@@ -17,6 +17,11 @@ class VlmInferRequest(BaseModel):
     # Optional override frame reference; when omitted the server uses the latest
     # Shared Dir frame for the camera.
     frame_ref: str | None = Field(default=None)
+    # Jetson 파일시스템의 프레임 폴더 절대 경로. 생략 시 설정값(KIOSK_VLM_FRAME_DIR).
+    # 주로 테스트/특정 폴더 지정용 오버라이드.
+    frame_dir: str | None = Field(
+        default=None, examples=["/home/ds/Desktop/vlm_test/frames_448_30"]
+    )
 
 
 class BehaviorDelta(BaseModel):
@@ -58,8 +63,9 @@ class VlmInferResponse(BaseModel):
     process_code: str | None = None
     source: str = Field(description="vlm / mock — 응답 출처")
 
-    detection: str = Field(description="원본 탐지 텍스트", examples=["안전모 미착용, 단독 사다리 작업"])
-    detection_labels: list[str] = Field(description="콤마 분리된 탐지 라벨")
+    detection: str = Field(description="감지된 행동 라벨 요약", examples=["모자(안전모) 벗는 행동, 사다리 혼자 올라가는 행동"])
+    detection_labels: list[str] = Field(description="감지된 행동 라벨 목록")
+    scene_description: str = Field(default="", description="VLM 장면 설명 원문(vlm_description)")
     warning_text: str = Field(examples=["안전모를 착용하고 단독 사다리 작업을 중지하세요"])
 
     behaviors: list[BehaviorDelta] = Field(description="파싱 & DB 반영 결과")

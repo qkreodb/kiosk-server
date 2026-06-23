@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
     logger.info(
         "%s v%s started | repo=%s | vlm=%s | shared_dir=%s",
         settings.app_name, settings.app_version, active_repository_name(),
-        settings.vlm_infer_url, settings.shared_dir,
+        settings.vlm_analyze_url, settings.shared_dir,
     )
     yield
     logger.info("%s shutting down.", settings.app_name)

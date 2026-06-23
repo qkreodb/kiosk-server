@@ -81,6 +81,30 @@ CATEGORY_BY_ID: dict[UnsafeBehavior, BehaviorCategory] = {
 }
 
 
+# VLM Server(`POST /analyze`)의 LLM 단계가 반환하는 ``action`` 키를 키오스크의
+# 불안전행동 카테고리로 직접 매핑한다. 키는 VLM 서버의 DEFAULT_DETECT_ACTIONS
+# 및 README 표와 1:1 로 일치한다(자유텍스트 키워드 매칭 불필요).
+#   hat_action         안전모 미착용 또는 벗는 행동
+#   touch_action       스피커를 만지는 행동
+#   dangerInOut_action 금지 구역 출입
+#   ladder_action      사다리를 올라가거나 단독 사다리 작업
+VLM_ACTION_KEY_MAP: dict[str, UnsafeBehavior] = {
+    "hat_action": UnsafeBehavior.HELMET_OFF,
+    "touch_action": UnsafeBehavior.TOUCH_EQUIPMENT,
+    "dangerInOut_action": UnsafeBehavior.UNAUTHORIZED_CROSSING,
+    "ladder_action": UnsafeBehavior.LADDER_ALONE,
+}
+
+# 키오스크가 `/analyze` 요청 시 함께 보내는 detect_actions(키+라벨). 키오스크가
+# 매핑의 단일 소유자가 되도록 명시적으로 전달한다(VLM 서버 기본값과 동일).
+VLM_DETECT_ACTIONS: list[dict[str, str]] = [
+    {"key": "hat_action", "label": "안전모를 착용하지 않았거나 벗는 행동"},
+    {"key": "touch_action", "label": "스피커를 만지는 행동"},
+    {"key": "dangerInOut_action", "label": "금지 구역에 출입하는 행동"},
+    {"key": "ladder_action", "label": "사다리를 올라가거나 단독 사다리 작업"},
+]
+
+
 class WarningLightState(str, Enum):
     """Discrete states the warning light (경광등) can be driven to."""
 

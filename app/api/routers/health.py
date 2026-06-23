@@ -19,6 +19,6 @@ async def health(settings: Settings = Depends(get_app_settings)) -> HealthRespon
         service=settings.app_name,
         version=settings.app_version,
         repository=active_repository_name(),
-        vlm_infer_url=settings.vlm_infer_url,
+        vlm_url=settings.vlm_analyze_url,
         shared_dir=str(settings.shared_dir),
     )
