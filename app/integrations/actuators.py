@@ -18,15 +18,21 @@ logger = get_logger(__name__)
 
 
 class SpeakerActuator:
-    """Outputs synthesized audio to the speaker (stubbed)."""
+    """Outputs synthesized audio to the speaker via playsound (blocking)."""
 
     def play(self, audio_path: str | None, text: str) -> bool:
-        if audio_path:
-            logger.info("[SPEAKER] play audio file: %s ('%s')", audio_path, text)
-        else:
-            logger.info("[SPEAKER] (stub) announce: '%s'", text)
-        # Real impl: dispatch to an audio backend. Always "succeeds" in stub.
-        return True
+        if not audio_path:
+            logger.warning("[SPEAKER] no audio file; cannot play: '%s'", text)
+            return False
+        try:
+            from playsound import playsound  # noqa: PLC0415
+            logger.info("[SPEAKER] playing: %s ('%s')", audio_path, text)
+            playsound(audio_path)  # blocking — waits until playback finishes
+            logger.info("[SPEAKER] playback complete.")
+            return True
+        except Exception as exc:  # noqa: BLE001
+            logger.error("[SPEAKER] playback failed (%s): %s", exc.__class__.__name__, exc)
+            return False
 
 
 class WarningLightActuator:

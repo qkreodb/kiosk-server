@@ -61,7 +61,7 @@ def create_app() -> FastAPI:
     )
 
     # Routers (one per domain).
-    from app.api.routers import cctv, health, modal, sensor, space, vlm
+    from app.api.routers import cctv, health, modal, sensor, space, tts, vlm
 
     app.include_router(health.router)
     app.include_router(space.router)
@@ -69,6 +69,7 @@ def create_app() -> FastAPI:
     app.include_router(modal.router)
     app.include_router(cctv.router)
     app.include_router(vlm.router)
+    app.include_router(tts.router)
 
     @app.get("/", tags=["meta"], summary="루트")
     async def root() -> dict:
