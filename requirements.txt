@@ -10,3 +10,6 @@ edge-tts==7.2.8
 playsound==1.2.2
 python-dotenv==1.0.1
 PyMySQL==1.1.1
+# 라이브 CCTV: IP 카메라 RTSP 를 서버에서 디코딩(FFmpeg 내장) → MJPEG 중계.
+# headless 휠은 GUI 의존성 없이 VideoCapture(RTSP) 를 지원한다.
+opencv-python-headless==4.10.0.84

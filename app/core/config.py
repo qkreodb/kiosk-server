@@ -54,6 +54,24 @@ class Settings(BaseSettings):
     shared_dir: Path = Path("../kiosk-hardware/frames")
     frame_glob: str = "frame_*.jpg"
 
+    # --- Live CCTV (IP 카메라 직결 RTSP) ---
+    # Shared Dir 파이프라인이 준비되기 전, 키오스크가 IP 카메라의 RTSP 스트림을
+    # 서버에서 직접 디코딩(OpenCV/FFmpeg)해 MJPEG 로 브라우저에 중계한다.
+    # ``cctv_rtsp_url`` 을 직접 지정하면 그 값을 그대로 쓰고, 비워두면 아래
+    # 구성요소(user/password/host/port/path)로 URL 을 조립한다.
+    # ⚠ 운영 시 비밀번호는 코드/저장소가 아니라 .env 의 KIOSK_CCTV_PASSWORD 로 둘 것.
+    cctv_rtsp_url: str = ""
+    cctv_host: str = "172.16.0.243"
+    cctv_port: int = 554
+    cctv_user: str = "admin"
+    cctv_password: str = "ekthf123"
+    cctv_stream_path: str = "stream1"
+    # RTSP → JPEG 재인코딩 품질(1~100)과 끊겼을 때 재접속 간격(초).
+    cctv_jpeg_quality: int = 80
+    cctv_reconnect_delay: float = 3.0
+    # MJPEG 중계 송출 상한 fps (브라우저로 내보내는 속도; 카메라 fps 와 무관).
+    cctv_stream_fps: int = 20
+
     # --- Shared DB ---
     # Data source selector: "mock" (JSON fixtures / in-memory) or
     # "mysql"/"sql" (real MySQL on the Jetson via SqlRepository). If "mysql" is
@@ -113,6 +131,19 @@ class Settings(BaseSettings):
         if self.cors_origins.strip() == "*":
             return ["*"]
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def cctv_rtsp_target(self) -> str:
+        """Effective RTSP URL: explicit override, else assembled from parts.
+
+        예) rtsp://admin:ekthf123@172.16.0.243:554/stream1
+        """
+        if self.cctv_rtsp_url.strip():
+            return self.cctv_rtsp_url.strip()
+        return (
+            f"rtsp://{self.cctv_user}:{self.cctv_password}"
+            f"@{self.cctv_host}:{self.cctv_port}/{self.cctv_stream_path.lstrip('/')}"
+        )
 
     @property
     def vlm_analyze_url(self) -> str:

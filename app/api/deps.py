@@ -11,6 +11,7 @@ from functools import lru_cache
 
 from app.core.config import Settings, get_settings
 from app.integrations.actuators import SpeakerActuator, WarningLightActuator
+from app.integrations.rtsp_stream import RtspCamera
 from app.integrations.shared_dir import SharedDirReader
 from app.integrations.tts import TtsService
 from app.integrations.vlm_client import VlmClient
@@ -41,6 +42,16 @@ def _shared_dir_reader() -> SharedDirReader:
 
 
 @lru_cache
+def _rtsp_camera() -> RtspCamera:
+    settings = get_settings()
+    return RtspCamera(
+        settings.cctv_rtsp_target,
+        jpeg_quality=settings.cctv_jpeg_quality,
+        reconnect_delay=settings.cctv_reconnect_delay,
+    )
+
+
+@lru_cache
 def _speaker() -> SpeakerActuator:
     return SpeakerActuator()
 
@@ -68,7 +79,7 @@ def get_modal_service() -> ModalService:
 
 
 def get_cctv_service() -> CctvService:
-    return CctvService(_shared_dir_reader())
+    return CctvService(_shared_dir_reader(), _rtsp_camera())
 
 
 @lru_cache

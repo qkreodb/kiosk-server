@@ -4119,6 +4119,11 @@
     const api = window.__API_BASE || 'http://localhost:8080';
     return api + '/cctv/stream?ts=' + Date.now();
   }
+  // 라이브 RTSP 직결 스트림 (서버가 RTSP→MJPEG 중계). 중앙 전시홀 카메라에 사용.
+  function cctvLiveSrc() {
+    const api = window.__API_BASE || 'http://localhost:8080';
+    return api + '/cctv/live?ts=' + Date.now();
+  }
   function isCentralCctv(region) {
     return String(region || '').includes('중앙 전시홀') || String(region || '').includes('Central Hall');
   }
@@ -4658,11 +4663,12 @@
     const frame = document.getElementById('cctvFrame');
     const image = document.getElementById('cctvImage');
     if (frame && isCentralCctv(region)) {
+      // 중앙 전시홀: IP 카메라 RTSP 실시간 영상을 서버 MJPEG 중계로 송출.
       frame.src = '';
       frame.style.display = 'none';
       if (image) {
         image.style.display = 'block';
-        image.src = cctvStreamSrc();
+        image.src = cctvLiveSrc();
       }
       document.getElementById('cctvOverlay').classList.add('open');
       return;
