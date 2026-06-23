@@ -40,13 +40,16 @@ class SpaceService:
 
     def get_space_name(self, process_code: str | None = None) -> SpaceNameResponse:
         all_processes = self._repo.get_processes()
-        code = process_code or self._default_process_code()
+        code = process_code or self._default_process_code() or "PRC-19"
 
         process = self._repo.get_process(code)
         if process is None:
-            raise HTTPException(
-                status_code=404, detail=f"알 수 없는 공정 코드: {code}"
-            )
+            if all_processes:
+                raise HTTPException(
+                    status_code=404, detail=f"알 수 없는 공정 코드: {code}"
+                )
+            process = {"name": "현장 공정", "code": code, "label": "현장 공정"}
+            all_processes = [process]
 
         counts = self._repo.get_behavior_counts(code)
         behaviors = [
@@ -62,7 +65,11 @@ class SpaceService:
         th = self._repo.get_temp_humid(code)
         temp_humid = None
         if th["readings"]:
-            temp_humid = TempHumidReading(timestamp=_now_iso(), **th["readings"][0])
+            reading = dict(th["readings"][0])
+            temp_humid = TempHumidReading(
+                timestamp=reading.pop("timestamp", None) or _now_iso(),
+                **reading,
+            )
 
         cameras = [CameraInfo(**c) for c in self._repo.get_cameras(code)]
 

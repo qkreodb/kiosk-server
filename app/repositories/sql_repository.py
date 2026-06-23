@@ -46,11 +46,18 @@ BEHAVIOR_COLUMN: dict[str, str] = {
 
 
 def _pid(code: str | None) -> int | None:
-    """Parse an API process code (str(process_id)) into an int, or None."""
+    """Parse an API process code into an int process_id, or None.
+
+    The kiosk HTML still sends legacy codes like ``PRC-19`` while the shared DB
+    stores only numeric ``process.process_id`` values.
+    """
     if code is None:
         return None
+    raw = str(code).strip()
+    if raw.upper().startswith("PRC-"):
+        raw = raw.split("-", 1)[1]
     try:
-        return int(str(code).strip())
+        return int(raw)
     except (TypeError, ValueError):
         return None
 
@@ -182,29 +189,28 @@ class SqlRepository(KioskRepository):
         # zone/feels_like/dust are not in the ERD; zone falls back to process name.
         return {
             "sensor_id": str(row["sensor_id"]),
-            "zone": row["process_name"],
-            "process_code": str(row["process_id"]),
+            "zone": row.get("process_name") or "온습도 센서",
+            "process_code": str(row["process_id"]) if row.get("process_id") is not None else None,
             "temp": float(row["temperature"]),
             "humidity": float(row["humidity"]),
             "feels_like": None,
             "dust": None,
+            "timestamp": row["measured_at"].isoformat() if hasattr(row["measured_at"], "isoformat") else str(row["measured_at"]),
         }
 
     def get_temp_humid(self, process_code: str | None = None) -> dict[str, Any]:
+        process = self.get_process(process_code) if process_code is not None else None
         sql = (
-            "SELECT p.process_id, p.process_name, t.sensor_id, "
-            "t.temperature, t.humidity, t.measured_at "
-            "FROM process p "
-            "JOIN temperature_humidity_sensor t ON p.th_sensor_id = t.sensor_id"
+            "SELECT t.sensor_id, t.temperature, t.humidity, t.measured_at, "
+            "%s AS process_id, %s AS process_name "
+            "FROM temperature_humidity_sensor t "
+            "ORDER BY t.measured_at DESC, t.sensor_id DESC "
+            "LIMIT 1"
         )
-        params: tuple[Any, ...] = ()
-        if process_code is not None:
-            pid = _pid(process_code)
-            if pid is None:
-                return {"location": self._settings.site_location, "readings": []}
-            sql += " WHERE p.process_id=%s"
-            params = (pid,)
-        sql += " ORDER BY p.process_id"
+        params: tuple[Any, ...] = (
+            _pid(process_code) if process_code is not None else None,
+            process["name"] if process else None,
+        )
         with self._lock:
             rows = self._query(sql, params)
         return {
@@ -220,27 +226,25 @@ class SqlRepository(KioskRepository):
         dummy. ``process_code`` selects which process's heartbeat sensor supplies
         the live value (falling back to the most recent reading overall).
         """
+        process = self.get_process(process_code) if process_code is not None else None
         live: dict[str, Any] | None = None
         with self._lock:
-            pid = _pid(process_code) if process_code is not None else None
-            if pid is not None:
-                live = self._query_one(
-                    "SELECT h.heart_rate, h.measured_at, p.process_id, p.process_name "
-                    "FROM process p JOIN heartbeat_sensor h ON p.hb_sensor_id = h.sensor_id "
-                    "WHERE p.process_id=%s",
-                    (pid,),
-                )
-            if live is None:
-                live = self._query_one(
-                    "SELECT h.heart_rate, h.measured_at, p.process_id, p.process_name "
-                    "FROM heartbeat_sensor h "
-                    "LEFT JOIN process p ON p.hb_sensor_id = h.sensor_id "
-                    "ORDER BY h.measured_at DESC LIMIT 1"
-                )
+            live = self._query_one(
+                "SELECT h.heart_rate, h.measured_at, "
+                "%s AS process_id, %s AS process_name "
+                "FROM heartbeat_sensor h "
+                "ORDER BY h.measured_at DESC, h.sensor_id DESC "
+                "LIMIT 1",
+                (
+                    _pid(process_code) if process_code is not None else None,
+                    process["name"] if process else None,
+                ),
+            )
 
         roster = copy.deepcopy(dummy_data.WATCH_ROSTER)
         if live is not None and roster:
             roster[0]["hr"] = int(live["heart_rate"])
+            roster[0]["timestamp"] = live["measured_at"].isoformat() if hasattr(live["measured_at"], "isoformat") else str(live["measured_at"])
             if live.get("process_id") is not None:
                 roster[0]["process_code"] = str(live["process_id"])
             if live.get("process_name"):

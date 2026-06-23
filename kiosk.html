@@ -559,6 +559,11 @@
     display: block;
     z-index: 1;
   }
+  .cctv-image {
+    object-fit: contain;
+    background: #000;
+    display: none;
+  }
   .cctv-fallback {
     position: absolute;
     inset: 0;
@@ -3339,6 +3344,7 @@
           frameborder="0"
           allow="autoplay; encrypted-media; picture-in-picture; web-share"
           allowfullscreen></iframe>
+        <img id="cctvImage" class="cctv-video cctv-image" alt="IP camera live stream" />
       </div>
 
       <!-- Camera selector -->
@@ -4109,8 +4115,18 @@
       + '&mute=1&loop=1&playlist=' + CCTV_VIDEO_ID
       + '&controls=0&modestbranding=1&rel=0&playsinline=1';
   }
+  function cctvStreamSrc() {
+    const api = window.__API_BASE || 'http://localhost:8080';
+    return api + '/cctv/stream?ts=' + Date.now();
+  }
+  function isCentralCctv(region) {
+    return String(region || '').includes('중앙 전시홀') || String(region || '').includes('Central Hall');
+  }
   function openCCTV() {
     const frame = document.getElementById('cctvFrame');
+    const image = document.getElementById('cctvImage');
+    if (image) { image.src = ''; image.style.display = 'none'; }
+    if (frame) frame.style.display = 'block';
     if (frame) frame.src = cctvSrc(true);
     document.getElementById('cctvOverlay').classList.add('open');
   }
@@ -4118,7 +4134,9 @@
     document.getElementById('cctvOverlay').classList.remove('open');
     // src를 비워 재생 완전 정지 (소리/리소스 차단)
     const frame = document.getElementById('cctvFrame');
+    const image = document.getElementById('cctvImage');
     if (frame) frame.src = '';
+    if (image) image.src = '';
   }
   // Close when clicking the dimmed backdrop
   document.getElementById('cctvOverlay').addEventListener('click', e => {
@@ -4132,6 +4150,9 @@
     document.getElementById('cctvLocProc').textContent = locProc;
     // 카메라 전환 시 영상 리로드 (실제 운영 시 카메라별 스트림 URL 적용)
     const frame = document.getElementById('cctvFrame');
+    const image = document.getElementById('cctvImage');
+    if (image) { image.src = ''; image.style.display = 'none'; }
+    if (frame) frame.style.display = 'block';
     if (frame) frame.src = cctvSrc(true);
   }
 
@@ -4217,16 +4238,145 @@
     });
   });
 
+  const liveSensors = { tempHumid: null, watch: null };
+  function sensorApi() { return window.__API_BASE || 'http://localhost:8080'; }
+  async function fetchJson(path) {
+    const resp = await fetch(sensorApi() + path, { cache: 'no-store' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    return await resp.json();
+  }
+  async function refreshLiveSensors() {
+    const [th, watch] = await Promise.allSettled([
+      fetchJson('/sensor/temp-humid'),
+      fetchJson('/sensor/watch')
+    ]);
+    if (th.status === 'fulfilled') liveSensors.tempHumid = th.value;
+    if (watch.status === 'fulfilled') liveSensors.watch = watch.value;
+    if (typeof updateLiveSensorBadge === 'function') updateLiveSensorBadge();
+  }
+  function latestTempHumidReading() {
+    const readings = liveSensors.tempHumid && liveSensors.tempHumid.readings;
+    return Array.isArray(readings) && readings.length ? readings[0] : null;
+  }
+  function latestWatchWorkers() {
+    const workers = liveSensors.watch && liveSensors.watch.workers;
+    return Array.isArray(workers) ? workers : [];
+  }
+  function heartClass(bpm) {
+    if (bpm >= 130) return 'danger';
+    if (bpm >= 110) return 'warn';
+    return '';
+  }
+  function heartStatus(bpm, apiStatus) {
+    if (apiStatus) return apiStatus;
+    if (bpm >= 130) return 'DANGER';
+    if (bpm >= 110) return 'CAUTION';
+    return 'NORMAL';
+  }
+  function isCentralTempHumid(sensorId, zone) {
+    return sensorId === 'TH-03' || String(zone || '').includes('중앙 전시홀');
+  }
+  function isCentralWatch(watchId, proc) {
+    return watchId === 'WATCH-03' || String(proc || '').includes('중앙 전시홀');
+  }
+  function dummyTempHumid(sensorId) {
+    const idx = Number(String(sensorId || '').replace(/\D/g, '')) || 1;
+    return {
+      temp: (25.5 + idx * 0.4 + Math.random() * 1.8).toFixed(1),
+      humidity: Math.floor(49 + idx * 2 + Math.random() * 8)
+    };
+  }
+  function dummyHeartRate(watchId) {
+    const idx = Number(String(watchId || '').replace(/\D/g, '')) || 1;
+    return 68 + ((idx * 9) % 32) + Math.floor(Math.random() * 8);
+  }
+  function renderWatchWorkers(workers) {
+    const grid = document.getElementById('hrGrid');
+    if (!grid) return;
+    if (!workers.length) {
+      grid.innerHTML = '<div class="watch-none">No live watch data</div>';
+      return;
+    }
+    grid.innerHTML = workers.map((w, i) => {
+      const bpm = Number(w.hr || 0);
+      const cls = heartClass(bpm);
+      const name = w.name || ('Worker ' + String(i + 1));
+      const watchId = w.watch_id || ('WATCH-' + String(i + 1).padStart(2, '0'));
+      const meta = [watchId, w.device || 'Galaxy Watch', w.zone].filter(Boolean).join(' · ');
+      return `
+        <div class="hr-worker ${cls}">
+          <div class="hr-avatar">${String(name).charAt(0)}</div>
+          <div class="hr-worker-info">
+            <div class="hr-worker-name">${name}</div>
+            <div class="hr-worker-meta">${meta}</div>
+            <span class="hr-status-badge">${heartStatus(bpm, w.status)}</span>
+          </div>
+          <div style="text-align:right;">
+            <div class="hr-bpm">
+              <svg class="hr-pulse-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:inherit;"><path d="M3 12h4l2 5 4-12 2 7h6"/></svg>
+              <span class="hr-bpm-val">${bpm || '-'}</span><span class="hr-bpm-unit">BPM</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function ensureLiveSensorBadge() {
+    let badge = document.getElementById('liveSensorBadge');
+    if (badge) return badge;
+    const host = document.querySelector('.site-env-card .behavior-head-right') || document.querySelector('.site-env-card');
+    if (!host) return null;
+    badge = document.createElement('div');
+    badge.id = 'liveSensorBadge';
+    badge.style.cssText = 'display:flex;align-items:center;gap:10px;padding:6px 10px;border:1px solid rgba(0,217,255,.22);border-radius:6px;background:rgba(0,217,255,.06);font:700 11px JetBrains Mono,monospace;color:#A8BCD6;white-space:nowrap;';
+    badge.innerHTML = '<span style="color:#FF6F2C;">TEMP --.-°C</span><span style="color:#00D9FF;">HUM --.-%</span><span style="color:#FF3B47;">HR -- BPM</span>';
+    host.insertBefore(badge, host.firstChild);
+    return badge;
+  }
+
+  function updateLiveSensorBadge() {
+    const badge = ensureLiveSensorBadge();
+    if (!badge) return;
+    const th = latestTempHumidReading();
+    const workers = latestWatchWorkers();
+    const hr = workers.length ? Number(workers[0].hr || 0) : 0;
+    const tempText = th ? Number(th.temp).toFixed(1) : '--.-';
+    const humText = th ? Number(th.humidity).toFixed(1) : '--.-';
+    const hrText = hr ? String(hr) : '--';
+    badge.innerHTML =
+      '<span style="color:#FF6F2C;">TEMP ' + tempText + '°C</span>' +
+      '<span style="color:#00D9FF;">HUM ' + humText + '%</span>' +
+      '<span style="color:#FF3B47;">HR ' + hrText + ' BPM</span>';
+  }
+
+  ensureLiveSensorBadge();
+  refreshLiveSensors().catch(() => updateLiveSensorBadge());
+  setInterval(() => refreshLiveSensors().catch(() => updateLiveSensorBadge()), 5000);
+
   // 온습도 센서 상세 열기
-  function openEnvDetail(sensorId, zone) {
+  async function openEnvDetail(sensorId, zone) {
     const sub = document.getElementById('envDetailSub');
     if (sub) sub.textContent = sensorId + ' · ' + zone;
     // 센서별로 약간 다른 값 (데모)
-    const temp = (26 + Math.random() * 3).toFixed(1);
-    const hum = Math.floor(52 + Math.random() * 12);
+    document.getElementById('envDetailTemp').innerHTML = '--<small>°C</small>';
+    document.getElementById('envDetailHum').innerHTML = '--<small>%</small>';
+    document.getElementById('envDetailOverlay').classList.add('open');
+    if (!isCentralTempHumid(sensorId, zone)) {
+      const dummy = dummyTempHumid(sensorId);
+      document.getElementById('envDetailTemp').innerHTML = dummy.temp + '<small>°C</small>';
+      document.getElementById('envDetailHum').innerHTML = dummy.humidity + '<small>%</small>';
+      return;
+    }
+    try {
+      await refreshLiveSensors();
+    } catch (_) { /* keep the modal open even if the API is unavailable */ }
+    const reading = latestTempHumidReading();
+    if (!reading) return;
+    const temp = Number(reading.temp).toFixed(1);
+    const hum = Number(reading.humidity).toFixed(1);
+    if (sub) sub.textContent = sensorId + ' · ' + zone + ' · LIVE';
     document.getElementById('envDetailTemp').innerHTML = temp + '<small>°C</small>';
     document.getElementById('envDetailHum').innerHTML = hum + '<small>%</small>';
-    document.getElementById('envDetailOverlay').classList.add('open');
   }
 
   // 비상대피로 안내도 열기
@@ -4399,12 +4549,126 @@
     document.getElementById('hrOverlay').classList.add('open');
   }
 
+  async function openHeartRate(region, count) {
+    const sub = document.getElementById('hrSub');
+    const grid = document.getElementById('hrGrid');
+    if (sub) sub.textContent = region + ' · Live Galaxy Watch';
+    if (grid) grid.innerHTML = '<div class="watch-none">Loading live watch data...</div>';
+    document.getElementById('hrOverlay').classList.add('open');
+    try {
+      await refreshLiveSensors();
+      const live = latestWatchWorkers()[0] || null;
+      const n = Math.min(count || 5, 8);
+      const names = ['Worker A', 'Worker B', 'Worker C', 'Worker D', 'Worker E', 'Worker F', 'Worker G', 'Worker H'];
+      const zones = ['Booth A', 'Booth C', 'Central Hall', 'Booth B', 'Seminar Room', 'Center Walkway', 'Booth D', 'Loading Area'];
+      const workers = Array.from({ length: n }, (_, i) => {
+        const watch = 'WATCH-' + String(i + 1).padStart(2, '0');
+        if (watch === 'WATCH-03' && live) {
+          return {
+            watch_id: watch,
+            name: names[i],
+            hr: live.hr,
+            status: live.status,
+            zone: zones[i],
+            device: live.device || 'Galaxy Watch'
+          };
+        }
+        const bpm = dummyHeartRate(watch);
+        return {
+          watch_id: watch,
+          name: names[i],
+          hr: bpm,
+          status: heartStatus(bpm),
+          zone: zones[i],
+          device: 'Galaxy Watch'
+        };
+      });
+      if (sub) sub.textContent = (liveSensors.watch && liveSensors.watch.region || region) + ' · WATCH-03 LIVE / others dummy';
+      renderWatchWorkers(workers);
+    } catch (e) {
+      if (grid) grid.innerHTML = '<div class="watch-none">Watch API unavailable</div>';
+    }
+  }
+
+  async function openWatchWorker(name, watchId, proc) {
+    const sub = document.getElementById('hrSub');
+    const grid = document.getElementById('hrGrid');
+    if (sub) sub.textContent = proc + ' · ' + name;
+    if (!isCentralWatch(watchId, proc)) {
+      const bpm = dummyHeartRate(watchId);
+      const cls = heartClass(bpm);
+      if (grid) grid.innerHTML = `
+        <div class="hr-worker ${cls}" style="grid-column:1 / 3;">
+          <div class="hr-avatar">${String(name || 'W').charAt(0)}</div>
+          <div class="hr-worker-info">
+            <div class="hr-worker-name">${name || 'Worker'}</div>
+            <div class="hr-worker-meta">${[watchId, 'Galaxy Watch', proc].filter(Boolean).join(' · ')}</div>
+            <span class="hr-status-badge">${heartStatus(bpm)}</span>
+          </div>
+          <div style="text-align:right;">
+            <div class="hr-bpm">
+              <svg class="hr-pulse-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 5 4-12 2 7h6"/></svg>
+              <span class="hr-bpm-val">${bpm}</span><span class="hr-bpm-unit">BPM</span>
+            </div>
+          </div>
+        </div>`;
+      document.getElementById('hrOverlay').classList.add('open');
+      return;
+    }
+    if (grid) grid.innerHTML = '<div class="watch-none">Loading live watch data...</div>';
+    document.getElementById('hrOverlay').classList.add('open');
+    try {
+      await refreshLiveSensors();
+      const workers = latestWatchWorkers();
+      const worker = workers[0] || null;
+      if (!worker) {
+        if (grid) grid.innerHTML = '<div class="watch-none">No live watch data</div>';
+        return;
+      }
+      const bpm = Number(worker.hr || 0);
+      const cls = heartClass(bpm);
+      const workerName = name || worker.name || 'Worker';
+      const workerWatchId = watchId || worker.watch_id || 'WATCH-03';
+      const workerProc = proc || worker.zone || '';
+      if (grid) grid.innerHTML = `
+        <div class="hr-worker ${cls}" style="grid-column:1 / 3;">
+          <div class="hr-avatar">${String(workerName).charAt(0)}</div>
+          <div class="hr-worker-info">
+            <div class="hr-worker-name">${workerName}</div>
+            <div class="hr-worker-meta">${[workerWatchId, worker.device || 'Galaxy Watch', workerProc].filter(Boolean).join(' · ')}</div>
+            <span class="hr-status-badge">${heartStatus(bpm, worker.status)}</span>
+          </div>
+          <div style="text-align:right;">
+            <div class="hr-bpm">
+              <svg class="hr-pulse-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 5 4-12 2 7h6"/></svg>
+              <span class="hr-bpm-val">${bpm || '-'}</span><span class="hr-bpm-unit">BPM</span>
+            </div>
+          </div>
+        </div>`;
+    } catch (e) {
+      if (grid) grid.innerHTML = '<div class="watch-none">Watch API unavailable</div>';
+    }
+  }
+
   // ===== 현장사진 / CCTV =====
   function openCCTVFor(region) {
     document.getElementById('cctvHeadSub').textContent = region + ' · 실시간';
     document.getElementById('cctvLocName').textContent = region + ' CCTV';
     document.getElementById('cctvLocProc').textContent = region + ' · 작업 현장';
     const frame = document.getElementById('cctvFrame');
+    const image = document.getElementById('cctvImage');
+    if (frame && isCentralCctv(region)) {
+      frame.src = '';
+      frame.style.display = 'none';
+      if (image) {
+        image.style.display = 'block';
+        image.src = cctvStreamSrc();
+      }
+      document.getElementById('cctvOverlay').classList.add('open');
+      return;
+    }
+    if (image) { image.src = ''; image.style.display = 'none'; }
+    if (frame) frame.style.display = 'block';
     if (frame) frame.src = cctvSrc(true);
     document.getElementById('cctvOverlay').classList.add('open');
   }

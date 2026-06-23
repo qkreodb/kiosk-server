@@ -35,9 +35,9 @@ class SensorService:
 
     def get_temp_humid(self, process_code: str | None = None) -> TempHumidResponse:
         data = self._repo.get_temp_humid(process_code)
-        ts = _now_iso()
         readings = [
-            TempHumidReading(timestamp=ts, **r) for r in data["readings"]
+            TempHumidReading(timestamp=r.pop("timestamp", None) or _now_iso(), **r)
+            for r in data["readings"]
         ]
         return TempHumidResponse(
             location=data["location"], count=len(readings), readings=readings
@@ -45,7 +45,6 @@ class SensorService:
 
     def get_watch(self, process_code: str | None = None) -> WatchResponse:
         data = self._repo.get_watch(process_code)
-        ts = _now_iso()
         workers = []
         for w in data["workers"]:
             bpm = int(w["hr"])
@@ -58,7 +57,7 @@ class SensorService:
                     zone=w.get("zone"),
                     process_code=w.get("process_code"),
                     device=w.get("device", "Galaxy Watch"),
-                    timestamp=ts,
+                    timestamp=w.get("timestamp") or _now_iso(),
                 )
             )
         return WatchResponse(region=data["region"], count=len(workers), workers=workers)

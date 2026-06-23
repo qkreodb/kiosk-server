@@ -35,6 +35,39 @@ copy .env.example .env        # Windows
 - Swagger UI: <http://localhost:8080/docs>
 - Health:     <http://localhost:8080/health>
 
+### Real sensor DB mode
+
+To show the temperature/humidity and Galaxy Watch heart-rate values written by
+`kiosk-hardware`, run with the shared MariaDB settings:
+
+```powershell
+$env:KIOSK_REPOSITORY="mysql"
+$env:KIOSK_DB_HOST="127.0.0.1"
+$env:KIOSK_DB_PORT="3306"
+$env:KIOSK_DB_USER="root"
+$env:KIOSK_DB_PASSWORD="ekthf123"
+$env:KIOSK_DB_NAME="ON_SAFE"
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8080
+```
+
+The kiosk screen reads these backend endpoints:
+
+```text
+GET /sensor/temp-humid
+GET /sensor/watch
+```
+
+### Live CCTV frame mode
+
+The center-hall CCTV marker reads the MJPEG feed from `GET /cctv/stream`.
+Start the RTSP frame collector in the hardware repo so it keeps writing
+fresh `../kiosk-hardware/frames/frame_*.jpg` files:
+
+```powershell
+cd ..\kiosk-hardware
+..\.venv\Scripts\python.exe rtsp_frame.py
+```
+
 ### Smoke test (no external servers needed)
 
 ```bash

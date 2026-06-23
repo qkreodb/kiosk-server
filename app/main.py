@@ -11,9 +11,11 @@ Run with:  uvicorn app.main:app --port 8080
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
@@ -79,7 +81,17 @@ def create_app() -> FastAPI:
             "version": settings.app_version,
             "docs": "/docs",
             "health": "/health",
+            "kiosk": "/kiosk.html",
         }
+
+    # 키오스크 프론트(kiosk.html)를 백엔드가 직접 서빙 — 별도 정적 서버 불필요.
+    @app.get("/kiosk.html", include_in_schema=False)
+    async def kiosk_html() -> FileResponse:
+        return FileResponse(Path(__file__).resolve().parents[1] / "kiosk.html")
+
+    @app.get("/kiosk", include_in_schema=False)
+    async def kiosk_page() -> FileResponse:
+        return FileResponse(Path(__file__).resolve().parents[1] / "kiosk.html")
 
     return app
 

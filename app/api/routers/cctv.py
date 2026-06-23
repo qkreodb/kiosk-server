@@ -45,7 +45,7 @@ async def frame(service: CctvService = Depends(get_cctv_service)) -> Response:
 )
 async def stream(service: CctvService = Depends(get_cctv_service)) -> StreamingResponse:
     async def gen():
-        # ~10 fps polling of the Shared Dir; kiosk display does not need 30.
+        # Poll close to the frame collector's 30 fps save limit.
         while True:
             result = service.latest_frame()
             yield (
@@ -54,10 +54,13 @@ async def stream(service: CctvService = Depends(get_cctv_service)) -> StreamingR
                 b"Content-Length: " + str(len(result.data)).encode() + b"\r\n\r\n"
                 + result.data + b"\r\n"
             )
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(1 / 30)
 
     return StreamingResponse(
         gen(),
         media_type=f"multipart/x-mixed-replace; boundary={_MJPEG_BOUNDARY}",
-        headers={"Cache-Control": "no-store"},
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+        },
     )

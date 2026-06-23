@@ -50,22 +50,24 @@ class Settings(BaseSettings):
     vlm_force_mock: bool = False
 
     # --- Shared Dir (30fps frames from the Hardware Server, PORT 8081) ---
-    shared_dir: Path = Path("./shared_dir")
+    # 하드웨어 서버(kiosk-hardware)의 RTSP 프레임 수집기가 기록하는 폴더.
+    shared_dir: Path = Path("../kiosk-hardware/frames")
     frame_glob: str = "frame_*.jpg"
 
     # --- Shared DB ---
     # Data source selector: "mock" (JSON fixtures / in-memory) or
     # "mysql"/"sql" (real MySQL on the Jetson via SqlRepository). If "mysql" is
     # selected but the DB is unreachable, the app falls back to "mock".
-    repository: str = "mock"
+    repository: str = "mysql"
     db_url: str = "mock://in-memory"  # legacy placeholder; unused by SqlRepository.
 
     # MySQL connection (used only when repository == "mysql"/"sql").
+    # 실제 비밀번호는 저장소에 커밋하지 말고 .env 의 KIOSK_DB_PASSWORD 로만 둘 것.
     db_host: str = "127.0.0.1"
     db_port: int = 3306
     db_user: str = "root"
     db_password: str = ""
-    db_name: str = "kiosk"
+    db_name: str = "ON_SAFE"
     db_charset: str = "utf8mb4"
     db_connect_timeout: int = 5
 
