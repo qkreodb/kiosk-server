@@ -71,6 +71,11 @@ def get_cctv_service() -> CctvService:
     return CctvService(_shared_dir_reader())
 
 
+@lru_cache
+def _led_service() -> LedService:
+    return LedService(get_settings())
+
+
 def get_vlm_service() -> VlmService:
     return VlmService(
         repo=get_repository(),
@@ -79,11 +84,12 @@ def get_vlm_service() -> VlmService:
         speaker=_speaker(),
         warning_light=_warning_light(),
         settings=get_settings(),
+        led=_led_service(),
     )
 
 
 def get_led_service() -> LedService:
-    return LedService(get_settings())
+    return _led_service()
 
 
 def get_app_settings() -> Settings:

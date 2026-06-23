@@ -3323,6 +3323,7 @@
           <div class="cctv-vlm-row"><span class="cctv-vlm-label" style="color:var(--cyan);">탐지</span><span class="cctv-vlm-val" id="vlmDetection">—</span></div>
           <div class="cctv-vlm-row"><span class="cctv-vlm-label" style="color:var(--amber);">경고</span><span class="cctv-vlm-val" id="vlmWarning">—</span></div>
           <div class="cctv-vlm-row"><span class="cctv-vlm-label" style="color:var(--red);">경광등</span><span class="cctv-vlm-val" id="vlmLight">—</span></div>
+          <div class="cctv-vlm-row"><span class="cctv-vlm-label" style="color:var(--green);">음성</span><span class="cctv-vlm-val" id="vlmTts">—</span></div>
         </div>
         <!-- Fallback (영상 로드 전/실패 시 표시) -->
         <div class="cctv-fallback">
@@ -4496,11 +4497,23 @@
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       const d = await resp.json();
 
-      document.getElementById('vlmDetection').textContent = d.detection || '—';
+      document.getElementById('vlmDetection').textContent = d.detection || '— (위험행동 미감지)';
       document.getElementById('vlmWarning').textContent = d.warning_text || '—';
       const wl = d.warning_light || {};
+      const ledTxt = wl.led && wl.led.status
+        ? ' · LED ' + (wl.led.status === 'sent' ? '점등' : wl.led.status)
+        : '';
       document.getElementById('vlmLight').textContent =
-        (wl.label || '—') + (wl.trigger_count != null ? ' (누적 ' + wl.trigger_count + '회)' : '');
+        (wl.label || '—') + (wl.trigger_count != null ? ' (누적 ' + wl.trigger_count + '회)' : '') + ledTxt;
+      // 음성(TTS) 재생 상태 — 백엔드가 경고문을 서버 스피커로 재생
+      const tts = d.tts || {};
+      const ttsTxt = {
+        synthesized: '🔊 음성 안내 재생 중',
+        stubbed: '🔊 음성 안내 재생 중(스텁)',
+        skipped: '경고문 없음 — 미재생',
+        failed: '재생 실패: ' + (tts.detail || ''),
+      }[tts.status] || (tts.status || '—');
+      document.getElementById('vlmTts').textContent = ttsTxt;
       overlay.classList.add('show');
 
       // 행렬도 갱신
@@ -4509,6 +4522,7 @@
       document.getElementById('vlmDetection').textContent = '분석 실패: ' + e.message;
       document.getElementById('vlmWarning').textContent = '백엔드 연결을 확인하세요';
       document.getElementById('vlmLight').textContent = '—';
+      document.getElementById('vlmTts').textContent = '—';
       overlay.classList.add('show');
     } finally {
       btn.disabled = false;
@@ -4577,11 +4591,13 @@
   window.__API_BASE = API; // analyzeCurrentCam()에서 참조
 
   // count → 행렬 등급(0:관심 / 1:주의 / 2:경고 / 3:위험) 변환
+  // 임계값 3/6/9/12. 0~2회는 소등(불 없음, -1 반환).
   function countToLevel(count) {
-    if (count <= 0) return 0;
-    if (count <= 2) return 1;
-    if (count <= 4) return 2;
-    return 3;
+    if (count >= 12) return 3; // 위험
+    if (count >= 9) return 2;  // 경고
+    if (count >= 6) return 1;  // 주의
+    if (count >= 3) return 0;  // 관심
+    return -1;                 // 0~2회 소등
   }
 
   // GET /space-name → #bhMatrix 행렬 업데이트
@@ -4619,12 +4635,11 @@
   window.resetBehavior = async function () {
     const processCode = currentProcessCode();
 
-    // 즉시 UI 초기화 (관심 등급)
+    // 즉시 UI 초기화 (카운트 0 → 소등, 불 없음)
     document.querySelectorAll('#bhMatrix .bh-matrix-row').forEach(row => {
       const lamps = row.querySelectorAll('.bhm-lamp');
       lamps.forEach(l => l.classList.remove('on'));
-      if (lamps[0]) lamps[0].classList.add('on');
-      row.dataset.active = '0';
+      row.dataset.active = '-1';
     });
 
     // 백엔드 count 리셋 (실패해도 UI는 이미 초기화)

@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import re
 
+from fastapi import HTTPException
+
 from app.core.config import Settings
 from app.core.logging import get_logger
 from app.domain.constants import (
@@ -21,6 +23,7 @@ from app.domain.constants import (
     CATEGORY_BY_ID,
     VLM_ACTION_KEY_MAP,
     WARNING_LIGHT_LABEL,
+    WARNING_STATE_TO_LED_LEVEL,
     UnsafeBehavior,
     WarningLightState,
 )
@@ -28,6 +31,7 @@ from app.integrations.actuators import SpeakerActuator, WarningLightActuator
 from app.integrations.tts import TtsService
 from app.integrations.vlm_client import VlmClient
 from app.repositories.base import KioskRepository
+from app.services.led_service import LedService
 from app.schemas.vlm import (
     BehaviorDelta,
     TtsDispatch,
@@ -97,6 +101,7 @@ class VlmService:
         speaker: SpeakerActuator,
         warning_light: WarningLightActuator,
         settings: Settings,
+        led: LedService | None = None,
     ) -> None:
         self._repo = repo
         self._vlm = vlm_client
@@ -104,15 +109,40 @@ class VlmService:
         self._speaker = speaker
         self._light = warning_light
         self._settings = settings
+        self._led = led
 
     def _warning_light_state(self, count: int) -> WarningLightState:
-        if count >= self._settings.light_danger_threshold:
+        """누적 카운트 → 경광등 단계 (임계값 3/6/9/12)."""
+        if count >= self._settings.light_danger_threshold:    # 12+ 위험
+            return WarningLightState.SEQUENCE
+        if count >= self._settings.light_warning_threshold:   # 9~11 경고
             return WarningLightState.RED_BLINK
-        if count >= self._settings.light_caution_threshold:
+        if count >= self._settings.light_caution_threshold:   # 6~8 주의
             return WarningLightState.YELLOW_BLINK
-        if count >= 1:
+        if count >= self._settings.light_interest_threshold:  # 3~5 관심
             return WarningLightState.GREEN
-        return WarningLightState.OFF
+        return WarningLightState.OFF                          # 0~2 소등
+
+    def _trigger_led(self, state: WarningLightState) -> dict | None:
+        """경광등 상태에 맞춰 실물 LED(led_service)를 점등. 실패해도 분석은 계속.
+
+        OFF 는 점등하지 않는다(진행 중인 신호를 끊지 않기 위해 소등도 보내지 않음).
+        LED가 이미 동작 중(409)이거나 장치 문제(503)면 분석 응답을 깨지 않고 상태만 기록.
+        """
+        if self._led is None:
+            return None
+        level = WARNING_STATE_TO_LED_LEVEL.get(state)
+        if level is None:
+            return None
+        try:
+            res = self._led.trigger(level)
+            return {"level": level, "status": res.get("status")}
+        except HTTPException as exc:
+            logger.info("[LED] 자동 점등 보류(level=%s): %s", level, exc.detail)
+            return {"level": level, "status": "skipped", "detail": str(exc.detail)}
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("[LED] 자동 점등 실패(level=%s): %s", level, exc)
+            return {"level": level, "status": "error", "detail": str(exc)}
 
     async def infer(
         self,
@@ -156,21 +186,30 @@ class VlmService:
                 )
             )
 
-        # Warning-light control signal from the highest resulting count this round.
-        trigger_count = max((d.count for d in deltas), default=0)
+        # 경광등은 "조회 결과" 기준 — 이번 라운드 감지분이 아니라 4대 행동의
+        # 누적 카운트 중 최대값을 사용한다. 그래야 다른 행동만 감지된 라운드에도
+        # 단계가 유지되고, 초기화(reset) 전까지 떨어지지 않는다.
+        all_counts = self._repo.get_behavior_counts(code)
+        trigger_count = max(all_counts.values(), default=0) if all_counts else 0
         state = self._warning_light_state(trigger_count)
         label = WARNING_LIGHT_LABEL[state]
         dispatched = False
+        led_dispatch: dict | None = None
         if state is not WarningLightState.OFF:
             dispatched = self._light.dispatch(state, label, trigger_count)
+            # 실물 경광등(LED) 자동 점등 — 실패해도 분석 응답은 유지.
+            led_dispatch = self._trigger_led(state)
 
         warning_light = WarningLightSignal(
             state=state.value,
             label=label,
             trigger_count=trigger_count,
+            interest_threshold=self._settings.light_interest_threshold,
             caution_threshold=self._settings.light_caution_threshold,
+            warning_threshold=self._settings.light_warning_threshold,
             danger_threshold=self._settings.light_danger_threshold,
             dispatched=dispatched,
+            led=led_dispatch,
         )
 
         # 4) Combine.

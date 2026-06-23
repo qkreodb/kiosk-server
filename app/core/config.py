@@ -81,9 +81,12 @@ class Settings(BaseSettings):
     tts_enabled: bool = True
 
     # --- Warning light (경광등) thresholds ---
-    # Cumulative unsafe-behavior count at/above which each state activates.
-    light_caution_threshold: int = Field(default=3, ge=1)
-    light_danger_threshold: int = Field(default=5, ge=1)
+    # 누적 불안전행동 카운트가 각 임계값 이상이면 해당 단계로 점등한다.
+    #   0~2: 소등 / 3~5: 관심(초록) / 6~8: 주의(노랑) / 9~11: 경고(빨강) / 12+: 위험(순차)
+    light_interest_threshold: int = Field(default=3, ge=1)   # 관심 (초록 점등)
+    light_caution_threshold: int = Field(default=6, ge=1)    # 주의 (노란색 깜빡임)
+    light_warning_threshold: int = Field(default=9, ge=1)    # 경고 (빨간색 깜빡임)
+    light_danger_threshold: int = Field(default=12, ge=1)    # 위험 (순차 점멸)
 
     # --- Warning light LED (실물 경광등, ST80EL-USB HID) ---
     # ``led_dry_run=False`` 이면 실제 HID 장치로 전송을 시도하고, hidapi 미설치/

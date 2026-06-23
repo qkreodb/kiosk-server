@@ -106,19 +106,31 @@ VLM_DETECT_ACTIONS: list[dict[str, str]] = [
 
 
 class WarningLightState(str, Enum):
-    """Discrete states the warning light (경광등) can be driven to."""
+    """Discrete states the warning light (경광등) can be driven to.
 
-    OFF = "off"
-    GREEN = "green"             # steady green — normal
-    YELLOW_BLINK = "yellow_blink"  # 노란색 깜빡임 — caution
-    RED_BLINK = "red_blink"     # 빨간색 깜빡임 — danger
+    누적 카운트 임계값(3/6/9/12)에 따라 관심→주의→경고→위험으로 단계가 오른다.
+    """
+
+    OFF = "off"                    # 0~2회   — 소등
+    GREEN = "green"                # 3~5회   — 관심 (초록 점등)
+    YELLOW_BLINK = "yellow_blink"  # 6~8회   — 주의 (노란색 깜빡임)
+    RED_BLINK = "red_blink"        # 9~11회  — 경고 (빨간색 깜빡임)
+    SEQUENCE = "sequence"          # 12회+   — 위험 (초록→노랑→빨강 순차 점멸)
 
 
-# Human-readable Korean control-signal label per state (matches diagram wording,
-# e.g. count == 3 -> "노란색 볼 깜빡임").
+# Human-readable Korean control-signal label per state.
 WARNING_LIGHT_LABEL: dict[WarningLightState, str] = {
     WarningLightState.OFF: "소등",
-    WarningLightState.GREEN: "녹색 점등",
-    WarningLightState.YELLOW_BLINK: "노란색 볼 깜빡임",
-    WarningLightState.RED_BLINK: "빨간색 볼 깜빡임",
+    WarningLightState.GREEN: "녹색 점등 (관심)",
+    WarningLightState.YELLOW_BLINK: "노란색 깜빡임 (주의)",
+    WarningLightState.RED_BLINK: "빨간색 깜빡임 (경고)",
+    WarningLightState.SEQUENCE: "순차 점멸 (위험)",
+}
+
+# 경광등 상태 → 실물 LED(led_service) 레벨. OFF 는 점등하지 않는다.
+WARNING_STATE_TO_LED_LEVEL: dict[WarningLightState, str] = {
+    WarningLightState.GREEN: "interest",
+    WarningLightState.YELLOW_BLINK: "caution",
+    WarningLightState.RED_BLINK: "warning",
+    WarningLightState.SEQUENCE: "danger",
 }

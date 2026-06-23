@@ -38,12 +38,17 @@ class BehaviorDelta(BaseModel):
 class WarningLightSignal(BaseModel):
     """Control signal generated for the 경광등 from the cumulative count."""
 
-    state: str = Field(description="off / green / yellow_blink / red_blink")
-    label: str = Field(description="한글 제어 신호", examples=["노란색 볼 깜빡임"])
+    state: str = Field(description="off / green / yellow_blink / red_blink / sequence")
+    label: str = Field(description="한글 제어 신호", examples=["노란색 깜빡임 (주의)"])
     trigger_count: int = Field(description="신호 산정에 사용된 누적 카운트")
-    caution_threshold: int
-    danger_threshold: int
-    dispatched: bool = Field(description="경광등으로 신호 전송 여부")
+    interest_threshold: int = Field(description="관심(초록) 임계값", examples=[3])
+    caution_threshold: int = Field(description="주의(노랑) 임계값", examples=[6])
+    warning_threshold: int = Field(description="경고(빨강) 임계값", examples=[9])
+    danger_threshold: int = Field(description="위험(순차) 임계값", examples=[12])
+    dispatched: bool = Field(description="경광등(stub)으로 신호 전송 여부")
+    led: dict | None = Field(
+        default=None, description="실물 LED 자동 점등 결과 {level, status}"
+    )
 
 
 class TtsDispatch(BaseModel):
