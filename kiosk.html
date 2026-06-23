@@ -4591,13 +4591,13 @@
   window.__API_BASE = API; // analyzeCurrentCam()에서 참조
 
   // count → 행렬 등급(0:관심 / 1:주의 / 2:경고 / 3:위험) 변환
-  // 임계값 3/6/9/12. 0~2회는 소등(불 없음, -1 반환).
+  // 데모용 임계값 1/2/3/4 (백엔드 KIOSK_LIGHT_*_THRESHOLD 와 일치해야 함). 0회는 소등.
   function countToLevel(count) {
-    if (count >= 12) return 3; // 위험
-    if (count >= 9) return 2;  // 경고
-    if (count >= 6) return 1;  // 주의
-    if (count >= 3) return 0;  // 관심
-    return -1;                 // 0~2회 소등
+    if (count >= 4) return 3; // 위험
+    if (count >= 3) return 2; // 경고
+    if (count >= 2) return 1; // 주의
+    if (count >= 1) return 0; // 관심
+    return -1;                // 0회 소등
   }
 
   // GET /space-name → #bhMatrix 행렬 업데이트
