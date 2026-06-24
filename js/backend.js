@@ -17,11 +17,20 @@
 (function () {
   'use strict';
 
-  // API base (파일 직접 열기, 또는 ?api=http://... 쿼리로 오버라이드 가능)
+  // API base 해석 우선순위:
+  //   1. ?api=http://... 쿼리 파라미터 (명시적 오버라이드)
+  //   2. 파일 직접 열기(file://) → localhost:8080
+  //   3. 포트 80/443(ngrok·리버스프록시 등) → 포트 없이 같은 origin 사용
+  //   4. 그 외(로컬 LAN 직접 접속) → 같은 호스트:8080
   const API = (function () {
     const qs = new URLSearchParams(location.search);
     if (qs.get('api')) return qs.get('api').replace(/\/$/, '');
     if (location.protocol === 'file:' || !location.hostname) return 'http://localhost:8080';
+    const port = location.port;
+    // 표준 포트(80/443)이면 FastAPI 도 같은 origin 에서 서빙되는 것 (ngrok 등)
+    if (!port || port === '80' || port === '443') {
+      return location.protocol + '//' + location.hostname;
+    }
     return location.protocol + '//' + location.hostname + ':8080';
   })();
   window.__API_BASE = API;
