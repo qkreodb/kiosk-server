@@ -37,14 +37,12 @@ class Settings(BaseSettings):
 
     # --- External VLM Server (PORT 8000, Jetson Thor) ---
     # 키오스크는 구조화된 결과(action + tts_message)를 주는 ``/analyze`` 를 사용한다.
-    # ``/infer`` 는 원시 장면 설명만 반환하므로 사용하지 않는다.
     vlm_base_url: str = "http://localhost:8000"
     vlm_analyze_path: str = "/analyze"
-    vlm_infer_path: str = "/infer"  # (참고용, 현재 파이프라인 미사용)
     # ``/analyze`` 가 Jetson 파일시스템에서 읽을 프레임 폴더(절대 경로). 하드웨어
     # 서버가 30fps 프레임을 기록하는 공유 디렉터리를 가리켜야 한다. 기본값은
     # VLM 서버 README의 테스트 폴더.
-    vlm_frame_dir: str = "/home/ds/Desktop/vlm_test/frames_448_30"
+    vlm_frame_dir: str = "/home/ds/Desktop/frames"
     # VLM+LLM 2단계 추론은 수 초가 걸리고 NUM_WORKERS=1 이면 큐 대기까지 더해진다.
     vlm_timeout_seconds: float = 60.0
     vlm_force_mock: bool = False
@@ -148,10 +146,6 @@ class Settings(BaseSettings):
     @property
     def vlm_analyze_url(self) -> str:
         return f"{self.vlm_base_url.rstrip('/')}/{self.vlm_analyze_path.lstrip('/')}"
-
-    @property
-    def vlm_infer_url(self) -> str:
-        return f"{self.vlm_base_url.rstrip('/')}/{self.vlm_infer_path.lstrip('/')}"
 
 
 @lru_cache
