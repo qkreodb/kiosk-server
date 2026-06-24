@@ -2977,6 +2977,116 @@
   .sp-footer { text-align: center; }
   .sp-date { font-size: 15px; color: #555; margin-bottom: 6px; }
   .sp-sig { font-size: 18px; font-weight: 700; color: #162352; }
+
+  /* ===== 산업안전보건 법령요지 모달 (표형 디자인 · #lawOverlay 스코프) ===== */
+  #lawOverlay .law-modal {
+    background: #fff;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 1000px;
+    max-height: calc(100% - 40px);
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    overflow: hidden;
+  }
+  #lawOverlay .law-header {
+    background: linear-gradient(135deg, #162352 0%, #1a3a6b 100%);
+    padding: 22px 30px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  #lawOverlay .law-header-left { display: flex; align-items: center; gap: 14px; }
+  #lawOverlay .law-header-icon {
+    width: 42px; height: 42px;
+    background: rgba(77,184,196,0.25);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #lawOverlay .law-header-icon svg { width: 22px; height: 22px; }
+  #lawOverlay .law-mtitle { color: #fff; font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  #lawOverlay .law-msubtitle { color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 400; margin-top: 3px; }
+  #lawOverlay .law-close {
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,0.12);
+    border: none; border-radius: 6px;
+    color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s; flex-shrink: 0;
+  }
+  #lawOverlay .law-close svg { width: 22px; height: 22px; }
+  #lawOverlay .law-close:active { background: rgba(255,255,255,0.22); transform: scale(0.94); }
+  #lawOverlay .law-stats {
+    padding: 14px 30px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e8edf3;
+    display: flex; align-items: center; gap: 22px;
+    flex-shrink: 0;
+  }
+  #lawOverlay .law-chip { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: #556; }
+  #lawOverlay .law-dot { width: 9px; height: 9px; border-radius: 50%; }
+  #lawOverlay .law-table-wrap { overflow-y: auto; flex: 1; padding: 0 30px 10px; }
+  #lawOverlay .law-table {
+    width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px;
+  }
+  #lawOverlay .law-table thead th {
+    position: sticky; top: 0;
+    background: #f0f4fa; color: #162352;
+    font-weight: 600; font-size: 13px;
+    padding: 13px 12px; text-align: center;
+    border-bottom: 2px solid #c8d8e8;
+    white-space: nowrap; letter-spacing: -0.2px; z-index: 1;
+  }
+  #lawOverlay .law-table thead th:first-child { border-radius: 6px 0 0 0; }
+  #lawOverlay .law-table thead th:last-child { border-radius: 0 6px 0 0; }
+  #lawOverlay .law-table tbody tr { transition: background 0.1s; }
+  #lawOverlay .law-table tbody tr:hover { background: #f5f8ff; }
+  #lawOverlay .law-table tbody tr:last-child td { border-bottom: none; }
+  #lawOverlay .law-table td {
+    padding: 13px 12px; color: #334;
+    vertical-align: middle; border-bottom: 1px solid #edf1f7; line-height: 1.5;
+  }
+  #lawOverlay .law-table td:first-child { text-align: center; color: #8899aa; font-size: 13px; font-weight: 500; }
+  #lawOverlay .law-name {
+    color: #162352; font-weight: 600; font-size: 14px; cursor: pointer;
+    background: none; border: none; padding: 0; font-family: inherit;
+    text-align: left; letter-spacing: -0.2px;
+  }
+  #lawOverlay .law-name:hover { text-decoration: underline; color: #2a4db8; }
+  #lawOverlay .law-badge {
+    display: inline-block; padding: 4px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; white-space: nowrap;
+  }
+  #lawOverlay .law-badge-partial { background: #e8f4ff; color: #1a6fc4; }
+  #lawOverlay .law-badge-other   { background: #fff0e8; color: #c45a1a; }
+  #lawOverlay .law-badge-enact   { background: #e8fff0; color: #1a8c4a; }
+  #lawOverlay .law-ministry { max-width: 130px; font-size: 13px; color: #667; line-height: 1.4; word-break: keep-all; }
+  #lawOverlay .law-date { text-align: center; font-size: 13.5px; color: #445; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  #lawOverlay .law-history { text-align: center; font-size: 13px; color: #556; white-space: nowrap; }
+  #lawOverlay .law-history .hl { color: #1a6fc4; font-weight: 600; }
+  #lawOverlay .law-compare {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 5px 12px; background: #fff;
+    border: 1.5px solid #4db8c4; border-radius: 4px;
+    color: #1a8090; font-size: 12.5px; font-family: inherit; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  #lawOverlay .law-compare:hover { background: #4db8c4; color: #fff; }
+  #lawOverlay .law-dash { color: #bbb; font-size: 15px; }
+  #lawOverlay .law-pagination {
+    padding: 16px 30px; border-top: 1px solid #e8edf3;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    flex-shrink: 0; background: #fafbfd;
+  }
+  #lawOverlay .law-page {
+    width: 34px; height: 34px; border-radius: 6px;
+    border: 1.5px solid #d0dae8; background: #fff; color: #445;
+    font-size: 13.5px; font-family: inherit; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+  }
+  #lawOverlay .law-page svg { width: 15px; height: 15px; }
+  #lawOverlay .law-page:hover:not(.disabled):not(.active) { border-color: #4db8c4; color: #1a8090; }
+  #lawOverlay .law-page.active { background: #162352; border-color: #162352; color: #fff; font-weight: 700; }
+  #lawOverlay .law-page.disabled { opacity: 0.35; cursor: default; }
 </style>
 </head>
 <body>
@@ -3332,7 +3442,7 @@
         </svg>
         <span>안전보건<br>경영방침</span>
       </button>
-      <button class="policy-mini">
+      <button class="policy-mini" onclick="openLawSummary()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 3L4 7v5c0 4.5 3.5 8.5 8 9.5 4.5-1 8-5 8-9.5V7l-8-4z"/><path d="M9 12h6M12 9v6"/>
         </svg>
@@ -3960,6 +4070,154 @@
   </div>
 </div>
 
+<!-- ============== 산업안전보건 법령요지 MODAL ============== -->
+<div class="modal-overlay" id="lawOverlay" style="z-index:1003;">
+  <div class="law-modal">
+    <div class="law-header">
+      <div class="law-header-left">
+        <div class="law-header-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#4db8c4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+          </svg>
+        </div>
+        <div>
+          <div class="law-mtitle">산업안전보건 법령요지</div>
+          <div class="law-msubtitle">관련 법령 현황 및 신구법 비교</div>
+        </div>
+      </div>
+      <button class="law-close" onclick="closeModal('lawOverlay')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="law-stats">
+      <div class="law-chip"><div class="law-dot" style="background:#1a6fc4;"></div>일부개정 3건</div>
+      <div class="law-chip"><div class="law-dot" style="background:#c45a1a;"></div>타법개정 4건</div>
+      <div class="law-chip"><div class="law-dot" style="background:#1a8c4a;"></div>제정 1건</div>
+      <div style="margin-left:auto; font-size:13px; color:#889; font-weight:500;">총 9건</div>
+    </div>
+
+    <div class="law-table-wrap">
+      <table class="law-table">
+        <thead>
+          <tr>
+            <th style="width:46px;">No</th>
+            <th style="text-align:left; padding-left:14px;">법령명</th>
+            <th style="width:82px;">제개정구분</th>
+            <th style="width:130px;">소관부처</th>
+            <th style="width:84px;">법령종류</th>
+            <th style="width:96px;">시행일자</th>
+            <th style="width:150px;">시행예정 / 연혁</th>
+            <th style="width:82px;">신구법비교</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>9</td>
+            <td><button class="law-name">산업안전보건법 시행규칙</button></td>
+            <td style="text-align:center;"><span class="law-badge law-badge-partial">일부개정</span></td>
+            <td class="law-ministry" style="text-align:center;">고용노동부</td>
+            <td style="text-align:center; font-size:13px; color:#556;">고용노동부령</td>
+            <td class="law-date">2026-06-01</td>
+            <td class="law-history"><span class="hl">1건</span> / 연혁 <span class="hl">3건</span></td>
+            <td style="text-align:center;"><button class="law-compare">신구법비교</button></td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td><button class="law-name">산업안전보건법</button></td>
+            <td style="text-align:center;"><span class="law-badge law-badge-partial">일부개정</span></td>
+            <td class="law-ministry" style="text-align:center;">고용노동부</td>
+            <td style="text-align:center; font-size:13px; color:#556;">법률</td>
+            <td class="law-date">2026-06-01</td>
+            <td class="law-history"><span class="hl">3건</span> / 연혁 <span class="hl">1건</span></td>
+            <td style="text-align:center;"><button class="law-compare">신구법비교</button></td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td><button class="law-name">중대재해 처벌 등에 관한 법률</button></td>
+            <td style="text-align:center;"><span class="law-badge law-badge-enact">제정</span></td>
+            <td class="law-ministry" style="text-align:center; font-size:12px; line-height:1.4;">고용노동부 외 6개부처</td>
+            <td style="text-align:center; font-size:13px; color:#556;">법률</td>
+            <td class="law-date">2022-01-27</td>
+            <td class="law-history" style="color:#bbb;">0건 / 연혁 0건</td>
+            <td style="text-align:center;"><span class="law-dash">—</span></td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td><button class="law-name">중대재해 처벌 등에 관한 법률 시행령</button></td>
+            <td style="text-align:center;"><span class="law-badge law-badge-other">타법개정</span></td>
+            <td class="law-ministry" style="text-align:center; font-size:12px; line-height:1.4;">고용노동부 외 6개부처</td>
+            <td style="text-align:center; font-size:13px; color:#556;">대통령령</td>
+            <td class="law-date">2025-10-01</td>
+            <td class="law-history" style="color:#bbb;">0건 / 연혁 0건</td>
+            <td style="text-align:center;"><span class="law-dash">—</span></td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td><button class="law-name">폐기물관리법</button></td>
+            <td style="text-align:center;"><span class="law-badge law-badge-other">타법개정</span></td>
+            <td class="law-ministry" style="text-align:center;">기후에너지환경부</td>
+            <td style="text-align:center; font-size:13px; color:#556;">법률</td>
+            <td class="law-date">2026-03-26</td>
+            <td class="law-history"><span class="hl">3건</span> / 연혁 <span class="hl">3건</span></td>
+            <td style="text-align:center;"><button class="law-compare">신구법비교</button></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td><button class="law-name">산업안전보건법 시행령</button></td>
+            <td style="text-align:center;"><span class="law-badge law-badge-other">타법개정</span></td>
+            <td class="law-ministry" style="text-align:center;">고용노동부</td>
+            <td style="text-align:center; font-size:13px; color:#556;">대통령령</td>
+            <td class="law-date">2026-03-24</td>
+            <td class="law-history"><span class="hl">1건</span> / 연혁 <span class="hl">1건</span></td>
+            <td style="text-align:center;"><button class="law-compare">신구법비교</button></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><button class="law-name">산업안전보건기준에 관한 규칙</button></td>
+            <td style="text-align:center;"><span class="law-badge law-badge-partial">일부개정</span></td>
+            <td class="law-ministry" style="text-align:center;">고용노동부</td>
+            <td style="text-align:center; font-size:13px; color:#556;">고용노동부령</td>
+            <td class="law-date">2026-03-02</td>
+            <td class="law-history">0건 / 연혁 <span class="hl">2건</span></td>
+            <td style="text-align:center;"><button class="law-compare">신구법비교</button></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><button class="law-name">119구조ㆍ구급에 관한 법률</button></td>
+            <td style="text-align:center;"><span class="law-badge law-badge-partial">일부개정</span></td>
+            <td class="law-ministry" style="text-align:center;">소방청</td>
+            <td style="text-align:center; font-size:13px; color:#556;">법률</td>
+            <td class="law-date">2025-06-04</td>
+            <td class="law-history" style="color:#bbb;">0건 / 연혁 0건</td>
+            <td style="text-align:center;"><span class="law-dash">—</span></td>
+          </tr>
+          <tr>
+            <td>1</td>
+            <td><button class="law-name">화학물질관리법</button></td>
+            <td style="text-align:center;"><span class="law-badge law-badge-other">타법개정</span></td>
+            <td class="law-ministry" style="text-align:center;">기후에너지환경부</td>
+            <td style="text-align:center; font-size:13px; color:#556;">법률</td>
+            <td class="law-date">2025-10-01</td>
+            <td class="law-history"><span class="hl">1건</span> / 연혁 0건</td>
+            <td style="text-align:center;"><button class="law-compare">신구법비교</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="law-pagination">
+      <button class="law-page disabled">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <button class="law-page active">1</button>
+      <button class="law-page disabled">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ============== AI 현장 상황 정보 MODAL (부스 TopView 블루프린트) ============== -->
 <div class="modal-overlay" id="aiSiteOverlay">
   <div class="modal-box" style="max-width: 1000px;">
@@ -4372,7 +4630,7 @@
 
   // ===== Generic modal control =====
   function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-  ['hrOverlay','msdsOverlay','photoOverlay','evacOverlay','facilityOverlay','contactOverlay','msdsListOverlay','riskOverlay','aiSiteOverlay','envDetailOverlay','processOverlay','issueOverlay','safetyPolicyOverlay'].forEach(id => {
+  ['hrOverlay','msdsOverlay','photoOverlay','evacOverlay','facilityOverlay','contactOverlay','msdsListOverlay','riskOverlay','aiSiteOverlay','envDetailOverlay','processOverlay','issueOverlay','safetyPolicyOverlay','lawOverlay'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('click', e => {
       if (e.target.id === id) closeModal(id);
@@ -4535,6 +4793,7 @@
   function openRisk() { document.getElementById('riskOverlay').classList.add('open'); }
   function openAISite() { document.getElementById('aiSiteOverlay').classList.add('open'); }
   function openSafetyPolicy() { document.getElementById('safetyPolicyOverlay').classList.add('open'); }
+  function openLawSummary() { document.getElementById('lawOverlay').classList.add('open'); }
   function openProcessMgmt() { document.getElementById('processOverlay').classList.add('open'); }
   function openIssueMgmt() { document.getElementById('issueOverlay').classList.add('open'); }
 
