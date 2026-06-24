@@ -9,6 +9,13 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 
+class DetectActionIn(BaseModel):
+    """체크된 감시 대상 한 건 (VLM /analyze 의 detect_actions 항목과 동일 형태)."""
+
+    key: str = Field(examples=["hat_action"])
+    label: str = Field(examples=["안전모 미착용 또는 안전모를 벗는 행동"])
+
+
 class VlmInferRequest(BaseModel):
     """Trigger payload from the kiosk for a connected camera."""
 
@@ -22,12 +29,13 @@ class VlmInferRequest(BaseModel):
     frame_dir: str | None = Field(
         default=None, examples=["/home/ds/Desktop/vlm_test/frames_448_30"]
     )
-    # 키오스크 불안전행동 카드에서 체크된 감시 대상 키. VLM /analyze 의
-    # focus(자연어 문자열) + detect_actions(키+라벨)로 변환되어 전달된다.
-    # 생략/빈 배열이면 4대 행동 전체를 감지한다(기존 동작).
-    focus_keys: list[str] | None = Field(
-        default=None, examples=[["hat_action", "ladder_action"]]
-    )
+    # 키오스크 카드에서 체크된 감시 대상. 프론트가 그대로 채워 보내고, 백엔드는
+    # VLM /analyze 로 그대로 전달한다(서버에 고정 기본값이 없어졌으므로).
+    #   focus          : 자연어 관찰 힌트 (체크된 라벨들을 이은 문자열)
+    #   detect_actions : 감지 대상 {key, label} 목록
+    # 둘 다 생략되면 vlm_client 가 안전상 4대 행동 전체로 폴백한다.
+    focus: str | None = Field(default=None)
+    detect_actions: list[DetectActionIn] | None = Field(default=None)
 
 
 class BehaviorDelta(BaseModel):
