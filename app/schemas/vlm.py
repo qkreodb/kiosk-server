@@ -22,6 +22,12 @@ class VlmInferRequest(BaseModel):
     frame_dir: str | None = Field(
         default=None, examples=["/home/ds/Desktop/vlm_test/frames_448_30"]
     )
+    # 키오스크 불안전행동 카드에서 체크된 감시 대상 키. VLM /analyze 의
+    # focus(자연어 문자열) + detect_actions(키+라벨)로 변환되어 전달된다.
+    # 생략/빈 배열이면 4대 행동 전체를 감지한다(기존 동작).
+    focus_keys: list[str] | None = Field(
+        default=None, examples=[["hat_action", "ladder_action"]]
+    )
 
 
 class BehaviorDelta(BaseModel):

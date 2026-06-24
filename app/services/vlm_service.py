@@ -22,6 +22,7 @@ from app.domain.constants import (
     BEHAVIOR_CATEGORIES,
     CATEGORY_BY_ID,
     VLM_ACTION_KEY_MAP,
+    VLM_DETECT_ACTIONS,
     WARNING_LIGHT_LABEL,
     WARNING_STATE_TO_LED_LEVEL,
     UnsafeBehavior,
@@ -144,17 +145,41 @@ class VlmService:
             logger.warning("[LED] 자동 점등 실패(level=%s): %s", level, exc)
             return {"level": level, "status": "error", "detail": str(exc)}
 
+    @staticmethod
+    def _resolve_focus(
+        focus_keys: list[str] | None,
+    ) -> tuple[str | None, list[dict[str, str]] | None]:
+        """체크된 focus_keys → VLM /analyze 의 (focus 문자열, detect_actions).
+
+        선택된 키에 해당하는 detect_actions 만 추려 감지를 그 행동들로 좁히고,
+        focus 문자열은 라벨을 이어 붙여 프롬프트 강조용으로 보낸다.
+        선택이 없으면 (None, None) → 클라이언트가 4대 행동 전체로 폴백.
+        """
+        if not focus_keys:
+            return None, None
+        keyset = set(focus_keys)
+        selected = [a for a in VLM_DETECT_ACTIONS if a["key"] in keyset]
+        if not selected:
+            return None, None
+        focus_str = ", ".join(a["label"] for a in selected)
+        return focus_str, selected
+
     async def infer(
         self,
         camera_id: str,
         process_code: str | None = None,
         frame_ref: str | None = None,
         frame_dir: str | None = None,
+        focus_keys: list[str] | None = None,
     ) -> VlmInferResponse:
         code = process_code or "PRC-19"
 
         # 1) Call the VLM Server's /analyze (or offline mock).
-        vlm = await self._vlm.analyze(frame_dir)
+        #    체크된 감시 대상이 있으면 focus/detect_actions 로 좁혀 보낸다.
+        focus_str, detect_actions = self._resolve_focus(focus_keys)
+        vlm = await self._vlm.analyze(
+            frame_dir, focus=focus_str, detect_actions=detect_actions
+        )
 
         # 2) BRANCH A — TTS -> speaker.
         #    재생은 백그라운드 스레드(fire-and-forget)로 — 오디오 재생 시간 동안

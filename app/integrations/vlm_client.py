@@ -87,20 +87,30 @@ class VlmClient:
         self._timeout = settings.vlm_timeout_seconds
         self._force_mock = settings.vlm_force_mock
 
-    async def analyze(self, dir_path: str | None = None) -> VlmResult:
+    async def analyze(
+        self,
+        dir_path: str | None = None,
+        focus: str | None = None,
+        detect_actions: list[dict[str, str]] | None = None,
+    ) -> VlmResult:
         """Call the VLM Server's /analyze; on any failure, return a stub result.
 
         ``dir_path`` is a directory on the *Jetson* filesystem holding 15~30
         frames. When omitted, the configured ``vlm_frame_dir`` is used.
+        ``focus`` is an optional natural-language hint (체크된 감시 대상 라벨)
+        appended to the VLM prompt. ``detect_actions`` narrows detection to the
+        selected behaviors; when omitted, all 4 categories are used.
         """
         if self._force_mock:
             logger.info("VLM forced mock mode; skipping network call.")
             return self._mock_result()
 
-        payload = {
+        payload: dict = {
             "dir_path": dir_path or self._frame_dir,
-            "detect_actions": VLM_DETECT_ACTIONS,
+            "detect_actions": detect_actions or VLM_DETECT_ACTIONS,
         }
+        if focus:
+            payload["focus"] = focus
         try:
             async with httpx.AsyncClient(timeout=self._timeout) as client:
                 resp = await client.post(self._url, json=payload)
