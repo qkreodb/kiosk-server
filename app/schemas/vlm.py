@@ -9,33 +9,16 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 
-class DetectActionIn(BaseModel):
-    """체크된 감시 대상 한 건 (VLM /analyze 의 detect_actions 항목과 동일 형태)."""
-
-    key: str = Field(examples=["hat_action"])
-    label: str = Field(examples=["안전모 미착용 또는 안전모를 벗는 행동"])
-
-
 class VlmInferRequest(BaseModel):
     """Trigger payload from the kiosk for a connected camera."""
 
     camera_id: str = Field(default="CAM-03", examples=["CAM-03"])
     process_code: str | None = Field(default=None, examples=["PRC-19"])
-    # Optional override frame reference; when omitted the server uses the latest
-    # Shared Dir frame for the camera.
     frame_ref: str | None = Field(default=None)
     # Jetson 파일시스템의 프레임 폴더 절대 경로. 생략 시 설정값(KIOSK_VLM_FRAME_DIR).
-    # 주로 테스트/특정 폴더 지정용 오버라이드.
     frame_dir: str | None = Field(
         default=None, examples=["/home/ds/Desktop/vlm_test/frames_448_30"]
     )
-    # 키오스크 카드에서 체크된 감시 대상. 프론트가 그대로 채워 보내고, 백엔드는
-    # VLM /analyze 로 그대로 전달한다(서버에 고정 기본값이 없어졌으므로).
-    #   focus          : 자연어 관찰 힌트 (체크된 라벨들을 이은 문자열)
-    #   detect_actions : 감지 대상 {key, label} 목록
-    # 둘 다 생략되면 vlm_client 가 안전상 4대 행동 전체로 폴백한다.
-    focus: str | None = Field(default=None)
-    detect_actions: list[DetectActionIn] | None = Field(default=None)
 
 
 class BehaviorDelta(BaseModel):

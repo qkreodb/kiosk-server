@@ -23,8 +23,4 @@ async def infer(
         process_code=req.process_code,
         frame_ref=req.frame_ref,
         frame_dir=req.frame_dir,
-        focus=req.focus,
-        detect_actions=(
-            [a.model_dump() for a in req.detect_actions] if req.detect_actions else None
-        ),
     )

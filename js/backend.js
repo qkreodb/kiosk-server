@@ -300,18 +300,7 @@
     document.getElementById('cctvOverlay').classList.add('open');
   };
 
-  /* ===================== 감시 대상(focus) / VLM / TTS ===================== */
-  window.__vlmFocusKeys = [];
-  function collectFocusKeys() {
-    return Array.from(document.querySelectorAll('.bhm-focus-cb:checked')).map(cb => cb.dataset.focusKey).filter(Boolean);
-  }
-  function collectDetectActions() {
-    return Array.from(document.querySelectorAll('.bhm-focus-cb:checked')).map(cb => ({
-      key: cb.dataset.focusKey,
-      label: cb.dataset.focusLabel || (cb.closest('.bhm-focus')?.querySelector('.bhm-focus-text')?.textContent || '').trim(),
-    })).filter(a => a.key);
-  }
-  window.onFocusToggle = function () { window.__vlmFocusKeys = collectFocusKeys(); };
+  /* ===================== VLM / TTS ===================== */
 
   window.showToast = function (msg, kind) {
     let el = document.getElementById('kioskToast');
@@ -357,10 +346,6 @@
     const overlay = document.getElementById('cctvVlmOverlay');
     if (!btn || !overlay) return;
 
-    const detectActions = collectDetectActions();
-    if (!detectActions.length) { window.showToast('감시할 불안전행동을 1개 이상 선택하세요', 'warn'); return; }
-    const focus = detectActions.map(a => a.label).join(', ');
-
     btn.disabled = true;
     btn.textContent = '분석 중…';
     try {
@@ -371,7 +356,7 @@
       const resp = await fetch((window.__API_BASE || 'http://localhost:8080') + '/vlm/infer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ camera_id: camId, process_code: processCode, focus: focus, detect_actions: detectActions }),
+        body: JSON.stringify({ camera_id: camId, process_code: processCode }),
       });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       const d = await resp.json();
@@ -536,9 +521,6 @@
   async function init() {
     document.body.appendChild(badge);
     setConn(false, '연결 중…');
-
-    // 감시 대상(focus) 전역 상태 동기화 (체크박스 초기값)
-    window.onFocusToggle();
 
     // 라이브 센서 배지 + 폴링 시작
     ensureLiveSensorBadge();

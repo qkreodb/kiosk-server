@@ -1,23 +1,27 @@
-"""Client for the external VLM Server's ``/analyze`` endpoint (PORT 8000).
+"""Client for the external VLM Server's ``/analyze/fist`` endpoint (PORT 8000).
 
 IMPORTANT: this is only a *client*. The VLM itself (Qwen2.5-VL on the Jetson
 Thor) is NOT implemented here. When the real server is offline — or when
 ``KIOSK_VLM_FORCE_MOCK`` is set — we fall back to a deterministic stub so the
 kiosk's /vlm/infer pipeline always works in local dev.
 
-The server runs a VLM→LLM 2-stage pipeline and returns structured JSON::
+Request body::
+
+    {"dir_path": "/path/to/frames"}
+
+Response::
 
     {
-      "request_id": "a1b2c3d4",
-      "action": "hat_action,ladder_action",   # comma-separated detected keys
-      "tts_message": "안전모를 착용하고 사다리 작업을 중단하십시오",
-      "vlm_description": "...장면 설명 원문...",
-      "elapsed_sec": 3.456
+      "request_id": "string",
+      "description": "string",
+      "action": "string",
+      "tts_message": "string",
+      "elapsed_sec": 0
     }
 
 ``action`` keys map 1:1 to the kiosk's unsafe-behavior categories via
-``VLM_ACTION_KEY_MAP`` (see app/domain/constants.py), so no fragile keyword
-matching on free text is needed.
+``VLM_ACTION_KEY_MAP`` (see app/domain/constants.py).
+Used fields: ``action`` (count +1), ``tts_message`` (TTS 알림).
 """
 
 from __future__ import annotations
@@ -29,14 +33,14 @@ from pydantic import BaseModel, Field
 
 from app.core.config import Settings
 from app.core.logging import get_logger
-from app.domain.constants import VLM_ACTION_KEY_MAP, VLM_DETECT_ACTIONS
+from app.domain.constants import VLM_ACTION_KEY_MAP
 
 logger = get_logger(__name__)
 
-# Response keys exactly as the VLM Server's /analyze emits them.
+# Response keys exactly as the VLM Server's /analyze/fist emits them.
 KEY_ACTION = "action"
 KEY_TTS = "tts_message"
-KEY_DESCRIPTION = "vlm_description"
+KEY_DESCRIPTION = "description"
 
 
 class VlmResult(BaseModel):
@@ -90,27 +94,17 @@ class VlmClient:
     async def analyze(
         self,
         dir_path: str | None = None,
-        focus: str | None = None,
-        detect_actions: list[dict[str, str]] | None = None,
     ) -> VlmResult:
-        """Call the VLM Server's /analyze; on any failure, return a stub result.
+        """Call the VLM Server's /analyze/fist; on any failure, return a stub result.
 
-        ``dir_path`` is a directory on the *Jetson* filesystem holding 15~30
-        frames. When omitted, the configured ``vlm_frame_dir`` is used.
-        ``focus`` is an optional natural-language hint (체크된 감시 대상 라벨)
-        appended to the VLM prompt. ``detect_actions`` narrows detection to the
-        selected behaviors; when omitted, all 4 categories are used.
+        ``dir_path`` is a directory on the *Jetson* filesystem holding frames.
+        When omitted, the configured ``vlm_frame_dir`` is used.
         """
         if self._force_mock:
             logger.info("VLM forced mock mode; skipping network call.")
             return self._mock_result()
 
-        payload: dict = {
-            "dir_path": dir_path or self._frame_dir,
-            "detect_actions": detect_actions or VLM_DETECT_ACTIONS,
-        }
-        if focus:
-            payload["focus"] = focus
+        payload: dict = {"dir_path": dir_path or self._frame_dir}
         try:
             async with httpx.AsyncClient(timeout=self._timeout) as client:
                 resp = await client.post(self._url, json=payload)

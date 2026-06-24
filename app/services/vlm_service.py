@@ -150,17 +150,11 @@ class VlmService:
         process_code: str | None = None,
         frame_ref: str | None = None,
         frame_dir: str | None = None,
-        focus: str | None = None,
-        detect_actions: list[dict[str, str]] | None = None,
     ) -> VlmInferResponse:
         code = process_code or "PRC-19"
 
-        # 1) Call the VLM Server's /analyze (or offline mock).
-        #    프론트가 체크한 항목을 focus(관찰 힌트) + detect_actions(키+라벨)로
-        #    그대로 전달한다. 둘 다 없으면 vlm_client 가 안전상 전체로 폴백.
-        vlm = await self._vlm.analyze(
-            frame_dir, focus=focus, detect_actions=detect_actions
-        )
+        # 1) Call the VLM Server's /analyze/fist (or offline mock).
+        vlm = await self._vlm.analyze(frame_dir)
 
         # 2) BRANCH A — TTS -> speaker.
         #    재생은 백그라운드 스레드(fire-and-forget)로 — 오디오 재생 시간 동안
