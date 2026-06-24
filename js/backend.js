@@ -1,0 +1,550 @@
+/* =====================================================================
+ * backend.js — 백엔드(PORT 8080) 연동 계층
+ * ---------------------------------------------------------------------
+ * 디자인(app.js)은 정적/더미 동작만 담고, 실제 서버 연동 기능은 여기에 모은다.
+ * app.js 다음에 로드되어 일부 함수(openCCTV/openEnvDetail 등)를 실서버 버전으로
+ * 덮어쓴다(window 재할당). 인라인 onclick 에서 호출되는 함수는 window 에 노출한다.
+ *
+ *   GET  /space-name            → 신호등 행렬 + 공정 드롭다운
+ *   POST /behavior/reset        → 카운트 0 리셋(경광등 소등)
+ *   POST /vlm/infer             → CCTV [분석] 결과 오버레이
+ *   POST /tts/demo              → CCTV [TTS] 데모 재생
+ *   POST /led/trigger           → 신호등 헤더(관심/주의/경고/위험) 경광등 점등
+ *   GET  /sensor/temp-humid     → 온습도 라이브
+ *   GET  /sensor/watch          → 스마트워치 심박 라이브
+ *   GET  /cctv/live             → 중앙 전시홀 IP카메라 RTSP→MJPEG 중계
+ * ===================================================================== */
+(function () {
+  'use strict';
+
+  // API base (파일 직접 열기, 또는 ?api=http://... 쿼리로 오버라이드 가능)
+  const API = (function () {
+    const qs = new URLSearchParams(location.search);
+    if (qs.get('api')) return qs.get('api').replace(/\/$/, '');
+    if (location.protocol === 'file:' || !location.hostname) return 'http://localhost:8080';
+    return location.protocol + '//' + location.hostname + ':8080';
+  })();
+  window.__API_BASE = API;
+
+  function sensorApi() { return window.__API_BASE || 'http://localhost:8080'; }
+  async function fetchJson(path) {
+    const resp = await fetch(sensorApi() + path, { cache: 'no-store' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    return await resp.json();
+  }
+
+  /* ===================== 라이브 센서 (온습도 / 심박) ===================== */
+  const liveSensors = { tempHumid: null, watch: null };
+
+  async function refreshLiveSensors() {
+    const [th, watch] = await Promise.allSettled([
+      fetchJson('/sensor/temp-humid'),
+      fetchJson('/sensor/watch')
+    ]);
+    if (th.status === 'fulfilled') liveSensors.tempHumid = th.value;
+    if (watch.status === 'fulfilled') liveSensors.watch = watch.value;
+    updateLiveSensorBadge();
+  }
+  function latestTempHumidReading() {
+    const readings = liveSensors.tempHumid && liveSensors.tempHumid.readings;
+    return Array.isArray(readings) && readings.length ? readings[0] : null;
+  }
+  function latestWatchWorkers() {
+    const workers = liveSensors.watch && liveSensors.watch.workers;
+    return Array.isArray(workers) ? workers : [];
+  }
+  function heartClass(bpm) {
+    if (bpm >= 130) return 'danger';
+    if (bpm >= 110) return 'warn';
+    return '';
+  }
+  function heartStatus(bpm, apiStatus) {
+    if (apiStatus) return apiStatus;
+    if (bpm >= 130) return 'DANGER';
+    if (bpm >= 110) return 'CAUTION';
+    return 'NORMAL';
+  }
+  function isCentralTempHumid(sensorId, zone) {
+    return sensorId === 'TH-03' || String(zone || '').includes('중앙 전시홀');
+  }
+  function isCentralWatch(watchId, proc) {
+    return watchId === 'WATCH-03' || String(proc || '').includes('중앙 전시홀');
+  }
+  function dummyTempHumid(sensorId) {
+    const idx = Number(String(sensorId || '').replace(/\D/g, '')) || 1;
+    return {
+      temp: (25.5 + idx * 0.4 + Math.random() * 1.8).toFixed(1),
+      humidity: Math.floor(49 + idx * 2 + Math.random() * 8)
+    };
+  }
+  function dummyHeartRate(watchId) {
+    const idx = Number(String(watchId || '').replace(/\D/g, '')) || 1;
+    return 68 + ((idx * 9) % 32) + Math.floor(Math.random() * 8);
+  }
+  function renderWatchWorkers(workers) {
+    const grid = document.getElementById('hrGrid');
+    if (!grid) return;
+    if (!workers.length) {
+      grid.innerHTML = '<div class="watch-none">No live watch data</div>';
+      return;
+    }
+    grid.innerHTML = workers.map((w, i) => {
+      const bpm = Number(w.hr || 0);
+      const cls = heartClass(bpm);
+      const name = w.name || ('Worker ' + String(i + 1));
+      const watchId = w.watch_id || ('WATCH-' + String(i + 1).padStart(2, '0'));
+      const meta = [watchId, w.device || 'Galaxy Watch', w.zone].filter(Boolean).join(' · ');
+      return `
+        <div class="hr-worker ${cls}">
+          <div class="hr-avatar">${String(name).charAt(0)}</div>
+          <div class="hr-worker-info">
+            <div class="hr-worker-name">${name}</div>
+            <div class="hr-worker-meta">${meta}</div>
+            <span class="hr-status-badge">${heartStatus(bpm, w.status)}</span>
+          </div>
+          <div style="text-align:right;">
+            <div class="hr-bpm">
+              <svg class="hr-pulse-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:inherit;"><path d="M3 12h4l2 5 4-12 2 7h6"/></svg>
+              <span class="hr-bpm-val">${bpm || '-'}</span><span class="hr-bpm-unit">BPM</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function ensureLiveSensorBadge() {
+    let badge = document.getElementById('liveSensorBadge');
+    if (badge) return badge;
+    const host = document.querySelector('.site-env-card .behavior-head-right') || document.querySelector('.site-env-card');
+    if (!host) return null;
+    badge = document.createElement('div');
+    badge.id = 'liveSensorBadge';
+    badge.className = 'live-sensor-badge';
+    badge.innerHTML = '<span class="lsb-temp">TEMP --.-°C</span><span class="lsb-hum">HUM --.-%</span><span class="lsb-hr">HR -- BPM</span>';
+    host.insertBefore(badge, host.firstChild);
+    return badge;
+  }
+  function updateLiveSensorBadge() {
+    const badge = ensureLiveSensorBadge();
+    if (!badge) return;
+    const th = latestTempHumidReading();
+    const workers = latestWatchWorkers();
+    const hr = workers.length ? Number(workers[0].hr || 0) : 0;
+    const tempText = th ? Number(th.temp).toFixed(1) : '--.-';
+    const humText = th ? Number(th.humidity).toFixed(1) : '--.-';
+    const hrText = hr ? String(hr) : '--';
+    badge.innerHTML =
+      '<span class="lsb-temp">TEMP ' + tempText + '°C</span>' +
+      '<span class="lsb-hum">HUM ' + humText + '%</span>' +
+      '<span class="lsb-hr">HR ' + hrText + ' BPM</span>';
+  }
+
+  /* 온습도 센서 상세(라이브) — app.js 더미 버전 덮어쓰기 */
+  window.openEnvDetail = async function (sensorId, zone) {
+    const sub = document.getElementById('envDetailSub');
+    if (sub) sub.textContent = sensorId + ' · ' + zone;
+    setText('envDetailTemp', '--<small>°C</small>', true);
+    setText('envDetailHum', '--<small>%</small>', true);
+    document.getElementById('envDetailOverlay').classList.add('open');
+    if (!isCentralTempHumid(sensorId, zone)) {
+      const dummy = dummyTempHumid(sensorId);
+      setText('envDetailTemp', dummy.temp + '<small>°C</small>', true);
+      setText('envDetailHum', dummy.humidity + '<small>%</small>', true);
+      return;
+    }
+    try { await refreshLiveSensors(); } catch (_) { /* 모달은 유지 */ }
+    const reading = latestTempHumidReading();
+    if (!reading) return;
+    if (sub) sub.textContent = sensorId + ' · ' + zone + ' · LIVE';
+    setText('envDetailTemp', Number(reading.temp).toFixed(1) + '<small>°C</small>', true);
+    setText('envDetailHum', Number(reading.humidity).toFixed(1) + '<small>%</small>', true);
+  };
+
+  /* 심박 그룹(라이브) — app.js 더미 버전 덮어쓰기 */
+  window.openHeartRate = async function (region, count) {
+    const sub = document.getElementById('hrSub');
+    const grid = document.getElementById('hrGrid');
+    if (sub) sub.textContent = region + ' · Live Galaxy Watch';
+    if (grid) grid.innerHTML = '<div class="watch-none">Loading live watch data...</div>';
+    document.getElementById('hrOverlay').classList.add('open');
+    try {
+      await refreshLiveSensors();
+      const live = latestWatchWorkers()[0] || null;
+      const n = Math.min(count || 5, 8);
+      const names = ['이*학', '전*조', '김*수', '박*후', '최*재', '정*진', '강*준', '윤*성'];
+      const zones = ['부스 A', '부스 C', '중앙 전시홀', '부스 B', '세미나실', '중앙 통로', '부스 D', '하역장'];
+      const workers = Array.from({ length: n }, (_, i) => {
+        const watch = 'WATCH-' + String(i + 1).padStart(2, '0');
+        if (watch === 'WATCH-03' && live) {
+          return { watch_id: watch, name: names[i], hr: live.hr, status: live.status, zone: zones[i], device: live.device || 'Galaxy Watch' };
+        }
+        const bpm = dummyHeartRate(watch);
+        return { watch_id: watch, name: names[i], hr: bpm, status: heartStatus(bpm), zone: zones[i], device: 'Galaxy Watch' };
+      });
+      renderWatchWorkers(workers);
+    } catch (e) {
+      if (grid) grid.innerHTML = '<div class="watch-none">Watch API unavailable</div>';
+    }
+  };
+
+  /* 심박 개인(라이브) — app.js 더미 버전 덮어쓰기 */
+  window.openWatchWorker = async function (name, watchId, proc) {
+    const sub = document.getElementById('hrSub');
+    const grid = document.getElementById('hrGrid');
+    if (sub) sub.textContent = proc + ' · ' + name;
+    if (!isCentralWatch(watchId, proc)) {
+      const bpm = dummyHeartRate(watchId);
+      if (grid) grid.innerHTML = workerCard(name || 'Worker', watchId, 'Galaxy Watch', proc, bpm, heartStatus(bpm), heartClass(bpm));
+      document.getElementById('hrOverlay').classList.add('open');
+      return;
+    }
+    if (grid) grid.innerHTML = '<div class="watch-none">Loading live watch data...</div>';
+    document.getElementById('hrOverlay').classList.add('open');
+    try {
+      await refreshLiveSensors();
+      const worker = latestWatchWorkers()[0] || null;
+      if (!worker) { if (grid) grid.innerHTML = '<div class="watch-none">No live watch data</div>'; return; }
+      const bpm = Number(worker.hr || 0);
+      if (grid) grid.innerHTML = workerCard(
+        name || worker.name || 'Worker',
+        watchId || worker.watch_id || 'WATCH-03',
+        worker.device || 'Galaxy Watch',
+        proc || worker.zone || '',
+        bpm || '-', heartStatus(bpm, worker.status), heartClass(bpm));
+    } catch (e) {
+      if (grid) grid.innerHTML = '<div class="watch-none">Watch API unavailable</div>';
+    }
+  };
+  function workerCard(name, watchId, device, proc, bpm, status, cls) {
+    return `
+      <div class="hr-worker ${cls}" style="grid-column:1 / 3;">
+        <div class="hr-avatar">${String(name).charAt(0)}</div>
+        <div class="hr-worker-info">
+          <div class="hr-worker-name">${name}</div>
+          <div class="hr-worker-meta">${[watchId, device, proc].filter(Boolean).join(' · ')}</div>
+          <span class="hr-status-badge">${status}</span>
+        </div>
+        <div style="text-align:right;">
+          <div class="hr-bpm">
+            <svg class="hr-pulse-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 5 4-12 2 7h6"/></svg>
+            <span class="hr-bpm-val">${bpm}</span><span class="hr-bpm-unit">BPM</span>
+          </div>
+        </div>
+      </div>`;
+  }
+  function setText(id, html, asHtml) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (asHtml) el.innerHTML = html; else el.textContent = html;
+  }
+
+  /* ===================== CCTV (라이브 스트림 포함) ===================== */
+  function cctvLiveSrc() { return (window.__API_BASE || 'http://localhost:8080') + '/cctv/live?ts=' + Date.now(); }
+  function isCentralCctv(region) {
+    return String(region || '').includes('중앙 전시홀') || String(region || '').includes('Central Hall');
+  }
+
+  window.openCCTV = function () {
+    const frame = document.getElementById('cctvFrame');
+    const image = document.getElementById('cctvImage');
+    if (image) { image.src = ''; image.style.display = 'none'; }
+    if (frame) { frame.style.display = 'block'; frame.src = cctvSrc(true); }
+    document.getElementById('cctvOverlay').classList.add('open');
+  };
+  window.closeCCTV = function () {
+    document.querySelectorAll('.cctv-btn-item').forEach(b => b.classList.remove('monitoring'));
+    document.getElementById('cctvOverlay').classList.remove('open');
+    const frame = document.getElementById('cctvFrame');
+    const image = document.getElementById('cctvImage');
+    if (frame) frame.src = '';
+    if (image) image.src = '';
+    const vlm = document.getElementById('cctvVlmOverlay');
+    if (vlm) vlm.classList.remove('show');
+  };
+  window.switchCam = function (el, locName, locProc) {
+    document.querySelectorAll('.cctv-cam-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('cctvLocName').textContent = locName;
+    document.getElementById('cctvLocProc').textContent = locProc;
+    const frame = document.getElementById('cctvFrame');
+    const image = document.getElementById('cctvImage');
+    if (image) { image.src = ''; image.style.display = 'none'; }
+    if (frame) { frame.style.display = 'block'; frame.src = cctvSrc(true); }
+  };
+  window.openCCTVFor = function (region) {
+    document.getElementById('cctvHeadSub').textContent = region + ' · 실시간';
+    document.getElementById('cctvLocName').textContent = region + ' CCTV';
+    document.getElementById('cctvLocProc').textContent = region + ' · 작업 현장';
+    const frame = document.getElementById('cctvFrame');
+    const image = document.getElementById('cctvImage');
+    const vlm = document.getElementById('cctvVlmOverlay');
+    if (vlm) vlm.classList.remove('show');
+    if (isCentralCctv(region) && image) {
+      // 중앙 전시홀: IP 카메라 RTSP 실시간 영상을 서버 MJPEG 중계로 송출
+      if (frame) { frame.src = ''; frame.style.display = 'none'; }
+      image.style.display = 'block';
+      image.src = cctvLiveSrc();
+    } else {
+      if (image) { image.src = ''; image.style.display = 'none'; }
+      if (frame) { frame.style.display = 'block'; frame.src = cctvSrc(true); }
+    }
+    document.getElementById('cctvOverlay').classList.add('open');
+  };
+
+  /* ===================== 감시 대상(focus) / VLM / TTS ===================== */
+  window.__vlmFocusKeys = [];
+  function collectFocusKeys() {
+    return Array.from(document.querySelectorAll('.bhm-focus-cb:checked')).map(cb => cb.dataset.focusKey).filter(Boolean);
+  }
+  function collectDetectActions() {
+    return Array.from(document.querySelectorAll('.bhm-focus-cb:checked')).map(cb => ({
+      key: cb.dataset.focusKey,
+      label: cb.dataset.focusLabel || (cb.closest('.bhm-focus')?.querySelector('.bhm-focus-text')?.textContent || '').trim(),
+    })).filter(a => a.key);
+  }
+  window.onFocusToggle = function () { window.__vlmFocusKeys = collectFocusKeys(); };
+
+  window.showToast = function (msg, kind) {
+    let el = document.getElementById('kioskToast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'kioskToast';
+      el.className = 'kiosk-toast';
+      document.body.appendChild(el);
+    }
+    el.className = 'kiosk-toast ' + (kind || 'warn');
+    el.textContent = msg;
+    requestAnimationFrame(() => el.classList.add('show'));
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), 2600);
+  };
+
+  window.playTtsDemo = async function () {
+    const btn = document.getElementById('cctvTtsBtn');
+    if (!btn) return;
+    btn.disabled = true;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/></svg> 재생 중…';
+    try {
+      const resp = await fetch((window.__API_BASE || 'http://localhost:8080') + '/tts/demo', { method: 'POST' });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      await resp.json();
+      btn.style.borderColor = 'var(--green)';
+      btn.style.color = 'var(--green)';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 완료';
+      setTimeout(resetTtsBtn, 1500);
+    } catch (e) {
+      resetTtsBtn();
+    }
+    function resetTtsBtn() {
+      btn.style.borderColor = '';
+      btn.style.color = '';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg> TTS';
+      btn.disabled = false;
+    }
+  };
+
+  window.analyzeCurrentCam = async function () {
+    const btn = document.getElementById('cctvAnalyzeBtn');
+    const overlay = document.getElementById('cctvVlmOverlay');
+    if (!btn || !overlay) return;
+
+    const detectActions = collectDetectActions();
+    if (!detectActions.length) { window.showToast('감시할 불안전행동을 1개 이상 선택하세요', 'warn'); return; }
+    const focus = detectActions.map(a => a.label).join(', ');
+
+    btn.disabled = true;
+    btn.textContent = '분석 중…';
+    try {
+      const camEl = document.querySelector('.cctv-cam-chip.active .cctv-cam-id');
+      const camId = camEl ? camEl.textContent.trim() : 'CAM-03';
+      const processCode = (window.currentProcessCode && window.currentProcessCode()) || '';
+
+      const resp = await fetch((window.__API_BASE || 'http://localhost:8080') + '/vlm/infer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ camera_id: camId, process_code: processCode, focus: focus, detect_actions: detectActions }),
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const d = await resp.json();
+
+      document.getElementById('vlmDetection').textContent = d.detection || '— (위험행동 미감지)';
+      document.getElementById('vlmWarning').textContent = d.warning_text || '—';
+      const wl = d.warning_light || {};
+      const ledTxt = wl.led && wl.led.status ? ' · LED ' + (wl.led.status === 'sent' ? '점등' : wl.led.status) : '';
+      document.getElementById('vlmLight').textContent = (wl.label || '—') + (wl.trigger_count != null ? ' (누적 ' + wl.trigger_count + '회)' : '') + ledTxt;
+      const tts = d.tts || {};
+      document.getElementById('vlmTts').textContent = {
+        synthesized: '🔊 음성 안내 재생 중',
+        stubbed: '🔊 음성 안내 재생 중(스텁)',
+        skipped: '경고문 없음 — 미재생',
+        failed: '재생 실패: ' + (tts.detail || ''),
+      }[tts.status] || (tts.status || '—');
+      overlay.classList.add('show');
+      hydrateMatrix(processCode).catch(() => {});
+    } catch (e) {
+      console.error('[VLM 분석] 실패:', e);
+      document.getElementById('vlmDetection').textContent = '분석 실패: ' + e.message;
+      document.getElementById('vlmWarning').textContent = '백엔드 연결을 확인하세요';
+      document.getElementById('vlmLight').textContent = '—';
+      document.getElementById('vlmTts').textContent = '—';
+      overlay.classList.add('show');
+      window.showToast('VLM 분석 실패: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg> 분석';
+    }
+  };
+
+  /* ===================== 신호등 행렬 / 공정 / 경광등 ===================== */
+  function countToLevel(count) {
+    if (count >= 4) return 3;   // 위험
+    if (count >= 3) return 2;   // 경고
+    if (count >= 2) return 1;   // 주의
+    if (count >= 1) return 0;   // 관심
+    return -1;                  // 0회 소등
+  }
+
+  async function hydrateMatrix(processCode) {
+    const path = '/space-name' + (processCode ? '?process_code=' + encodeURIComponent(processCode) : '');
+    const resp = await fetch(API + path, { cache: 'no-store' });
+    if (!resp.ok) throw new Error('GET /space-name → ' + resp.status);
+    const data = await resp.json();
+    const rows = document.querySelectorAll('#bhMatrix .bh-matrix-row');
+    if (Array.isArray(data.behaviors)) {
+      data.behaviors.forEach((b, idx) => {
+        const row = rows[idx];
+        if (!row) return;
+        const level = countToLevel(b.count);
+        const lamps = row.querySelectorAll('.bhm-lamp');
+        lamps.forEach(l => l.classList.remove('on'));
+        if (lamps[level]) lamps[level].classList.add('on');
+        row.dataset.active = String(level);
+      });
+    }
+    return data;
+  }
+  window.hydrateMatrix = hydrateMatrix;
+
+  // 현재 선택된 공정 코드 (커스텀 드롭다운: 활성 .bps-option)
+  function currentProcessCode() {
+    const opt = document.querySelector('#bhProcDropdown .bps-option.active');
+    if (!opt) return '';
+    if (opt.dataset.code) return opt.dataset.code;
+    const v = opt.dataset.value || opt.textContent || '';
+    const m = /(PRC-\d+)/i.exec(v);
+    return m ? m[1] : v.trim();
+  }
+  window.currentProcessCode = currentProcessCode;
+
+  // /space-name 의 processes(실제 DB 공정 목록)로 커스텀 드롭다운을 채운다.
+  async function populateProcesses() {
+    const dd = document.getElementById('bhProcDropdown');
+    const label = document.getElementById('bhProcLabel');
+    if (!dd) return;
+    const resp = await fetch(API + '/space-name', { cache: 'no-store' });
+    if (!resp.ok) throw new Error('GET /space-name → ' + resp.status);
+    const data = await resp.json();
+    const procs = Array.isArray(data.processes) ? data.processes : [];
+    if (!procs.length) return; // 비어 있으면 기존(하드코딩) 옵션 유지
+    const current = (data.process && data.process.code) || procs[0].code;
+    dd.innerHTML = '';
+    procs.forEach((p, i) => {
+      const li = document.createElement('li');
+      const active = String(p.code) === String(current);
+      li.className = 'bps-option' + (active ? ' active' : '');
+      li.dataset.value = (p.label || p.name || p.code);
+      li.dataset.code = p.code;
+      li.dataset.cctv = String((i % 3) + 1);
+      li.textContent = p.label || p.name || p.code;
+      li.setAttribute('onclick', 'bhPickProc(this)');
+      dd.appendChild(li);
+      if (active && label) label.textContent = li.textContent;
+    });
+  }
+
+  // 초기화 버튼: UI 즉시 소등 + 백엔드 count 0 리셋
+  window.resetBehavior = async function () {
+    const processCode = currentProcessCode();
+    document.querySelectorAll('#bhMatrix .bh-matrix-row').forEach(row => {
+      row.querySelectorAll('.bhm-lamp').forEach(l => l.classList.remove('on'));
+      row.dataset.active = '-1';
+    });
+    try {
+      await fetch(API + '/behavior/reset?process_code=' + encodeURIComponent(processCode), { method: 'POST' });
+    } catch (_) { /* 오프라인이면 무시 */ }
+  };
+
+  // 신호등 헤더 칸(관심/주의/경고/위험) 클릭 → 실물 경광등 점등
+  const LED_LABEL = { interest: '관심', caution: '주의', warning: '경고', danger: '위험' };
+  window.triggerLed = async function (level, btn) {
+    const allBtns = Array.from(document.querySelectorAll('.bhm-led-btn'));
+    allBtns.forEach(b => { b.disabled = true; });
+    if (btn) btn.classList.add('fired');
+    let cooldown = 1200;
+    try {
+      const resp = await fetch(API + '/led/trigger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ level: level }),
+      });
+      const name = LED_LABEL[level] || level;
+      if (!resp.ok) {
+        let detail = 'HTTP ' + resp.status;
+        try { const err = await resp.json(); if (err && err.detail) detail = err.detail; } catch (_) {}
+        throw new Error(detail);
+      }
+      const d = await resp.json();
+      if (d.status === 'sent') {
+        cooldown = ((d.signal && d.signal.duration_ms) || 5000) + 300;
+        setConn(true, '경광등 ' + name + ' 점등 중…');
+      } else if (d.status === 'simulated') {
+        setConn(true, '경광등 ' + name + ' · 시뮬(장치 없음)');
+      } else {
+        setConn(true, '경광등 ' + name + ' · dry-run');
+      }
+    } catch (e) {
+      setConn(false, '경광등 실패: ' + e.message);
+    } finally {
+      setTimeout(() => {
+        allBtns.forEach(b => { b.disabled = false; });
+        if (btn) btn.classList.remove('fired');
+      }, cooldown);
+    }
+  };
+
+  /* ===================== 연결 상태 배지 ===================== */
+  const badge = document.createElement('div');
+  badge.id = 'connBadge';
+  badge.className = 'conn-badge';
+  function setConn(ok, msg) {
+    const col = ok ? '#16A34A' : '#DC2626';
+    badge.innerHTML =
+      '<span class="conn-dot" style="background:' + col + ';box-shadow:0 0 8px ' + col + ';"></span>' +
+      (ok ? '백엔드 연결됨' : '백엔드 오프라인') + ' · :8080' + (msg ? ' · ' + msg : '');
+  }
+
+  /* ===================== 초기화 ===================== */
+  async function init() {
+    document.body.appendChild(badge);
+    setConn(false, '연결 중…');
+
+    // 감시 대상(focus) 전역 상태 동기화 (체크박스 초기값)
+    window.onFocusToggle();
+
+    // 라이브 센서 배지 + 폴링 시작
+    ensureLiveSensorBadge();
+    refreshLiveSensors().catch(() => updateLiveSensorBadge());
+    setInterval(() => refreshLiveSensors().catch(() => updateLiveSensorBadge()), 5000);
+
+    // 공정 드롭다운을 실제 DB 목록으로 채움(실패해도 하드코딩 옵션 유지)
+    try { await populateProcesses(); }
+    catch (e) { console.warn('[공정 목록] 동적 로드 실패, 기본 옵션 사용:', e.message); }
+
+    // 신호등 행렬 초기 동기화
+    try { await hydrateMatrix(currentProcessCode()); setConn(true, '신호등 동기화 완료'); }
+    catch (e) { setConn(false, e.message); }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();

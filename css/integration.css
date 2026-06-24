@@ -1,0 +1,198 @@
+/* =====================================================================
+ * integration.css — 백엔드 연동 기능 위젯 스타일
+ * ---------------------------------------------------------------------
+ * 디자인(style.css)에는 없는, 실서버 기능 요소들의 보강 스타일.
+ *   · 신호등 감시대상 체크박스 / 경광등 점등 버튼
+ *   · CCTV [TTS]/[분석] 버튼 · VLM 결과 오버레이 · IP카메라 이미지
+ *   · 라이브 센서 배지 · 연결 상태 배지 · 토스트
+ * 색상은 design-system.css 의 라이트 테마 변수를 그대로 사용한다.
+ * ===================================================================== */
+
+/* ===== 신호등 헤더: 감시 항목 힌트 ===== */
+.bhm-col-hint {
+  display: inline-block;
+  margin-left: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--t-4);
+}
+.bhm-col-hint.bhm-focus-hint { color: var(--cyan); opacity: 0.85; }
+
+/* ===== 신호등 헤더: 경광등 점등 버튼 (관심/주의/경고/위험) ===== */
+.bhm-lamps-head .bhm-led-btn {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: currentColor;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  padding: 3px 0;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+.bhm-lamps-head .bhm-led-btn:hover { background: rgba(0, 0, 0, 0.04); border-color: currentColor; }
+.bhm-lamps-head .bhm-led-btn:active { transform: scale(0.92); }
+.bhm-lamps-head .bhm-led-btn:disabled { opacity: 0.5; cursor: wait; }
+.bhm-lamps-head .bhm-led-btn.fired {
+  border-color: currentColor;
+  box-shadow: 0 0 12px currentColor;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* ===== 신호등 행: 감시 대상(focus) 체크박스 ===== */
+.bhm-name.bhm-focus {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  min-width: 0;
+}
+.bhm-focus-cb {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--cyan);
+  cursor: pointer;
+  margin: 0;
+}
+.bhm-focus-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bhm-name.bhm-focus:has(.bhm-focus-cb:not(:checked)) .bhm-focus-text { color: var(--t-4); }
+
+/* ===== CCTV 헤더 액션 버튼 영역 ===== */
+.cctv-head-actions { display: flex; align-items: center; gap: 10px; }
+.cctv-tts-btn,
+.cctv-analyze-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 16px;
+  height: 42px;
+  border-radius: var(--r-md);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.cctv-tts-btn {
+  background: rgba(217, 119, 6, 0.10);
+  border: 1px solid rgba(217, 119, 6, 0.35);
+  color: var(--amber);
+}
+.cctv-tts-btn:hover { background: rgba(217, 119, 6, 0.20); border-color: var(--amber); }
+.cctv-analyze-btn {
+  background: rgba(2, 132, 199, 0.10);
+  border: 1px solid rgba(2, 132, 199, 0.35);
+  color: var(--cyan);
+}
+.cctv-analyze-btn:hover { background: rgba(2, 132, 199, 0.20); border-color: var(--cyan); }
+.cctv-tts-btn:active,
+.cctv-analyze-btn:active { transform: scale(0.95); }
+.cctv-tts-btn:disabled,
+.cctv-analyze-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+.cctv-tts-btn svg,
+.cctv-analyze-btn svg { width: 18px; height: 18px; }
+
+/* ===== CCTV: IP카메라 라이브 이미지 (중앙 전시홀) ===== */
+.cctv-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+  display: none;
+  z-index: 1;
+}
+
+/* ===== CCTV: VLM 분석 결과 오버레이 ===== */
+.cctv-vlm-overlay {
+  display: none;
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(0deg, rgba(3, 7, 15, 0.92) 60%, transparent);
+  padding: 20px 20px 16px;
+  z-index: 5;
+  pointer-events: none;
+}
+.cctv-vlm-overlay.show { display: block; }
+.cctv-vlm-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.cctv-vlm-label { font-weight: 700; white-space: nowrap; }
+.cctv-vlm-val { color: #E5EDF7; }
+
+/* ===== 라이브 센서 배지 (온습도 카드 헤더) ===== */
+.live-sensor-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg-card-hi);
+  font: 700 11px 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+.live-sensor-badge .lsb-temp { color: var(--orange); }
+.live-sensor-badge .lsb-hum { color: var(--cyan); }
+.live-sensor-badge .lsb-hr { color: var(--red); }
+
+/* ===== 백엔드 연결 상태 배지 (상단 중앙 고정) ===== */
+.conn-badge {
+  position: fixed;
+  top: 8px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  font: 600 12px 'Pretendard', sans-serif;
+  padding: 5px 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--line);
+  color: var(--t-2);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.conn-badge .conn-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: 7px;
+  vertical-align: middle;
+}
+
+/* ===== 경량 토스트 ===== */
+.kiosk-toast {
+  position: fixed;
+  left: 50%; bottom: 28px;
+  transform: translateX(-50%) translateY(20px);
+  z-index: 10000;
+  max-width: 80vw;
+  padding: 12px 22px;
+  border-radius: 10px;
+  font: 600 15px 'Pretendard', sans-serif;
+  color: #fff;
+  opacity: 0;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+  transition: opacity 0.2s, transform 0.2s;
+  white-space: nowrap;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+.kiosk-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.kiosk-toast.warn  { background: rgba(217, 119, 6, 0.97); color: #fff; }
+.kiosk-toast.error { background: rgba(220, 38, 38, 0.97); color: #fff; }
+.kiosk-toast.ok    { background: rgba(22, 163, 74, 0.97); color: #fff; }

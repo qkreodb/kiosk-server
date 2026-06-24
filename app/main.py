@@ -16,6 +16,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
@@ -92,6 +93,13 @@ def create_app() -> FastAPI:
     @app.get("/kiosk", include_in_schema=False)
     async def kiosk_page() -> FileResponse:
         return FileResponse(Path(__file__).resolve().parents[1] / "kiosk.html")
+
+    # 키오스크 프론트 정적 자산(css/js/images) — kiosk.html 의 상대경로와 일치.
+    project_root = Path(__file__).resolve().parents[1]
+    for sub in ("css", "js", "images"):
+        asset_dir = project_root / sub
+        if asset_dir.is_dir():
+            app.mount(f"/{sub}", StaticFiles(directory=asset_dir), name=sub)
 
     return app
 

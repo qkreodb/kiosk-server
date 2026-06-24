@@ -1,0 +1,98 @@
+:root {
+  /* Base — Light Mode */
+  --bg-void: #F8FAFC;
+  --bg-deep: #EEF2F7;
+  --bg-base: #FFFFFF;
+  --bg-elev: #F8FAFC;
+  --bg-card: #FFFFFF;
+  --bg-card-hi: #F1F5F9;
+
+  /* Borders */
+  --line: #D3DCE7;
+  --line-strong: #CBD5E1;
+  --line-warm: rgba(180, 100, 0, 0.18);
+
+  /* Text */
+  --t-1: #0F172A;
+  --t-2: #334155;
+  --t-3: #64748B;
+  --t-4: #94A3B8;
+
+  /* Brand & Data */
+  --brand-blue: #2A60CC;
+  --brand-navy: #000F57;
+  --cyan: #0284C7;
+  --cyan-dim: rgba(2, 132, 199, 0.08);
+  --cyan-glow: rgba(2, 132, 199, 0.15);
+  --amber: #D97706;
+  --orange: #EA580C;
+  --red: #DC2626;
+  --green: #16A34A;
+  --violet: #7C3AED;
+  --pink: #DB2777;
+
+  --safety-y: #CA8A04;
+  --safety-o: #EA580C;
+
+  --r-xs: 2px;
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+
+  /* Type Scale */
+  --fs-xs: 11px;
+  --fs-sm: 13px;
+  --fs-md: 16px;
+  --fs-base: 18px;
+  --fs-lg: 20px;
+  --fs-xl: 24px;
+  --fs-2xl: 32px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  overflow-x: auto;
+  overflow-y: auto;
+  background: #BCBFC6;
+}
+body {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  font-family: 'Pretendard', -apple-system, sans-serif;
+  font-size: var(--fs-base);
+  background: #D9D9D9;
+  color: var(--t-1);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Browser scrollbar */
+html::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+html::-webkit-scrollbar-track {
+  background: var(--bg-deep);
+  border-left: 1px solid var(--line);
+}
+html::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 5px;
+  border: 2px solid var(--bg-deep);
+}
+html::-webkit-scrollbar-thumb:hover {
+  background: var(--cyan);
+}
+html::-webkit-scrollbar-corner {
+  background: var(--bg-deep);
+}
+html {
+  scrollbar-color: var(--line-strong) var(--bg-deep);
+  scrollbar-width: thin;
+}
