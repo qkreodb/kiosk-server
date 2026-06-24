@@ -5230,10 +5230,9 @@
       // 현재 선택된 카메라 ID 파악 (cam-chip의 cam-id 텍스트)
       const camEl = document.querySelector('.cctv-cam-chip.active .cctv-cam-id');
       const camId = camEl ? camEl.textContent.trim() : 'CAM-03';
-      // 현재 공정 코드 (bhProcSelect에서 PRC-XX 추출)
-      const sel = document.getElementById('bhProcSelect');
-      const m = sel ? /(PRC-\d+)/.exec(sel.value) : null;
-      const processCode = m ? m[1] : 'PRC-19';
+      // 현재 공정 코드 — 동적 드롭다운의 실제 DB 코드를 그대로 사용
+      const processCode = (window.currentProcessCode && window.currentProcessCode())
+        || (document.getElementById('bhProcSelect') || {}).value || '';
 
       const API = window.__API_BASE || 'http://localhost:8080';
       const resp = await fetch(API + '/vlm/infer', {
@@ -5373,11 +5372,36 @@
   // 외부에서도 호출 가능하도록 전역 노출
   window.hydrateMatrix = hydrateMatrix;
 
-  // 현재 선택된 공정 코드(PRC-XX) 추출
+  // 현재 선택된 공정 코드 추출.
+  // 동적 옵션은 value 에 실제 DB 코드(예: "19")가 들어가고, 폴백(하드코딩) 옵션은
+  // "정밀가공 공정 · PRC-19" 형태이므로 둘 다 처리한다.
   function currentProcessCode() {
     const sel = document.getElementById('bhProcSelect');
-    const m = sel ? /(PRC-\d+)/.exec(sel.value) : null;
-    return m ? m[1] : 'PRC-19';
+    if (!sel || !sel.value) return '';
+    const m = /(PRC-\d+)/i.exec(sel.value);
+    return m ? m[1] : sel.value.trim();
+  }
+  window.currentProcessCode = currentProcessCode;
+
+  // /space-name 의 processes(실제 DB 공정 목록)로 드롭다운을 채운다.
+  // 하드코딩된 PRC-19/07/12 가 실제 process_id 와 어긋나 분석 시 500이 나던 문제를 해결.
+  async function populateProcesses() {
+    const sel = document.getElementById('bhProcSelect');
+    if (!sel) return;
+    const resp = await fetch(API + '/space-name', { cache: 'no-store' });
+    if (!resp.ok) throw new Error('GET /space-name → ' + resp.status);
+    const data = await resp.json();
+    const procs = Array.isArray(data.processes) ? data.processes : [];
+    if (!procs.length) return; // 비어 있으면 기존(하드코딩) 옵션 유지
+    const current = (data.process && data.process.code) || procs[0].code;
+    sel.innerHTML = '';
+    procs.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.code;                      // 실제 DB 코드
+      opt.textContent = p.label || p.name || p.code;
+      if (String(p.code) === String(current)) opt.selected = true;
+      sel.appendChild(opt);
+    });
   }
 
   // 초기화 버튼: 기존 클라이언트 초기화 + 백엔드 count 0 리셋
@@ -5463,6 +5487,13 @@
   async function init() {
     // 감시 대상(focus) 전역 상태를 체크박스 초기값(전체 체크)으로 동기화
     if (typeof window.onFocusToggle === 'function') window.onFocusToggle();
+
+    // 드롭다운을 실제 DB 공정 목록으로 채운다(실패해도 하드코딩 옵션으로 진행).
+    try {
+      await populateProcesses();
+    } catch (e) {
+      console.warn('[공정 목록] 동적 로드 실패, 기본 옵션 사용:', e.message);
+    }
 
     try {
       await hydrateMatrix(currentProcessCode());

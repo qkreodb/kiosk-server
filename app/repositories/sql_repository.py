@@ -323,9 +323,16 @@ class SqlRepository(KioskRepository):
                 (delta, pid),
             )
             if not affected:
-                raise ValueError(
-                    f"No unstable_behavior row for process_id={pid} (check process FK)."
+                # 해당 공정에 unstable_behavior 행이 없거나 process.behavior_id FK가
+                # 비어 있는 경우. 분석 파이프라인을 깨지 않도록 500 대신 경고만 남기고
+                # 0을 반환한다(카운트는 증가하지 않음 — DB 시드 필요).
+                logger.warning(
+                    "No unstable_behavior row for process_id=%s "
+                    "(unstable_behavior 미시드 또는 process.behavior_id FK 누락); "
+                    "증가를 건너뜀. 카운트 0 유지. DB 시드를 확인하세요.",
+                    pid,
                 )
+                return 0
             row = self._query_one(
                 f"SELECT {col} AS c FROM unstable_behavior "
                 "WHERE behavior_id = (SELECT behavior_id FROM process WHERE process_id=%s)",
