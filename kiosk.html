@@ -2888,6 +2888,95 @@
   .policy-mini:active { transform: scale(0.97); border-color: var(--line-strong); }
   .policy-mini svg { width: 36px; height: 36px; flex-shrink: 0; }
   .policy-mini span { font-size: 20px; font-weight: 700; color: var(--t-1); line-height: 1.2; }
+
+  /* ===== 안전보건경영방침 모달 (문서형 디자인) ===== */
+  .sp-container {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    max-height: calc(100% - 40px);
+    overflow-y: auto;
+    border-radius: 6px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .sp-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,0.92);
+    border: none; border-radius: 50%;
+    cursor: pointer; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    color: #162352;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    transition: background 0.15s;
+  }
+  .sp-close svg { width: 20px; height: 20px; }
+  .sp-close:active { background: #fff; transform: scale(0.94); }
+  .sp-wrapper {
+    position: relative;
+    background: #4db8c4;
+    padding: 32px 28px;
+    overflow: hidden;
+  }
+  .sp-tri {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 56px; overflow: hidden;
+  }
+  .sp-tri svg { width: 56px; height: 100%; }
+  .sp-card {
+    position: relative;
+    background: #fff;
+    margin-left: 36px;
+    padding: 40px 34px 34px;
+    border: 2px solid #4db8c4;
+    outline: 5px solid #4db8c4;
+    outline-offset: -9px;
+  }
+  .sp-corner { position: absolute; width: 20px; height: 20px; }
+  .sp-corner svg { width: 100%; height: 100%; }
+  .sp-corner.tl { top: -2px; left: -2px; }
+  .sp-corner.tr { top: -2px; right: -2px; transform: rotate(90deg); }
+  .sp-corner.bl { bottom: -2px; left: -2px; transform: rotate(-90deg); }
+  .sp-corner.br { bottom: -2px; right: -2px; transform: rotate(180deg); }
+  .sp-title {
+    text-align: center;
+    font-size: 30px; font-weight: 800;
+    color: #162352; letter-spacing: -0.3px;
+    margin-bottom: 22px;
+  }
+  .sp-subtitle {
+    font-size: 16px; font-weight: 600;
+    color: #162352;
+    padding-bottom: 7px;
+    border-bottom: 2px solid #e8960e;
+    display: inline-block;
+    margin-bottom: 20px;
+  }
+  .sp-items {
+    border: 1px solid #c8d8e4;
+    border-radius: 6px;
+    background: #f7f9fb;
+    padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 14px;
+    margin-bottom: 28px;
+  }
+  .sp-item { display: flex; align-items: flex-start; gap: 14px; }
+  .sp-badge {
+    flex-shrink: 0;
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: #162352;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 13px; font-weight: 700; letter-spacing: 0.5px;
+  }
+  .sp-itext {
+    font-size: 15px; color: #333; line-height: 1.6;
+    padding-top: 6px; flex: 1;
+  }
+  .sp-footer { text-align: center; }
+  .sp-date { font-size: 15px; color: #555; margin-bottom: 6px; }
+  .sp-sig { font-size: 18px; font-weight: 700; color: #162352; }
 </style>
 </head>
 <body>
@@ -3237,7 +3326,7 @@
 
     <!-- 하단 우측 정책 버튼 2개 -->
     <div class="policy-bottom">
-      <button class="policy-mini">
+      <button class="policy-mini" onclick="openSafetyPolicy()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/>
         </svg>
@@ -3824,6 +3913,53 @@
   </div>
 </div>
 
+<!-- ============== 안전보건경영방침 MODAL ============== -->
+<div class="modal-overlay" id="safetyPolicyOverlay" style="z-index:1003;">
+  <div class="sp-container">
+    <button class="sp-close" onclick="closeModal('safetyPolicyOverlay')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="sp-wrapper">
+      <!-- 좌측 장식 삼각형 -->
+      <div class="sp-tri">
+        <svg viewBox="0 0 56 600" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="0,0 56,0 0,160" fill="#162352" opacity="0.85"/>
+          <polygon points="0,140 56,180 0,280" fill="#2a9aaa" opacity="0.7"/>
+          <polygon points="0,260 42,320 0,400" fill="#162352" opacity="0.6"/>
+          <polygon points="0,380 56,430 0,520" fill="#2a9aaa" opacity="0.5"/>
+          <polygon points="0,500 34,550 0,600" fill="#162352" opacity="0.4"/>
+        </svg>
+      </div>
+      <!-- 흰 문서 카드 -->
+      <div class="sp-card">
+        <div class="sp-corner tl"><svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 17 L1 1 L17 1" stroke="#4db8c4" stroke-width="2.5" fill="none"/></svg></div>
+        <div class="sp-corner tr"><svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 17 L1 1 L17 1" stroke="#4db8c4" stroke-width="2.5" fill="none"/></svg></div>
+        <div class="sp-corner bl"><svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 17 L1 1 L17 1" stroke="#4db8c4" stroke-width="2.5" fill="none"/></svg></div>
+        <div class="sp-corner br"><svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 17 L1 1 L17 1" stroke="#4db8c4" stroke-width="2.5" fill="none"/></svg></div>
+
+        <div class="sp-title">안전보건경영방침</div>
+        <div style="text-align:center;">
+          <span class="sp-subtitle">무사고 사업장을 목표로 안전수칙을 준수한다</span>
+        </div>
+
+        <div class="sp-items">
+          <div class="sp-item"><div class="sp-badge">하나</div><div class="sp-itext">위험성평가에서 제시된 내용에 근거해 우리사 전체의 산재된 위험을 파악하며, 이에 대비한다.</div></div>
+          <div class="sp-item"><div class="sp-badge">하나</div><div class="sp-itext">안전보건방침은 전직원이 함께 제작에 참여하며, 즉시 전사에 공유되어야 한다.</div></div>
+          <div class="sp-item"><div class="sp-badge">하나</div><div class="sp-itext">안전보건관리는 전직원의 참여를 기본으로 하며, 최고경영자의 주도하에 참여하여 관리하는 것이 되고시스템 안전보건관리의 최우선 기조이다.</div></div>
+          <div class="sp-item"><div class="sp-badge">하나</div><div class="sp-itext">사람을 살피고 서로 협조한다.</div></div>
+          <div class="sp-item"><div class="sp-badge">하나</div><div class="sp-itext">나부터 먼저 안전수칙을 철저히 지킨다.</div></div>
+          <div class="sp-item"><div class="sp-badge">하나</div><div class="sp-itext">안전수칙을 서로 공유하며 준수할 수 있도록 독려한다.</div></div>
+        </div>
+
+        <div class="sp-footer">
+          <div class="sp-date">2026-06-24</div>
+          <div class="sp-sig">세이퍼정밀 주식회사 대표이사 김용필</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ============== AI 현장 상황 정보 MODAL (부스 TopView 블루프린트) ============== -->
 <div class="modal-overlay" id="aiSiteOverlay">
   <div class="modal-box" style="max-width: 1000px;">
@@ -4236,7 +4372,7 @@
 
   // ===== Generic modal control =====
   function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-  ['hrOverlay','msdsOverlay','photoOverlay','evacOverlay','facilityOverlay','contactOverlay','msdsListOverlay','riskOverlay','aiSiteOverlay','envDetailOverlay','processOverlay','issueOverlay'].forEach(id => {
+  ['hrOverlay','msdsOverlay','photoOverlay','evacOverlay','facilityOverlay','contactOverlay','msdsListOverlay','riskOverlay','aiSiteOverlay','envDetailOverlay','processOverlay','issueOverlay','safetyPolicyOverlay'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('click', e => {
       if (e.target.id === id) closeModal(id);
@@ -4398,6 +4534,7 @@
   function openMSDSList() { document.getElementById('msdsListOverlay').classList.add('open'); }
   function openRisk() { document.getElementById('riskOverlay').classList.add('open'); }
   function openAISite() { document.getElementById('aiSiteOverlay').classList.add('open'); }
+  function openSafetyPolicy() { document.getElementById('safetyPolicyOverlay').classList.add('open'); }
   function openProcessMgmt() { document.getElementById('processOverlay').classList.add('open'); }
   function openIssueMgmt() { document.getElementById('issueOverlay').classList.add('open'); }
 
