@@ -394,6 +394,7 @@
    * CCTV 모달이 열리면 분석을 시작하고, 응답이 올 때마다 즉시 다음 요청을 보낸다.
    * 모달을 닫으면(또는 카메라 전환 시 토큰 무효화) 루프가 멈춘다.
    * 분석 버튼은 이 루프의 일시정지/재개 토글로 동작한다.            */
+  const VLM_POLL_INTERVAL_MS = 5000; // 성공 응답 후 다음 요청까지 대기(경광등/TTS 겹침 방지)
   const VLM_ERROR_BACKOFF_MS = 1500; // 오류 시 재시도 전 대기
   const vlmLoop = { token: 0, paused: false };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -477,7 +478,8 @@
         if (vlmLoop.paused) { await sleep(250); continue; }
         try {
           await runVlmAnalysisOnce(myToken);
-          // 성공 → 즉시 다음 요청 (네트워크 왕복이 자연 스로틀 역할)
+          // 성공 → 5초 대기 후 다음 요청 (요청 → 응답 → 대기 → 요청)
+          await sleep(VLM_POLL_INTERVAL_MS);
         } catch (e) {
           if (vlmLoop.token !== myToken || !cctvModalOpen()) break;
           console.error('[VLM 분석] 실패:', e);
