@@ -37,8 +37,13 @@ class KioskRepository(ABC):
 
     # --- Sensors ---
     @abstractmethod
-    def get_temp_humid(self, process_code: str | None = None) -> dict[str, Any]:
-        """``{"location": str, "readings": [...]}`` for temp/humidity sensors."""
+    def get_temp_humid(
+        self, process_code: str | None = None, sensor_name: str | None = None
+    ) -> dict[str, Any]:
+        """``{"location": str, "readings": [...]}`` for temp/humidity sensors.
+
+        ``sensor_name`` (예: ``shelly_1``/``sonoff_1``) 가 주어지면 해당 센서만 반환한다.
+        """
 
     @abstractmethod
     def get_watch(self, process_code: str | None = None) -> dict[str, Any]:

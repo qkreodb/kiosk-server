@@ -58,6 +58,12 @@
     const readings = liveSensors.tempHumid && liveSensors.tempHumid.readings;
     return Array.isArray(readings) && readings.length ? readings[0] : null;
   }
+  // 특정 온습도 센서(shelly_1/sonoff_1)의 최신값만 직접 조회.
+  async function fetchTempHumidByName(sensorName) {
+    const data = await fetchJson('/sensor/temp-humid?sensor_name=' + encodeURIComponent(sensorName));
+    const readings = data && data.readings;
+    return Array.isArray(readings) && readings.length ? readings[0] : null;
+  }
   function latestWatchWorkers() {
     const workers = liveSensors.watch && liveSensors.watch.workers;
     return Array.isArray(workers) ? workers : [];
@@ -151,6 +157,8 @@
   /* ===================== 모달 라이브 폴링 ===================== */
   // 모달이 열려 있는 동안 주기적으로 값을 다시 가져와 실시간으로 갱신한다.
   const MODAL_POLL_MS = 3000;
+  // 온습도 실센서별 모달 갱신 주기: shelly 4분(완만), sonoff 5초(직관적 실시간).
+  const TH_POLL_MS = { shelly_1: 240000, sonoff_1: 5000 };
   const modalPollers = {}; // overlayId -> intervalId
 
   function stopModalPoll(overlayId) {
@@ -160,14 +168,15 @@
     }
   }
   // fn: 값 갱신 함수(비동기 가능). 같은 모달의 기존 폴링은 정리하고 새로 시작.
-  function startModalPoll(overlayId, fn) {
+  // intervalMs 미지정 시 기본 주기(MODAL_POLL_MS) 사용.
+  function startModalPoll(overlayId, fn, intervalMs) {
     stopModalPoll(overlayId);
     modalPollers[overlayId] = setInterval(() => {
       // 닫힌 모달(배경 클릭 등으로 .open 제거)은 자동 정리 — 닫기 직후 한 번 더 요청 방지
       const el = document.getElementById(overlayId);
       if (!el || !el.classList.contains('open')) { stopModalPoll(overlayId); return; }
       Promise.resolve(fn()).catch(() => { /* 일시적 오류는 다음 주기에 재시도 */ });
-    }, MODAL_POLL_MS);
+    }, intervalMs || MODAL_POLL_MS);
   }
 
   // closeModal(닫기 버튼) 호출 시 해당 모달의 폴링을 즉시 정지하도록 래핑.
@@ -179,15 +188,18 @@
     else { const el = document.getElementById(id); if (el) el.classList.remove('open'); }
   };
 
-  /* 온습도 센서 상세(라이브) — app.js 더미 버전 덮어쓰기 */
-  window.openEnvDetail = async function (sensorId, zone) {
+  /* 온습도 센서 상세(라이브) — app.js 더미 버전 덮어쓰기
+   * sensorName(shelly_1/sonoff_1)이 주어진 아이콘은 해당 실센서를 라이브 조회하고,
+   * 그 외 아이콘은 기존처럼 더미값을 표시한다. 폴링 주기는 센서별로 다르다.   */
+  window.openEnvDetail = async function (sensorId, zone, sensorName) {
     const sub = document.getElementById('envDetailSub');
     if (sub) sub.textContent = sensorId + ' · ' + zone;
     setText('envDetailTemp', '--<small>°C</small>', true);
     setText('envDetailHum', '--<small>%</small>', true);
     document.getElementById('envDetailOverlay').classList.add('open');
 
-    const live = isCentralTempHumid(sensorId, zone);
+    const live = !!sensorName;
+    const pollMs = TH_POLL_MS[sensorName] || MODAL_POLL_MS;
     async function update() {
       if (!live) {
         const dummy = dummyTempHumid(sensorId);
@@ -195,8 +207,7 @@
         setText('envDetailHum', dummy.humidity + '<small>%</small>', true);
         return;
       }
-      await refreshLiveSensors();
-      const reading = latestTempHumidReading();
+      const reading = await fetchTempHumidByName(sensorName);
       if (!reading) return;
       if (sub) sub.textContent = sensorId + ' · ' + zone + ' · LIVE';
       setText('envDetailTemp', Number(reading.temp).toFixed(1) + '<small>°C</small>', true);
@@ -204,7 +215,7 @@
     }
 
     try { await update(); } catch (_) { /* 모달은 유지 */ }
-    startModalPoll('envDetailOverlay', update); // 열려 있는 동안 주기적 갱신
+    startModalPoll('envDetailOverlay', update, pollMs); // shelly 4분 / sonoff 5초
   };
 
   /* 심박 그룹(라이브) — app.js 더미 버전 덮어쓰기 */

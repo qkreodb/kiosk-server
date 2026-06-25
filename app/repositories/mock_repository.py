@@ -70,9 +70,13 @@ class MockRepository(KioskRepository):
         return next((copy.deepcopy(c) for c in self._cameras if c["cam_id"] == cam_id), None)
 
     # --- Sensors ---
-    def get_temp_humid(self, process_code: str | None = None) -> dict[str, Any]:
+    def get_temp_humid(
+        self, process_code: str | None = None, sensor_name: str | None = None
+    ) -> dict[str, Any]:
         readings = self._temp_humid["readings"]
-        if process_code:
+        if sensor_name:
+            readings = [r for r in readings if r.get("sensor_name") == sensor_name]
+        elif process_code:
             readings = [r for r in readings if r.get("process_code") == process_code]
         return {"location": self._temp_humid["location"], "readings": copy.deepcopy(readings)}
 

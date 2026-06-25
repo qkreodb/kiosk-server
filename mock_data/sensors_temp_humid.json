@@ -1,10 +1,10 @@
 {
   "location": "경기도 고양시",
   "readings": [
-    { "sensor_id": "TH-01", "zone": "정밀가공 시연존", "process_code": "PRC-19", "temp": 27.4, "humidity": 58, "feels_like": 28.1, "dust": 42 },
-    { "sensor_id": "TH-02", "zone": "절단·용접 시연존", "process_code": "PRC-07", "temp": 29.2, "humidity": 51, "feels_like": 30.4, "dust": 55 },
-    { "sensor_id": "TH-03", "zone": "스프레이 도장실", "process_code": "PRC-12", "temp": 24.8, "humidity": 47, "feels_like": 24.9, "dust": 38 },
-    { "sensor_id": "TH-04", "zone": "메인 조립 라인", "process_code": "PRC-23", "temp": 26.1, "humidity": 53, "feels_like": 26.5, "dust": 33 },
-    { "sensor_id": "TH-05", "zone": "입출고 하역장", "process_code": "PRC-31", "temp": 23.5, "humidity": 60, "feels_like": 23.6, "dust": 70 }
+    { "sensor_id": "TH-01", "sensor_name": "shelly_1", "zone": "정밀가공 시연존", "process_code": "PRC-19", "temp": 27.4, "humidity": 58, "feels_like": 28.1, "dust": 42 },
+    { "sensor_id": "TH-02", "sensor_name": "sonoff_1", "zone": "절단·용접 시연존", "process_code": "PRC-07", "temp": 29.2, "humidity": 51, "feels_like": 30.4, "dust": 55 },
+    { "sensor_id": "TH-03", "sensor_name": "th_3", "zone": "스프레이 도장실", "process_code": "PRC-12", "temp": 24.8, "humidity": 47, "feels_like": 24.9, "dust": 38 },
+    { "sensor_id": "TH-04", "sensor_name": "th_4", "zone": "메인 조립 라인", "process_code": "PRC-23", "temp": 26.1, "humidity": 53, "feels_like": 26.5, "dust": 33 },
+    { "sensor_id": "TH-05", "sensor_name": "th_5", "zone": "입출고 하역장", "process_code": "PRC-31", "temp": 23.5, "humidity": 60, "feels_like": 23.6, "dust": 70 }
   ]
 }

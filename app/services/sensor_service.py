@@ -33,8 +33,10 @@ class SensorService:
     def __init__(self, repo: KioskRepository) -> None:
         self._repo = repo
 
-    def get_temp_humid(self, process_code: str | None = None) -> TempHumidResponse:
-        data = self._repo.get_temp_humid(process_code)
+    def get_temp_humid(
+        self, process_code: str | None = None, sensor_name: str | None = None
+    ) -> TempHumidResponse:
+        data = self._repo.get_temp_humid(process_code, sensor_name)
         readings = [
             TempHumidReading(timestamp=r.pop("timestamp", None) or _now_iso(), **r)
             for r in data["readings"]

@@ -184,12 +184,12 @@
 
             <!-- 온습도계 뷰 (각 구역 벽면에 분산 배치) -->
             <g id="siteEnvMarkers">
-              <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-01','부스 A · 정밀가공 시연존')">
+              <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-01','부스 A · 정밀가공 시연존','shelly_1')">
                 <circle cx="175" cy="320" r="22" fill="#FF9000"><animate attributeName="opacity" values="0.5;0;0.5" dur="1.6s" repeatCount="indefinite"/></circle>
                 <circle cx="175" cy="320" r="18" fill="#FF9000" fill-opacity="0.18"/>
                 <image x="161" y="306" width="28" height="28" href="images/icon_Thermometer.svg"/>
               </g>
-              <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-02','부스 C · 절단·용접 시연존')">
+              <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-02','부스 C · 절단·용접 시연존','sonoff_1')">
                 <circle cx="775" cy="330" r="22" fill="#FF9000"><animate attributeName="opacity" values="0.5;0;0.5" dur="1.6s" repeatCount="indefinite"/></circle>
                 <circle cx="775" cy="330" r="18" fill="#FF9000" fill-opacity="0.18"/>
                 <image x="761" y="316" width="28" height="28" href="images/icon_Thermometer.svg"/>
@@ -886,14 +886,14 @@
           </g>
 
           <!-- 온습도계 아이콘 2개 -->
-          <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-01','정밀가공 시연존')">
+          <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-01','정밀가공 시연존','shelly_1')">
             <circle cx="160" cy="200" r="22" fill="#FF9000" opacity="0.15"/>
             <circle cx="160" cy="200" r="18" fill="#0a2540" stroke="#FF9000" stroke-width="2"/>
             <path d="M162 192a2 2 0 0 0-4 0v9a3.5 3.5 0 1 0 4 0z" fill="none" stroke="#FF9000" stroke-width="1.6"/>
             <circle cx="160" cy="203" r="2.5" fill="#FF9000"/>
             <text x="160" y="237" text-anchor="middle" fill="#FF9000" font-family="Pretendard, sans-serif" font-size="12" font-weight="700">온습도 ①</text>
           </g>
-          <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-02','절단·용접 시연존')">
+          <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-02','절단·용접 시연존','sonoff_1')">
             <circle cx="740" cy="200" r="22" fill="#FF9000" opacity="0.15"/>
             <circle cx="740" cy="200" r="18" fill="#0a2540" stroke="#FF9000" stroke-width="2"/>
             <path d="M742 192a2 2 0 0 0-4 0v9a3.5 3.5 0 1 0 4 0z" fill="none" stroke="#FF9000" stroke-width="1.6"/>

@@ -186,9 +186,11 @@ class SqlRepository(KioskRepository):
     # ────────────────────────────── Sensors ──────────────────────────────
     @staticmethod
     def _th_reading(row: dict[str, Any]) -> dict[str, Any]:
-        # zone/feels_like/dust are not in the ERD; zone falls back to process name.
+        # zone/feels_like/dust are not in the ERD; zone falls back to the process
+        # that references this sensor (process.th_sensor_id), then a generic label.
         return {
             "sensor_id": str(row["sensor_id"]),
+            "sensor_name": row.get("sensor_name"),
             "zone": row.get("process_name") or "온습도 센서",
             "process_code": str(row["process_id"]) if row.get("process_id") is not None else None,
             "temp": float(row["temperature"]),
@@ -198,19 +200,28 @@ class SqlRepository(KioskRepository):
             "timestamp": row["measured_at"].isoformat() if hasattr(row["measured_at"], "isoformat") else str(row["measured_at"]),
         }
 
-    def get_temp_humid(self, process_code: str | None = None) -> dict[str, Any]:
-        process = self.get_process(process_code) if process_code is not None else None
+    def get_temp_humid(
+        self, process_code: str | None = None, sensor_name: str | None = None
+    ) -> dict[str, Any]:
+        # sensor_id is the PK (one current row per sensor), so a plain select gives
+        # each sensor's latest value. zone comes from the process that uses it.
         sql = (
-            "SELECT t.sensor_id, t.temperature, t.humidity, t.measured_at, "
-            "%s AS process_id, %s AS process_name "
+            "SELECT t.sensor_id, t.sensor_name, t.temperature, t.humidity, t.measured_at, "
+            "p.process_id, p.process_name "
             "FROM temperature_humidity_sensor t "
-            "ORDER BY t.measured_at DESC, t.sensor_id DESC "
-            "LIMIT 1"
+            "LEFT JOIN process p ON p.th_sensor_id = t.sensor_id"
         )
-        params: tuple[Any, ...] = (
-            _pid(process_code) if process_code is not None else None,
-            process["name"] if process else None,
-        )
+        params: tuple[Any, ...] = ()
+        if sensor_name is not None:
+            sql += " WHERE t.sensor_name = %s"
+            params = (sensor_name,)
+        elif process_code is not None:
+            pid = _pid(process_code)
+            if pid is None:
+                return {"location": self._settings.site_location, "readings": []}
+            sql += " WHERE p.process_id = %s"
+            params = (pid,)
+        sql += " ORDER BY t.sensor_id"
         with self._lock:
             rows = self._query(sql, params)
         return {

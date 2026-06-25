@@ -8,12 +8,13 @@
 USE kiosk;
 
 -- temp/humid sensors (one snapshot row per sensor; PK = sensor_id).
-INSERT INTO temperature_humidity_sensor (sensor_id, temperature, humidity, measured_at) VALUES
-  (1, 27.4, 58.0, NOW()),
-  (2, 29.2, 51.0, NOW()),
-  (3, 24.8, 47.0, NOW()),
-  (4, 26.1, 53.0, NOW()),
-  (5, 23.5, 60.0, NOW());
+-- sensor_name = 하드웨어 서버 송신 식별자. 부스A=shelly_1, 부스C=sonoff_1.
+INSERT INTO temperature_humidity_sensor (sensor_id, sensor_name, temperature, humidity, measured_at) VALUES
+  (1, 'shelly_1', 27.4, 58.0, NOW()),
+  (2, 'sonoff_1', 29.2, 51.0, NOW()),
+  (3, 'th_3',     24.8, 47.0, NOW()),
+  (4, 'th_4',     26.1, 53.0, NOW()),
+  (5, 'th_5',     23.5, 60.0, NOW());
 
 -- heartbeat sensors (one watch per process).
 INSERT INTO heartbeat_sensor (sensor_id, heart_rate, measured_at) VALUES

@@ -9,6 +9,11 @@ class TempHumidReading(BaseModel):
     """One 온습도 센서 reading (from the Hardware Server's DB)."""
 
     sensor_id: str = Field(examples=["TH-01"])
+    sensor_name: str | None = Field(
+        default=None,
+        description="하드웨어 서버 송신 식별자 (예: shelly_1, sonoff_1)",
+        examples=["shelly_1"],
+    )
     zone: str = Field(examples=["정밀가공 시연존"])
     process_code: str | None = Field(default=None, examples=["PRC-19"])
     temp: float = Field(description="섭씨 온도 (°C)", examples=[27.4])

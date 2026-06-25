@@ -22,6 +22,7 @@ DROP TABLE IF EXISTS unstable_behavior;
 
 CREATE TABLE temperature_humidity_sensor (
   sensor_id    INT          NOT NULL PRIMARY KEY,
+  sensor_name  VARCHAR(50),                       -- 하드웨어 서버 송신 식별자 (예: shelly_1, sonoff_1)
   temperature  DECIMAL(5,2) NOT NULL,
   humidity     DECIMAL(5,2) NOT NULL,
   measured_at  DATETIME     NOT NULL
