@@ -203,25 +203,44 @@ class SqlRepository(KioskRepository):
     def get_temp_humid(
         self, process_code: str | None = None, sensor_name: str | None = None
     ) -> dict[str, Any]:
-        # sensor_id is the PK (one current row per sensor), so a plain select gives
-        # each sensor's latest value. zone comes from the process that uses it.
-        sql = (
+        # temperature_humidity_sensor 는 측정마다 새 행이 INSERT 되는 시계열 테이블
+        # (sensor_id AUTO_INCREMENT). 따라서 sensor_name 별 "가장 최근(sensor_id 최대)"
+        # 행만 골라야 한다. ORDER BY sensor_id ASC + readings[0] 는 가장 오래된 값이
+        # 고정 반환되어 모달이 갱신되지 않으므로 사용하면 안 된다.
+        cols = (
             "SELECT t.sensor_id, t.sensor_name, t.temperature, t.humidity, t.measured_at, "
             "p.process_id, p.process_name "
             "FROM temperature_humidity_sensor t "
-            "LEFT JOIN process p ON p.th_sensor_id = t.sensor_id"
+            "LEFT JOIN process p ON p.th_sensor_id = t.sensor_id "
         )
-        params: tuple[Any, ...] = ()
         if sensor_name is not None:
-            sql += " WHERE t.sensor_name = %s"
-            params = (sensor_name,)
+            # 해당 센서의 최신 1행.
+            sql = cols + "WHERE t.sensor_name = %s ORDER BY t.sensor_id DESC LIMIT 1"
+            params: tuple[Any, ...] = (sensor_name,)
         elif process_code is not None:
             pid = _pid(process_code)
             if pid is None:
                 return {"location": self._settings.site_location, "readings": []}
-            sql += " WHERE p.process_id = %s"
+            # 이 공정에 매핑된 센서(process.th_sensor_id)의 sensor_name 의 최신 1행.
+            sql = (
+                cols
+                + "WHERE t.sensor_name = ("
+                "  SELECT s.sensor_name FROM process pp "
+                "  JOIN temperature_humidity_sensor s ON s.sensor_id = pp.th_sensor_id "
+                "  WHERE pp.process_id = %s) "
+                "ORDER BY t.sensor_id DESC LIMIT 1"
+            )
             params = (pid,)
-        sql += " ORDER BY t.sensor_id"
+        else:
+            # 전체: sensor_name 별 최신 1행씩.
+            sql = (
+                cols
+                + "JOIN (SELECT sensor_name, MAX(sensor_id) AS max_id "
+                "       FROM temperature_humidity_sensor GROUP BY sensor_name) latest "
+                "  ON latest.max_id = t.sensor_id "
+                "ORDER BY t.sensor_name"
+            )
+            params = ()
         with self._lock:
             rows = self._query(sql, params)
         return {

@@ -20,12 +20,15 @@ DROP TABLE IF EXISTS heartbeat_sensor;
 DROP TABLE IF EXISTS cctv_info;
 DROP TABLE IF EXISTS unstable_behavior;
 
+-- 시계열(append) 테이블: 측정마다 새 행이 INSERT 된다(sensor_id AUTO_INCREMENT).
+-- sensor_name(예: shelly_1, sonoff_1)으로 센서를 구분하며, 같은 sensor_name 행이
+-- 시간 순으로 누적된다. "현재값"은 sensor_name 별 sensor_id 최대(=최신) 행.
 CREATE TABLE temperature_humidity_sensor (
-  sensor_id    INT          NOT NULL PRIMARY KEY,
-  sensor_name  VARCHAR(50),                       -- 하드웨어 서버 송신 식별자 (예: shelly_1, sonoff_1)
+  sensor_id    INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
   temperature  DECIMAL(5,2) NOT NULL,
   humidity     DECIMAL(5,2) NOT NULL,
-  measured_at  DATETIME     NOT NULL
+  measured_at  DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  sensor_name  VARCHAR(100)                       -- 하드웨어 서버 송신 식별자 (예: shelly_1, sonoff_1)
 );
 
 CREATE TABLE heartbeat_sensor (
