@@ -148,6 +148,37 @@
       '<span class="lsb-hr">HR ' + hrText + ' BPM</span>';
   }
 
+  /* ===================== 모달 라이브 폴링 ===================== */
+  // 모달이 열려 있는 동안 주기적으로 값을 다시 가져와 실시간으로 갱신한다.
+  const MODAL_POLL_MS = 3000;
+  const modalPollers = {}; // overlayId -> intervalId
+
+  function stopModalPoll(overlayId) {
+    if (modalPollers[overlayId]) {
+      clearInterval(modalPollers[overlayId]);
+      delete modalPollers[overlayId];
+    }
+  }
+  // fn: 값 갱신 함수(비동기 가능). 같은 모달의 기존 폴링은 정리하고 새로 시작.
+  function startModalPoll(overlayId, fn) {
+    stopModalPoll(overlayId);
+    modalPollers[overlayId] = setInterval(() => {
+      // 닫힌 모달(배경 클릭 등으로 .open 제거)은 자동 정리 — 닫기 직후 한 번 더 요청 방지
+      const el = document.getElementById(overlayId);
+      if (!el || !el.classList.contains('open')) { stopModalPoll(overlayId); return; }
+      Promise.resolve(fn()).catch(() => { /* 일시적 오류는 다음 주기에 재시도 */ });
+    }, MODAL_POLL_MS);
+  }
+
+  // closeModal(닫기 버튼) 호출 시 해당 모달의 폴링을 즉시 정지하도록 래핑.
+  // (배경 클릭으로 닫는 경우는 위 인터벌의 .open 체크가 정리한다)
+  const _closeModal = window.closeModal;
+  window.closeModal = function (id) {
+    stopModalPoll(id);
+    if (typeof _closeModal === 'function') _closeModal(id);
+    else { const el = document.getElementById(id); if (el) el.classList.remove('open'); }
+  };
+
   /* 온습도 센서 상세(라이브) — app.js 더미 버전 덮어쓰기 */
   window.openEnvDetail = async function (sensorId, zone) {
     const sub = document.getElementById('envDetailSub');
@@ -155,18 +186,25 @@
     setText('envDetailTemp', '--<small>°C</small>', true);
     setText('envDetailHum', '--<small>%</small>', true);
     document.getElementById('envDetailOverlay').classList.add('open');
-    if (!isCentralTempHumid(sensorId, zone)) {
-      const dummy = dummyTempHumid(sensorId);
-      setText('envDetailTemp', dummy.temp + '<small>°C</small>', true);
-      setText('envDetailHum', dummy.humidity + '<small>%</small>', true);
-      return;
+
+    const live = isCentralTempHumid(sensorId, zone);
+    async function update() {
+      if (!live) {
+        const dummy = dummyTempHumid(sensorId);
+        setText('envDetailTemp', dummy.temp + '<small>°C</small>', true);
+        setText('envDetailHum', dummy.humidity + '<small>%</small>', true);
+        return;
+      }
+      await refreshLiveSensors();
+      const reading = latestTempHumidReading();
+      if (!reading) return;
+      if (sub) sub.textContent = sensorId + ' · ' + zone + ' · LIVE';
+      setText('envDetailTemp', Number(reading.temp).toFixed(1) + '<small>°C</small>', true);
+      setText('envDetailHum', Number(reading.humidity).toFixed(1) + '<small>%</small>', true);
     }
-    try { await refreshLiveSensors(); } catch (_) { /* 모달은 유지 */ }
-    const reading = latestTempHumidReading();
-    if (!reading) return;
-    if (sub) sub.textContent = sensorId + ' · ' + zone + ' · LIVE';
-    setText('envDetailTemp', Number(reading.temp).toFixed(1) + '<small>°C</small>', true);
-    setText('envDetailHum', Number(reading.humidity).toFixed(1) + '<small>%</small>', true);
+
+    try { await update(); } catch (_) { /* 모달은 유지 */ }
+    startModalPoll('envDetailOverlay', update); // 열려 있는 동안 주기적 갱신
   };
 
   /* 심박 그룹(라이브) — app.js 더미 버전 덮어쓰기 */
@@ -176,12 +214,13 @@
     if (sub) sub.textContent = region + ' · Live Galaxy Watch';
     if (grid) grid.innerHTML = '<div class="watch-none">Loading live watch data...</div>';
     document.getElementById('hrOverlay').classList.add('open');
-    try {
+
+    const n = Math.min(count || 5, 8);
+    const names = ['이*학', '전*조', '김*수', '박*후', '최*재', '정*진', '강*준', '윤*성'];
+    const zones = ['부스 A', '부스 C', '중앙 전시홀', '부스 B', '세미나실', '중앙 통로', '부스 D', '하역장'];
+    async function update() {
       await refreshLiveSensors();
       const live = latestWatchWorkers()[0] || null;
-      const n = Math.min(count || 5, 8);
-      const names = ['이*학', '전*조', '김*수', '박*후', '최*재', '정*진', '강*준', '윤*성'];
-      const zones = ['부스 A', '부스 C', '중앙 전시홀', '부스 B', '세미나실', '중앙 통로', '부스 D', '하역장'];
       const workers = Array.from({ length: n }, (_, i) => {
         const watch = 'WATCH-' + String(i + 1).padStart(2, '0');
         if (watch === 'WATCH-03' && live) {
@@ -191,9 +230,11 @@
         return { watch_id: watch, name: names[i], hr: bpm, status: heartStatus(bpm), zone: zones[i], device: 'Galaxy Watch' };
       });
       renderWatchWorkers(workers);
-    } catch (e) {
-      if (grid) grid.innerHTML = '<div class="watch-none">Watch API unavailable</div>';
     }
+
+    try { await update(); }
+    catch (e) { if (grid) grid.innerHTML = '<div class="watch-none">Watch API unavailable</div>'; }
+    startModalPoll('hrOverlay', update); // 열려 있는 동안 주기적 갱신
   };
 
   /* 심박 개인(라이브) — app.js 더미 버전 덮어쓰기 */
@@ -201,15 +242,15 @@
     const sub = document.getElementById('hrSub');
     const grid = document.getElementById('hrGrid');
     if (sub) sub.textContent = proc + ' · ' + name;
-    if (!isCentralWatch(watchId, proc)) {
-      const bpm = dummyHeartRate(watchId);
-      if (grid) grid.innerHTML = workerCard(name || 'Worker', watchId, 'Galaxy Watch', proc, bpm, heartStatus(bpm), heartClass(bpm));
-      document.getElementById('hrOverlay').classList.add('open');
-      return;
-    }
-    if (grid) grid.innerHTML = '<div class="watch-none">Loading live watch data...</div>';
     document.getElementById('hrOverlay').classList.add('open');
-    try {
+
+    const live = isCentralWatch(watchId, proc);
+    async function update() {
+      if (!live) {
+        const bpm = dummyHeartRate(watchId);
+        if (grid) grid.innerHTML = workerCard(name || 'Worker', watchId, 'Galaxy Watch', proc, bpm, heartStatus(bpm), heartClass(bpm));
+        return;
+      }
       await refreshLiveSensors();
       const worker = latestWatchWorkers()[0] || null;
       if (!worker) { if (grid) grid.innerHTML = '<div class="watch-none">No live watch data</div>'; return; }
@@ -220,9 +261,12 @@
         worker.device || 'Galaxy Watch',
         proc || worker.zone || '',
         bpm || '-', heartStatus(bpm, worker.status), heartClass(bpm));
-    } catch (e) {
-      if (grid) grid.innerHTML = '<div class="watch-none">Watch API unavailable</div>';
     }
+
+    if (live && grid) grid.innerHTML = '<div class="watch-none">Loading live watch data...</div>';
+    try { await update(); }
+    catch (e) { if (grid) grid.innerHTML = '<div class="watch-none">Watch API unavailable</div>'; }
+    startModalPoll('hrOverlay', update); // 열려 있는 동안 주기적 갱신
   };
   function workerCard(name, watchId, device, proc, bpm, status, cls) {
     return `
