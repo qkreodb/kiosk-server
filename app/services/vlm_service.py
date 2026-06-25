@@ -153,7 +153,7 @@ class VlmService:
     ) -> VlmInferResponse:
         code = process_code or "PRC-19"
 
-        # 1) Call the VLM Server's /analyze/fist (or offline mock).
+        # 1) Call the VLM Server's /analyze (or offline mock).
         vlm = await self._vlm.analyze(frame_dir)
 
         # 2) BRANCH A — TTS -> speaker.

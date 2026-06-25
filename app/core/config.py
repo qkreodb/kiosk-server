@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     # --- External VLM Server (PORT 8000, Jetson Thor) ---
     # 키오스크는 구조화된 결과(action + tts_message)를 주는 ``/analyze`` 를 사용한다.
     vlm_base_url: str = "http://localhost:8000"
-    vlm_analyze_path: str = "/analyze/fist"
+    vlm_analyze_path: str = "/analyze"
     # ``/analyze`` 가 Jetson 파일시스템에서 읽을 프레임 폴더(절대 경로). 하드웨어
     # 서버가 30fps 프레임을 기록하는 공유 디렉터리를 가리켜야 한다. 기본값은
     # VLM 서버 README의 테스트 폴더.

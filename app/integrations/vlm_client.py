@@ -1,4 +1,4 @@
-"""Client for the external VLM Server's ``/analyze/fist`` endpoint (PORT 8000).
+"""Client for the external VLM Server's ``/analyze`` endpoint (PORT 8000).
 
 IMPORTANT: this is only a *client*. The VLM itself (Qwen2.5-VL on the Jetson
 Thor) is NOT implemented here. When the real server is offline — or when
@@ -37,7 +37,7 @@ from app.domain.constants import VLM_ACTION_KEY_MAP
 
 logger = get_logger(__name__)
 
-# Response keys exactly as the VLM Server's /analyze/fist emits them.
+# Response keys exactly as the VLM Server's /analyze emits them.
 KEY_ACTION = "action"
 KEY_TTS = "tts_message"
 KEY_DESCRIPTION = "description"
@@ -95,7 +95,7 @@ class VlmClient:
         self,
         dir_path: str | None = None,
     ) -> VlmResult:
-        """Call the VLM Server's /analyze/fist; on any failure, return a stub result.
+        """Call the VLM Server's /analyze; on any failure, return a stub result.
 
         ``dir_path`` is a directory on the *Jetson* filesystem holding frames.
         When omitted, the configured ``vlm_frame_dir`` is used.
