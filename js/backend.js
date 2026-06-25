@@ -303,8 +303,11 @@
     if (image) { image.src = ''; image.style.display = 'none'; }
     if (frame) { frame.style.display = 'block'; frame.src = cctvSrc(true); }
     document.getElementById('cctvOverlay').classList.add('open');
+    startVlmLoop(); // 모달 열림과 동시에 VLM 연속 분석 시작
   };
   window.closeCCTV = function () {
+    stopVlmLoop(); // 모달 닫으면 분석 루프 중단
+    resetAnalyzeBtn();
     document.querySelectorAll('.cctv-btn-item').forEach(b => b.classList.remove('monitoring'));
     document.getElementById('cctvOverlay').classList.remove('open');
     const frame = document.getElementById('cctvFrame');
@@ -323,6 +326,7 @@
     const image = document.getElementById('cctvImage');
     if (image) { image.src = ''; image.style.display = 'none'; }
     if (frame) { frame.style.display = 'block'; frame.src = cctvSrc(true); }
+    startVlmLoop({ keepPaused: true }); // 새 카메라로 즉시 재타게팅(일시정지 상태는 유지)
   };
   window.openCCTVFor = function (region) {
     document.getElementById('cctvHeadSub').textContent = region + ' · 실시간';
@@ -342,6 +346,7 @@
       if (frame) { frame.style.display = 'block'; frame.src = cctvSrc(true); }
     }
     document.getElementById('cctvOverlay').classList.add('open');
+    startVlmLoop(); // 모달 열림과 동시에 VLM 연속 분석 시작
   };
 
   /* ===================== VLM / TTS ===================== */
@@ -385,52 +390,120 @@
     }
   };
 
-  window.analyzeCurrentCam = async function () {
+  /* ----- VLM 연속 분석 루프 -----
+   * CCTV 모달이 열리면 분석을 시작하고, 응답이 올 때마다 즉시 다음 요청을 보낸다.
+   * 모달을 닫으면(또는 카메라 전환 시 토큰 무효화) 루프가 멈춘다.
+   * 분석 버튼은 이 루프의 일시정지/재개 토글로 동작한다.            */
+  const VLM_ERROR_BACKOFF_MS = 1500; // 오류 시 재시도 전 대기
+  const vlmLoop = { token: 0, paused: false };
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  function cctvModalOpen() {
+    const o = document.getElementById('cctvOverlay');
+    return !!(o && o.classList.contains('open'));
+  }
+
+  // 분석 버튼 표시 갱신: 진행 중 → '일시정지', 일시정지 → '재개'
+  const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>';
+  const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
+  const ICON_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>';
+
+  function updateAnalyzeBtn() {
     const btn = document.getElementById('cctvAnalyzeBtn');
-    const overlay = document.getElementById('cctvVlmOverlay');
-    if (!btn || !overlay) return;
-
-    btn.disabled = true;
-    btn.textContent = '분석 중…';
-    try {
-      const camEl = document.querySelector('.cctv-cam-chip.active .cctv-cam-id');
-      const camId = camEl ? camEl.textContent.trim() : 'CAM-03';
-      const processCode = (window.currentProcessCode && window.currentProcessCode()) || '';
-
-      const resp = await fetch((window.__API_BASE || 'http://localhost:8080') + '/vlm/infer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ camera_id: camId, process_code: processCode }),
-      });
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const d = await resp.json();
-
-      document.getElementById('vlmDetection').textContent = d.detection || '— (위험행동 미감지)';
-      document.getElementById('vlmWarning').textContent = d.warning_text || '—';
-      const wl = d.warning_light || {};
-      const ledTxt = wl.led && wl.led.status ? ' · LED ' + (wl.led.status === 'sent' ? '점등' : wl.led.status) : '';
-      document.getElementById('vlmLight').textContent = (wl.label || '—') + (wl.trigger_count != null ? ' (누적 ' + wl.trigger_count + '회)' : '') + ledTxt;
-      const tts = d.tts || {};
-      document.getElementById('vlmTts').textContent = {
-        synthesized: '🔊 음성 안내 재생 중',
-        stubbed: '🔊 음성 안내 재생 중(스텁)',
-        skipped: '경고문 없음 — 미재생',
-        failed: '재생 실패: ' + (tts.detail || ''),
-      }[tts.status] || (tts.status || '—');
-      overlay.classList.add('show');
-      hydrateMatrix(processCode).catch(() => {});
-    } catch (e) {
-      console.error('[VLM 분석] 실패:', e);
-      document.getElementById('vlmDetection').textContent = '분석 실패: ' + e.message;
-      document.getElementById('vlmWarning').textContent = '백엔드 연결을 확인하세요';
-      document.getElementById('vlmLight').textContent = '—';
-      document.getElementById('vlmTts').textContent = '—';
-      overlay.classList.add('show');
-      window.showToast('VLM 분석 실패: ' + e.message, 'error');
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg> 분석';
+    if (!btn) return;
+    btn.disabled = false;
+    if (vlmLoop.paused) {
+      btn.classList.remove('analyzing');
+      btn.innerHTML = ICON_PLAY + ' 재개';
+    } else {
+      btn.classList.add('analyzing');
+      btn.innerHTML = ICON_PAUSE + ' 분석 중';
     }
+  }
+  function resetAnalyzeBtn() {
+    const btn = document.getElementById('cctvAnalyzeBtn');
+    if (!btn) return;
+    btn.classList.remove('analyzing');
+    btn.disabled = false;
+    btn.innerHTML = ICON_SEARCH + ' 분석';
+  }
+
+  function renderVlmResult(d) {
+    document.getElementById('vlmDetection').textContent = d.detection || '— (위험행동 미감지)';
+    document.getElementById('vlmWarning').textContent = d.warning_text || '—';
+    const wl = d.warning_light || {};
+    const ledTxt = wl.led && wl.led.status ? ' · LED ' + (wl.led.status === 'sent' ? '점등' : wl.led.status) : '';
+    document.getElementById('vlmLight').textContent = (wl.label || '—') + (wl.trigger_count != null ? ' (누적 ' + wl.trigger_count + '회)' : '') + ledTxt;
+    const tts = d.tts || {};
+    document.getElementById('vlmTts').textContent = {
+      synthesized: '🔊 음성 안내 재생 중',
+      stubbed: '🔊 음성 안내 재생 중(스텁)',
+      skipped: '경고문 없음 — 미재생',
+      failed: '재생 실패: ' + (tts.detail || ''),
+    }[tts.status] || (tts.status || '—');
+  }
+
+  // 1회 분석 요청 + 렌더. token 이 어긋나거나 모달이 닫혔으면 결과 렌더를 건너뛴다.
+  async function runVlmAnalysisOnce(token) {
+    const camEl = document.querySelector('.cctv-cam-chip.active .cctv-cam-id');
+    const camId = camEl ? camEl.textContent.trim() : 'CAM-03';
+    const processCode = (window.currentProcessCode && window.currentProcessCode()) || '';
+
+    const resp = await fetch(API + '/vlm/infer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ camera_id: camId, process_code: processCode }),
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const d = await resp.json();
+    if (vlmLoop.token !== token || !cctvModalOpen()) return; // 응답 도착 시 이미 중단/전환됨
+    renderVlmResult(d);
+    document.getElementById('cctvVlmOverlay').classList.add('show');
+    hydrateMatrix(processCode).catch(() => {});
+  }
+
+  // 분석 루프 시작. opts.keepPaused: 카메라 전환 등에서 일시정지 상태 유지.
+  function startVlmLoop(opts) {
+    if (!(opts && opts.keepPaused)) vlmLoop.paused = false;
+    const myToken = ++vlmLoop.token; // 이전 루프/in-flight 응답 무효화
+    updateAnalyzeBtn();
+    const det = document.getElementById('vlmDetection');
+    if (det && !vlmLoop.paused) {
+      det.textContent = '분석 요청 중…';
+      document.getElementById('cctvVlmOverlay').classList.add('show');
+    }
+    (async function loop() {
+      while (vlmLoop.token === myToken && cctvModalOpen()) {
+        if (vlmLoop.paused) { await sleep(250); continue; }
+        try {
+          await runVlmAnalysisOnce(myToken);
+          // 성공 → 즉시 다음 요청 (네트워크 왕복이 자연 스로틀 역할)
+        } catch (e) {
+          if (vlmLoop.token !== myToken || !cctvModalOpen()) break;
+          console.error('[VLM 분석] 실패:', e);
+          document.getElementById('vlmDetection').textContent = '분석 실패: ' + e.message;
+          document.getElementById('vlmWarning').textContent = '백엔드 연결을 확인하세요';
+          document.getElementById('cctvVlmOverlay').classList.add('show');
+          await sleep(VLM_ERROR_BACKOFF_MS); // 오류 백오프 후 재시도
+        }
+      }
+    })();
+  }
+
+  // 루프 중단(토큰 무효화). 진행 중 요청의 응답은 token 불일치로 렌더되지 않음.
+  function stopVlmLoop() {
+    vlmLoop.token++;
+    vlmLoop.paused = false;
+  }
+  window.startVlmLoop = startVlmLoop;
+  window.stopVlmLoop = stopVlmLoop;
+
+  // 분석 버튼 = 일시정지/재개 토글
+  window.analyzeCurrentCam = function () {
+    if (!cctvModalOpen()) return;
+    vlmLoop.paused = !vlmLoop.paused;
+    updateAnalyzeBtn();
+    // 재개 시: 활성 루프가 일시정지 슬립에서 깨어나 다음 주기에 자동 재요청
   };
 
   /* ===================== 신호등 행렬 / 공정 / 경광등 ===================== */
