@@ -610,6 +610,105 @@
 .modal-close svg { width: 20px; height: 20px; }
 .modal-body { padding: 24px 28px 28px; overflow-y: auto; }
 
+/* ===== 안전보건경영방침 — 문서형(document) 모달 ===== */
+/* management 타입일 때만 modal-box 에 .policy-doc-mode 를 부여해 헤더를 숨기고
+   본문을 가장자리까지 채운다(참고 디자인: 안전보건경영방침.dc.html). */
+.modal-box.policy-doc-mode {
+  max-width: 480px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  overflow: visible;
+}
+.modal-box.policy-doc-mode .modal-head { display: none; }
+/* 본문 패딩 제거(문서가 가장자리까지). 긴 문서는 그대로 세로 스크롤. */
+.modal-box.policy-doc-mode .modal-body { padding: 0; }
+
+.policy-doc {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 32px 64px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+.policy-doc-close {
+  position: absolute; top: 14px; right: 14px;
+  width: 34px; height: 34px;
+  background: rgba(255, 255, 255, 0.92);
+  border: none; border-radius: 50%;
+  cursor: pointer; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+  color: #162352;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  transition: background 0.15s;
+}
+.policy-doc-close:hover { background: #fff; }
+.policy-doc-close svg { width: 18px; height: 18px; }
+
+/* 틸색 배경 + 좌측 삼각형 장식 */
+.policy-doc-wrapper {
+  position: relative;
+  background: #4db8c4;
+  padding: 26px 22px;
+  overflow: hidden;
+}
+.policy-tri { position: absolute; left: 0; top: 0; bottom: 0; width: 52px; overflow: hidden; }
+.policy-tri svg { width: 52px; height: 100%; }
+
+/* 흰색 문서 카드 (이중 테두리 + 모서리 장식). A4 비율(1:1.414) 세로 페이지. */
+.policy-doc-card {
+  position: relative;
+  background: #fff;
+  margin-left: 34px;
+  padding: 34px 30px 28px;
+  border: 2px solid #4db8c4;
+  outline: 5px solid #4db8c4;
+  outline-offset: -8px;
+  aspect-ratio: 1 / 1.414;
+  display: flex;
+  flex-direction: column;
+}
+/* 서명/날짜 푸터는 A4 페이지 하단에 고정되도록 남은 공간을 밀어낸다. */
+.policy-doc-card .policy-doc-footer { margin-top: auto; }
+.policy-corner { position: absolute; width: 18px; height: 18px; }
+.policy-corner svg { width: 100%; height: 100%; }
+.policy-corner-tl { top: -2px; left: -2px; }
+.policy-corner-tr { top: -2px; right: -2px; transform: rotate(90deg); }
+.policy-corner-bl { bottom: -2px; left: -2px; transform: rotate(-90deg); }
+.policy-corner-br { bottom: -2px; right: -2px; transform: rotate(180deg); }
+
+.policy-doc-title {
+  text-align: center;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 28px; font-weight: 800;
+  color: #162352; letter-spacing: -0.3px;
+  margin-bottom: 22px;
+}
+.policy-doc-subtitle {
+  font-size: 15px; font-weight: 600; color: #162352;
+  margin-bottom: 18px; padding-bottom: 7px;
+  border-bottom: 2px solid #e8960e;
+  display: inline-block;
+}
+/* A4 높이를 채우도록 항목 박스가 남는 공간을 차지하고 행을 균등 분배한다. */
+.policy-items-box {
+  flex: 1;
+  border: 1px solid #c8d8e4; border-radius: 6px;
+  background: #f7f9fb; padding: 20px 18px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  margin-bottom: 22px;
+}
+.policy-item-row { display: flex; align-items: center; gap: 15px; }
+.policy-hana-badge {
+  flex-shrink: 0; width: 46px; height: 46px; border-radius: 50%;
+  background: #162352;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 13px; font-weight: 700; letter-spacing: 0.5px;
+}
+.policy-item-text { font-size: 15px; color: #333; line-height: 1.7; flex: 1; }
+.policy-doc-footer { text-align: center; }
+.policy-footer-date { font-size: 15px; color: #555; margin-bottom: 5px; }
+.policy-footer-sig { font-size: 19px; font-weight: 700; color: #162352; }
+
 /* 비상대피로 블루프린트 */
 .evac-blueprint {
   width: 100%;

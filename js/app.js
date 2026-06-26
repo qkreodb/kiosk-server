@@ -197,26 +197,60 @@ function openContact() {
 function openPolicy(type) {
   const title = document.getElementById('policyTitle');
   const body = document.getElementById('policyBody');
+  const box = document.querySelector('#policyOverlay .modal-box');
   if (!title || !body) return;
-  
+
   if (type === 'management') {
-    title.textContent = '안전보건 경영방침';
+    // 문서형(document) 레이아웃 — 참고: 안전보건경영방침.dc.html
+    if (box) box.classList.add('policy-doc-mode');
+    title.textContent = '안전보건경영방침';
+    const triSvg = `
+      <svg viewBox="0 0 52 600" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="0,0 52,0 0,160" fill="#162352" opacity="0.85"/>
+        <polygon points="0,140 52,180 0,280" fill="#2a9aaa" opacity="0.7"/>
+        <polygon points="0,260 38,320 0,400" fill="#162352" opacity="0.6"/>
+        <polygon points="0,380 52,430 0,520" fill="#2a9aaa" opacity="0.5"/>
+        <polygon points="0,500 30,550 0,600" fill="#162352" opacity="0.4"/>
+      </svg>`;
+    const cornerSvg = `<svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 17 L1 1 L17 1" stroke="#4db8c4" stroke-width="2.5" fill="none"/></svg>`;
+    const items = [
+      '위험성평가에서 제시된 내용에 근거해 우리사 전체의 산재된 위험을 파악하며,<br>이에 대비한다.',
+      '안전보건방침은 전직원이 함께 제작에 참여하며, 즉시 전사에 공유되어야 한다.',
+      '안전보건관리는 전직원의 참여를 기본으로 하며, 최고경영자의 주도하에 안전보건관리에 최우선으로 임한다.',
+      '사람을 살피고 서로 협조한다',
+      '나부터 먼저 안전수칙을 철저히 지킨다',
+      '안전수칙을 서로 공유하며 준수할 수 있도록 독려한다.',
+    ];
+    const itemRows = items.map(t =>
+      `<div class="policy-item-row"><div class="policy-hana-badge">하나</div><div class="policy-item-text">${t}</div></div>`
+    ).join('');
     body.innerHTML = `
-      <div style="text-align:center; padding: 10px 0;">
-        <h3 style="font-size:22px; color:var(--cyan); margin-bottom:18px; font-weight:800; font-family:'Pretendard', sans-serif;">"안전을 최우선 가치로 삼는 되고세이퍼"</h3>
-        <p style="font-size:15px; color:var(--t-2); line-height:1.7; margin-bottom:24px; font-weight:500;">
-          우리는 근로자의 생명과 안전을 기업 경영의 최우선 가치로 인식하고,<br>
-          지속 가능한 안전보건 경영 체계를 구축하기 위해 다음을 선언한다.
-        </p>
-        <ul style="text-align:left; list-style:none; padding:18px 24px; display:inline-block; width:100%; max-width:620px; font-size:14.5px; color:var(--t-1); line-height:2.0; background:var(--bg-card-hi); border-radius:12px; border:1px solid var(--line);">
-          <li style="margin-bottom:12px; border-bottom:1px dashed var(--line-strong); padding-bottom:8px;"><b>1. 안전보건 법규 준수</b><br><span style="font-size:13px; color:var(--t-3);">모든 사업 활동에서 관련 법규와 기준을 엄격히 준수한다.</span></li>
-          <li style="margin-bottom:12px; border-bottom:1px dashed var(--line-strong); padding-bottom:8px;"><b>2. 유해위험요인 예방</b><br><span style="font-size:13px; color:var(--t-3);">현장의 위험성을 철저히 평가하고 선제적으로 개선한다.</span></li>
-          <li style="margin-bottom:12px; border-bottom:1px dashed var(--line-strong); padding-bottom:8px;"><b>3. 안전문화 정착</b><br><span style="font-size:13px; color:var(--t-3);">전 임직원의 자발적인 안전보건 활동 참여와 소통을 강화한다.</span></li>
-          <li style="margin-bottom:0;"><b>4. 쾌적한 작업환경 제공</b><br><span style="font-size:13px; color:var(--t-3);">지속적인 모니터링을 통해 안전하고 건강한 현장을 유지한다.</span></li>
-        </ul>
+      <div class="policy-doc">
+        <button class="policy-doc-close" onclick="closeModal('policyOverlay')" aria-label="닫기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="policy-doc-wrapper">
+          <div class="policy-tri">${triSvg}</div>
+          <div class="policy-doc-card">
+            <div class="policy-corner policy-corner-tl">${cornerSvg}</div>
+            <div class="policy-corner policy-corner-tr">${cornerSvg}</div>
+            <div class="policy-corner policy-corner-bl">${cornerSvg}</div>
+            <div class="policy-corner policy-corner-br">${cornerSvg}</div>
+            <div class="policy-doc-title">안전보건경영방침</div>
+            <div style="margin-bottom:16px;">
+              <span class="policy-doc-subtitle">무사고 사업장을 목표로 안전수칙을 준수한다</span>
+            </div>
+            <div class="policy-items-box">${itemRows}</div>
+            <div class="policy-doc-footer">
+              <div class="policy-footer-date">2026-06-24</div>
+              <div class="policy-footer-sig">세이퍼정밀 주식회사 대표이사 김용필</div>
+            </div>
+          </div>
+        </div>
       </div>
     `;
   } else {
+    if (box) box.classList.remove('policy-doc-mode');
     title.textContent = '산업안전보건 법령요지';
     body.innerHTML = `
       <div style="padding: 10px 0;">
