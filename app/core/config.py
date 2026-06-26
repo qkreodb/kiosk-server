@@ -99,13 +99,18 @@ class Settings(BaseSettings):
     tts_enabled: bool = True
 
     # --- Warning light (경광등) thresholds ---
-    # 누적 불안전행동 카운트가 각 임계값 이상이면 해당 단계로 점등한다.
-    # 데모용으로 1/2/3/4 로 낮춤(감지 1회마다 한 단계 상승). 운영 권장값은 3/6/9/12.
-    #   0: 소등 / 1: 관심(초록) / 2: 주의(노랑) / 3: 경고(빨강) / 4+: 위험(순차)
-    light_interest_threshold: int = Field(default=1, ge=1)   # 관심 (초록 점등)
-    light_caution_threshold: int = Field(default=2, ge=1)    # 주의 (노란색 깜빡임)
-    light_warning_threshold: int = Field(default=3, ge=1)    # 경고 (빨간색 깜빡임)
-    light_danger_threshold: int = Field(default=4, ge=1)     # 위험 (순차 점멸)
+    # 탐지된 불안전행동 카운트가 각 임계값 이상이면 해당 단계로 점등한다.
+    # 단, 경광등은 "이번 분석 사이클에 VLM 탐지 결과가 존재할 때"만 발동하며
+    # (vlm_service.infer 참고), 카운트 단독으로는 울리지 않는다.
+    #   count==0   : 소등
+    #   1<=count<5 : 관심(초록)   — 첫 탐지(count==1)부터 초록 유지
+    #   5<=count<10: 주의(노랑)
+    #   10<=count<15: 경고(빨강)
+    #   count>=15  : 위험(점멸 — 색상 교번 반복)
+    light_interest_threshold: int = Field(default=1, ge=1)    # 관심 (초록 점등)
+    light_caution_threshold: int = Field(default=5, ge=1)     # 주의 (노란색)
+    light_warning_threshold: int = Field(default=10, ge=1)    # 경고 (빨간색)
+    light_danger_threshold: int = Field(default=15, ge=1)     # 위험 (순차 점멸)
 
     # --- Warning light LED (실물 경광등, ST80EL-USB HID) ---
     # ``led_dry_run=False`` 이면 실제 HID 장치로 전송을 시도하고, hidapi 미설치/

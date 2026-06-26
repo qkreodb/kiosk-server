@@ -186,16 +186,22 @@ class VlmService:
                 )
             )
 
-        # 경광등은 "조회 결과" 기준 — 이번 라운드 감지분이 아니라 4대 행동의
-        # 누적 카운트 중 최대값을 사용한다. 그래야 다른 행동만 감지된 라운드에도
-        # 단계가 유지되고, 초기화(reset) 전까지 떨어지지 않는다.
-        all_counts = self._repo.get_behavior_counts(code)
-        trigger_count = max(all_counts.values(), default=0) if all_counts else 0
-        state = self._warning_light_state(trigger_count)
+        # 경광등 발동 규칙:
+        #  1) 안전 결과(이번 사이클 탐지 없음)면 카운트가 높아도 절대 울리지 않는다.
+        #     트리거는 반드시 "이번 사이클에 VLM 탐지가 존재"할 때만 발동한다.
+        #  2) 다중 탐지 우선순위: 한 번에 여러 행동이 탐지되면, 그중 카운트가 가장
+        #     높은 항목의 단계를 경광등에 반영한다(예: A=5, B=15 → 15의 점멸).
+        has_detection = bool(deltas)
+        trigger_count = max((d.count for d in deltas), default=0)
+        state = (
+            self._warning_light_state(trigger_count)
+            if has_detection
+            else WarningLightState.OFF
+        )
         label = WARNING_LIGHT_LABEL[state]
         dispatched = False
         led_dispatch: dict | None = None
-        if state is not WarningLightState.OFF:
+        if has_detection and state is not WarningLightState.OFF:
             dispatched = self._light.dispatch(state, label, trigger_count)
             # 실물 경광등(LED) 자동 점등 — 실패해도 분석 응답은 유지.
             led_dispatch = self._trigger_led(state)
