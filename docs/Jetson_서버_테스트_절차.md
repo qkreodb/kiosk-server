@@ -147,7 +147,7 @@ TTS(Edge TTS)는 **인터넷 연결**이 필요하다(Microsoft 서버 합성).
 mysql -uroot -p dasol < db/schema.sql
 mysql -uroot -p dasol < db/seed.sql
 # 연결 점검
-python db_check.py
+mysql -uroot -p dasol -e "SELECT COUNT(*) FROM process;"
 ```
 
 DB가 없거나 연결 실패하면 서버는 **자동으로 mock 으로 폴백**(경고 로그)하므로 웹 자체는 뜬다.
@@ -213,7 +213,7 @@ curl -s http://localhost:8080/         # {"kiosk":"/kiosk.html", ...}
 | [분석] `source=mock` | VLM 연결 실패 | `KIOSK_VLM_BASE_URL`, `curl localhost:8000/health` |
 | 자동 LED 단계 안 오름 | VLM 미감지(action="") | FORCE_MOCK=true 또는 감지되는 프레임 |
 | TTS 무음 | 오디오 백엔드/스피커/인터넷 | 5단계, `speaker-test`, 인터넷 확인 |
-| 센서 더미만 | DB 미연결 → mock 폴백 | 6단계, `python db_check.py` |
+| 센서 더미만 | DB 미연결 → mock 폴백 | 6단계, 서버 기동 로그의 repository=mock 경고 확인 |
 | CCTV 검은 화면 | 프레임 폴더 비어있음 | `kiosk-hardware/rtsp_frame.py` 실행, `KIOSK_SHARED_DIR` 확인 |
 
 ---

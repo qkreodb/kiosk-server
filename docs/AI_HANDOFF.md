@@ -22,7 +22,7 @@
 
 ## 2. 현재 상태
 
-- ✅ 7개 엔드포인트 + `/health` + `/docs` 전부 동작 (smoke_test 통과).
+- ✅ 7개 엔드포인트 + `/health` + `/docs` 전부 동작.
 - ✅ `kiosk.html` 프론트가 백엔드에 연동됨(파일 하단 `<script>` IIFE). 백엔드 꺼지면 기존 하드코딩으로 fallback.
 - ✅ `.venv` 가상환경에 의존성 설치 완료 (Python 3.12, PyMySQL 포함).
 - ✅ **실제 MySQL(Jetson) 연동 구현 완료** — 확정 ERD 5개 테이블을 `SqlRepository`(PyMySQL raw SQL)로
@@ -40,16 +40,14 @@
 # 서버 기동 (PORT 8080)
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8080
 
-# 전체 엔드포인트 스모크 테스트 (외부 서버 불필요, VLM 오프라인 mock 사용)
-.\.venv\Scripts\python.exe smoke_test.py
-
 # 프론트 열기
 start "" "C:\workspace\kiosk_front\kiosk.html"
 
+# 검증: Swagger(/docs) 또는 Health(/health) 로 엔드포인트 동작 확인
+
 # 실제 MySQL 모드로 기동 (.env 에 KIOSK_REPOSITORY=mysql + KIOSK_DB_* 설정)
 $env:KIOSK_REPOSITORY="mysql"; .\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8080
-# DB 연결 점검 (SELECT 1 + 5테이블 카운트)
-.\.venv\Scripts\python.exe db_check.py
+# DB 연결 점검: /health 의 repository 필드가 mysql 이면 연결 성공(mock 이면 폴백)
 # 로컬 테스트용 DB 구축(참고): mysql < db/schema.sql ; mysql kiosk < db/seed.sql
 ```
 - Swagger: http://localhost:8080/docs · Health: http://localhost:8080/health
@@ -101,8 +99,6 @@ docs/
 db/                        # ★ 로컬 테스트용 참고 DDL/시드 (Jetson DB는 이미 구축됨)
   schema.sql seed.sql
 kiosk.html                 # 프론트엔드. 맨 아래 <script> IIFE 가 백엔드 연동 코드
-smoke_test.py              # 전체 엔드포인트 검증 스크립트 (mock 경로)
-db_check.py                # MySQL 연결 점검 스크립트
 requirements.txt .env.example README.md .gitignore
 ```
 
