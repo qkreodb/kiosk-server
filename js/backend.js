@@ -483,7 +483,10 @@
     updateAnalyzeBtn();
     const det = document.getElementById('vlmDetection');
     if (det && !vlmLoop.paused) {
-      det.textContent = '분석 요청 중…';
+      // 직전 분석 결과는 다음 응답이 도착할 때까지 그대로 유지한다.
+      // (아직 한 번도 결과가 없을 때만 안내 문구를 보여준다)
+      const cur = det.textContent.trim();
+      if (!cur || cur === '—') det.textContent = '분석 요청 중…';
       document.getElementById('cctvVlmOverlay').classList.add('show');
     }
     (async function loop() {
