@@ -76,3 +76,4 @@ POST /vlm/infer
 
 - [ ] `WarningLightActuator.dispatch()` — 경광등 실제 제어 (Hardware Server 8081 or GPIO)
 - [ ] TTS 오프라인 환경 대응 — edge-tts는 인터넷 필요. Jetson 오프라인 시 대체 수단 검토
+- edge-tts는 텍스트를 Microsoft의 클라우드 서버로 전송하고 합성된 음성을 받아오는 클라이언트 라이브러리로 폐쇄망에서는 서버에 도달할 수 없어서 동작하지 않음
