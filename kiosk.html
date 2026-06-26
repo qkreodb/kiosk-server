@@ -91,8 +91,8 @@
           <div class="bh-matrix-row" data-active="3">
             <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><i class="ri-edit-line"></i></button>
             <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
-              <input type="checkbox" class="bhm-focus-cb" data-focus-key="hat_action" data-focus-label="안전모 미착용 또는 안전모를 벗는 행동" checked onchange="onFocusToggle()">
-              <span class="bhm-focus-text">모자(안전모) 벗는 행동</span>
+              <input type="checkbox" class="bhm-focus-cb" data-focus-key="helmet_off" data-focus-label="안전모를 착용하지 않은 행동" checked onchange="onFocusToggle()">
+              <span class="bhm-focus-text">안전모 미착용</span>
             </label>
             <div class="bhm-lamps">
               <span class="bhm-lamp interest"></span>
@@ -104,8 +104,8 @@
           <div class="bh-matrix-row" data-active="1">
             <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><i class="ri-edit-line"></i></button>
             <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
-              <input type="checkbox" class="bhm-focus-cb" data-focus-key="touch_action" data-focus-label="스피커(설비)를 손으로 만지는 행동" checked onchange="onFocusToggle()">
-              <span class="bhm-focus-text">스피커(설비) 만지는 행동</span>
+              <input type="checkbox" class="bhm-focus-cb" data-focus-key="cone_touch" data-focus-label="라바콘에 접촉하는 행동" checked onchange="onFocusToggle()">
+              <span class="bhm-focus-text">라바콘 접촉</span>
             </label>
             <div class="bhm-lamps">
               <span class="bhm-lamp interest"></span>
@@ -117,8 +117,8 @@
           <div class="bh-matrix-row" data-active="0">
             <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><i class="ri-edit-line"></i></button>
             <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
-              <input type="checkbox" class="bhm-focus-cb" data-focus-key="dangerInOut_action" data-focus-label="금지(통제) 구역에 출입하거나 무단 횡단하는 행동" checked onchange="onFocusToggle()">
-              <span class="bhm-focus-text">위험지역 무단횡단 행동</span>
+              <input type="checkbox" class="bhm-focus-cb" data-focus-key="fence_crossing" data-focus-label="위험 펜스를 넘는 행동" checked onchange="onFocusToggle()">
+              <span class="bhm-focus-text">위험 펜스 넘음</span>
             </label>
             <div class="bhm-lamps">
               <span class="bhm-lamp interest on"></span>
@@ -130,13 +130,26 @@
           <div class="bh-matrix-row" data-active="2">
             <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><i class="ri-edit-line"></i></button>
             <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
-              <input type="checkbox" class="bhm-focus-cb" data-focus-key="ladder_action" data-focus-label="사다리를 혼자 올라가거나 단독으로 사다리 작업하는 행동" checked onchange="onFocusToggle()">
-              <span class="bhm-focus-text">사다리 혼자 올라가는 행동</span>
+              <input type="checkbox" class="bhm-focus-cb" data-focus-key="ladder_alone" data-focus-label="사다리를 단독으로 이용하는 행동" checked onchange="onFocusToggle()">
+              <span class="bhm-focus-text">사다리 단독 이용</span>
             </label>
             <div class="bhm-lamps">
               <span class="bhm-lamp interest"></span>
               <span class="bhm-lamp caution"></span>
               <span class="bhm-lamp warning on"></span>
+              <span class="bhm-lamp danger"></span>
+            </div>
+          </div>
+          <div class="bh-matrix-row" data-active="0">
+            <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><i class="ri-edit-line"></i></button>
+            <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
+              <input type="checkbox" class="bhm-focus-cb" data-focus-key="safety_vest" data-focus-label="안전 고리를 착용하지 않은 행동" checked onchange="onFocusToggle()">
+              <span class="bhm-focus-text">안전 고리 미착용</span>
+            </label>
+            <div class="bhm-lamps">
+              <span class="bhm-lamp interest"></span>
+              <span class="bhm-lamp caution"></span>
+              <span class="bhm-lamp warning"></span>
               <span class="bhm-lamp danger"></span>
             </div>
           </div>

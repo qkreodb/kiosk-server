@@ -47,7 +47,7 @@ class VlmResult(BaseModel):
     """Normalized VLM result consumed by the pipeline."""
 
     action_keys: list[str] = Field(
-        default_factory=list, description="감지된 action 키 (예: hat_action)"
+        default_factory=list, description="감지된 action 키 (예: helmet_off)"
     )
     detection: str = Field(default="", description="감지 라벨을 합친 요약 텍스트")
     warning_text: str = Field(default="", description="TTS 경고 메시지(tts_message)")
@@ -59,19 +59,19 @@ class VlmResult(BaseModel):
 # 오프라인 개발용 스텁 시나리오 (action 키 기반).
 _MOCK_SCENES: list[dict] = [
     {
-        KEY_ACTION: "hat_action,ladder_action",
+        KEY_ACTION: "helmet_off,ladder_alone",
         KEY_TTS: "안전모를 착용하지 않은 상태로 단독 사다리 작업을 하고 있어 위험합니다. 안전모를 착용하고 사다리 작업을 중단하십시오",
         KEY_DESCRIPTION: "작업자가 안전모 없이 사다리에 단독으로 올라가 있습니다.",
     },
     {
-        KEY_ACTION: "touch_action,hat_action",
-        KEY_TTS: "안전모 미착용 상태로 설비(스피커)를 만지고 있어 위험합니다. 설비에서 손을 떼고 안전모를 착용하십시오",
-        KEY_DESCRIPTION: "작업자가 가동 중인 설비에 손을 대고 있으며 안전모를 쓰지 않았습니다.",
+        KEY_ACTION: "cone_touch,helmet_off",
+        KEY_TTS: "안전모 미착용 상태로 라바콘을 접촉하고 있어 위험합니다. 라바콘에서 떨어지고 안전모를 착용하십시오",
+        KEY_DESCRIPTION: "작업자가 통제용 라바콘에 손을 대고 있으며 안전모를 쓰지 않았습니다.",
     },
     {
-        KEY_ACTION: "dangerInOut_action",
-        KEY_TTS: "금지 구역에 출입하고 있어 위험합니다. 통제구역 출입을 중단하십시오",
-        KEY_DESCRIPTION: "작업자가 통제선을 넘어 금지 구역으로 진입하고 있습니다.",
+        KEY_ACTION: "fence_crossing,safety_vest",
+        KEY_TTS: "안전 고리 미착용 상태로 위험 펜스를 넘고 있어 위험합니다. 즉시 펜스를 넘지 말고 안전 고리를 체결하십시오",
+        KEY_DESCRIPTION: "작업자가 안전 고리를 걸지 않은 채 위험 구역의 펜스를 넘고 있습니다.",
     },
     {
         KEY_ACTION: "",

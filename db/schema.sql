@@ -44,10 +44,11 @@ CREATE TABLE cctv_info (
 
 CREATE TABLE unstable_behavior (
   behavior_id           INT NOT NULL PRIMARY KEY,
-  hat_removal_count     INT NOT NULL DEFAULT 0,
-  ladder_alone_count    INT NOT NULL DEFAULT 0,
-  restricted_area_count INT NOT NULL DEFAULT 0,
-  speaker_touch_count   INT NOT NULL DEFAULT 0
+  hat_removal_count     INT NOT NULL DEFAULT 0,  -- helmet_off     안전모 미착용
+  ladder_alone_count    INT NOT NULL DEFAULT 0,  -- ladder_alone   사다리 단독 이용
+  restricted_area_count INT NOT NULL DEFAULT 0,  -- fence_crossing 위험 펜스 넘음
+  speaker_touch_count   INT NOT NULL DEFAULT 0,  -- cone_touch     라바콘 접촉
+  safety_vest_count     INT NOT NULL DEFAULT 0   -- safety_vest    안전 고리 미착용
 );
 
 -- Central mapping table: each process points to one of each related row.

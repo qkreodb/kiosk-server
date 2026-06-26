@@ -8,7 +8,7 @@ Talks to the confirmed 5-table schema on the Jetson via PyMySQL + raw SQL:
     heartbeat_sensor(sensor_id PK, heart_rate, measured_at)
     cctv_info(cctv_id PK, rtsp_url)
     unstable_behavior(behavior_id PK, hat_removal_count, ladder_alone_count,
-                      restricted_area_count, speaker_touch_count)
+                      restricted_area_count, speaker_touch_count, safety_vest_count)
 
 Design notes:
   * The DB has no string "code" column, so the API process ``code`` is
@@ -37,11 +37,14 @@ from app.repositories.base import KioskRepository
 logger = get_logger(__name__)
 
 # unsafe-behavior id  ->  unstable_behavior column (confirmed schema mapping).
+# cone_touch/fence_crossing 는 기존 touch/crossing 컬럼을 그대로 재사용하고,
+# safety_vest 는 신규 추가된 safety_vest_count 컬럼에 매핑된다.
 BEHAVIOR_COLUMN: dict[str, str] = {
     UnsafeBehavior.HELMET_OFF.value: "hat_removal_count",
-    UnsafeBehavior.TOUCH_EQUIPMENT.value: "speaker_touch_count",
-    UnsafeBehavior.UNAUTHORIZED_CROSSING.value: "restricted_area_count",
+    UnsafeBehavior.CONE_TOUCH.value: "speaker_touch_count",
+    UnsafeBehavior.FENCE_CROSSING.value: "restricted_area_count",
     UnsafeBehavior.LADDER_ALONE.value: "ladder_alone_count",
+    UnsafeBehavior.SAFETY_VEST.value: "safety_vest_count",
 }
 
 
@@ -311,7 +314,7 @@ class SqlRepository(KioskRepository):
         with self._lock:
             row = self._query_one(
                 "SELECT u.hat_removal_count, u.ladder_alone_count, "
-                "u.restricted_area_count, u.speaker_touch_count "
+                "u.restricted_area_count, u.speaker_touch_count, u.safety_vest_count "
                 "FROM process p JOIN unstable_behavior u ON p.behavior_id = u.behavior_id "
                 "WHERE p.process_id=%s",
                 (pid,),
@@ -320,9 +323,10 @@ class SqlRepository(KioskRepository):
             return zeros
         return {
             UnsafeBehavior.HELMET_OFF.value: int(row["hat_removal_count"]),
-            UnsafeBehavior.TOUCH_EQUIPMENT.value: int(row["speaker_touch_count"]),
-            UnsafeBehavior.UNAUTHORIZED_CROSSING.value: int(row["restricted_area_count"]),
+            UnsafeBehavior.CONE_TOUCH.value: int(row["speaker_touch_count"]),
+            UnsafeBehavior.FENCE_CROSSING.value: int(row["restricted_area_count"]),
             UnsafeBehavior.LADDER_ALONE.value: int(row["ladder_alone_count"]),
+            UnsafeBehavior.SAFETY_VEST.value: int(row["safety_vest_count"]),
         }
 
     def reset_behavior_counts(self, process_code: str) -> None:

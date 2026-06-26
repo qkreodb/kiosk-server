@@ -25,7 +25,7 @@ class BehaviorDelta(BaseModel):
     """Result of parsing one detected behavior into a category + DB increment."""
 
     id: str = Field(examples=["helmet_off"])
-    name: str = Field(examples=["모자(안전모) 벗는 행동"])
+    name: str = Field(examples=["안전모 미착용"])
     grade: str = Field(examples=["위험"])
     matched_label: str = Field(description="이 카테고리에 매칭된 원본 탐지 라벨")
     increment: int = Field(description="이번 추론으로 더해진 횟수", examples=[1])
@@ -65,7 +65,7 @@ class VlmInferResponse(BaseModel):
     process_code: str | None = None
     source: str = Field(description="vlm / mock — 응답 출처")
 
-    detection: str = Field(description="감지된 행동 라벨 요약", examples=["모자(안전모) 벗는 행동, 사다리 혼자 올라가는 행동"])
+    detection: str = Field(description="감지된 행동 라벨 요약", examples=["안전모 미착용, 사다리 단독 이용"])
     detection_labels: list[str] = Field(description="감지된 행동 라벨 목록")
     scene_description: str = Field(default="", description="VLM 장면 설명 원문(vlm_description)")
     warning_text: str = Field(examples=["안전모를 착용하고 단독 사다리 작업을 중지하세요"])

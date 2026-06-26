@@ -1,8 +1,8 @@
 {
   "_comment": "공정별 불안전행동 누적 카운트 시드값. /vlm/infer 가 이 값을 증가시킨다.",
-  "PRC-19": { "helmet_off": 3, "touch_equipment": 1, "unauthorized_crossing": 0, "ladder_alone": 0 },
-  "PRC-07": { "helmet_off": 1, "touch_equipment": 0, "unauthorized_crossing": 1, "ladder_alone": 2 },
-  "PRC-12": { "helmet_off": 0, "touch_equipment": 2, "unauthorized_crossing": 0, "ladder_alone": 0 },
-  "PRC-23": { "helmet_off": 0, "touch_equipment": 1, "unauthorized_crossing": 0, "ladder_alone": 1 },
-  "PRC-31": { "helmet_off": 2, "touch_equipment": 0, "unauthorized_crossing": 3, "ladder_alone": 0 }
+  "PRC-19": { "helmet_off": 3, "cone_touch": 1, "fence_crossing": 0, "ladder_alone": 0, "safety_vest": 0 },
+  "PRC-07": { "helmet_off": 1, "cone_touch": 0, "fence_crossing": 1, "ladder_alone": 2, "safety_vest": 1 },
+  "PRC-12": { "helmet_off": 0, "cone_touch": 2, "fence_crossing": 0, "ladder_alone": 0, "safety_vest": 0 },
+  "PRC-23": { "helmet_off": 0, "cone_touch": 1, "fence_crossing": 0, "ladder_alone": 1, "safety_vest": 2 },
+  "PRC-31": { "helmet_off": 2, "cone_touch": 0, "fence_crossing": 3, "ladder_alone": 0, "safety_vest": 0 }
 }

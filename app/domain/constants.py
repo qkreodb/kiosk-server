@@ -1,7 +1,7 @@
 """Domain enums and constants shared across the server.
 
 The single source of truth for:
-  * the 4 unsafe-behavior ("불안전행동") categories the kiosk monitors, and
+  * the 5 unsafe-behavior ("불안전행동") categories the kiosk monitors, and
   * the warning-light ("경광등") states the /vlm/infer pipeline can emit.
 
 Category names match the labels rendered by the kiosk frontend
@@ -24,12 +24,18 @@ class BehaviorGrade(str, Enum):
 
 
 class UnsafeBehavior(str, Enum):
-    """Stable identifiers for the 4 unsafe-behavior categories."""
+    """Stable identifiers for the 5 unsafe-behavior categories.
 
-    HELMET_OFF = "helmet_off"
-    TOUCH_EQUIPMENT = "touch_equipment"
-    UNAUTHORIZED_CROSSING = "unauthorized_crossing"
-    LADDER_ALONE = "ladder_alone"
+    값은 VLM Server가 ``action`` 으로 내보내는 탐지 라벨 키와 1:1로 동일하다
+    (VLM 측 ``LABEL_KO`` 딕셔너리 키와 일치). 따라서 별도 키 변환 없이 그대로
+    매핑된다(:data:`VLM_ACTION_KEY_MAP`).
+    """
+
+    HELMET_OFF = "helmet_off"          # 안전모 미착용
+    CONE_TOUCH = "cone_touch"          # 라바콘 접촉
+    FENCE_CROSSING = "fence_crossing"  # 위험 펜스 넘음
+    LADDER_ALONE = "ladder_alone"      # 사다리 단독 이용
+    SAFETY_VEST = "safety_vest"        # 안전 고리 미착용
 
 
 @dataclass(frozen=True)
@@ -51,27 +57,33 @@ class BehaviorCategory:
 BEHAVIOR_CATEGORIES: tuple[BehaviorCategory, ...] = (
     BehaviorCategory(
         id=UnsafeBehavior.HELMET_OFF,
-        name="모자(안전모) 벗는 행동",
+        name="안전모 미착용",
         base_grade=BehaviorGrade.DANGER,
         keywords=("안전모", "헬멧", "모자", "helmet"),
     ),
     BehaviorCategory(
-        id=UnsafeBehavior.TOUCH_EQUIPMENT,
-        name="스피커(설비) 만지는 행동",
+        id=UnsafeBehavior.CONE_TOUCH,
+        name="라바콘 접촉",
         base_grade=BehaviorGrade.CAUTION,
-        keywords=("설비", "스피커", "기계", "장비", "만지"),
+        keywords=("라바콘", "라바", "콘", "접촉", "cone"),
     ),
     BehaviorCategory(
-        id=UnsafeBehavior.UNAUTHORIZED_CROSSING,
-        name="위험지역 무단횡단 행동",
-        base_grade=BehaviorGrade.NORMAL,
-        keywords=("무단횡단", "위험지역", "통제구역", "출입"),
+        id=UnsafeBehavior.FENCE_CROSSING,
+        name="위험 펜스 넘음",
+        base_grade=BehaviorGrade.DANGER,
+        keywords=("펜스", "울타리", "넘", "차단", "fence"),
     ),
     BehaviorCategory(
         id=UnsafeBehavior.LADDER_ALONE,
-        name="사다리 혼자 올라가는 행동",
+        name="사다리 단독 이용",
         base_grade=BehaviorGrade.NORMAL,
         keywords=("사다리", "단독", "혼자", "ladder"),
+    ),
+    BehaviorCategory(
+        id=UnsafeBehavior.SAFETY_VEST,
+        name="안전 고리 미착용",
+        base_grade=BehaviorGrade.DANGER,
+        keywords=("안전 고리", "고리", "안전대", "안전벨트", "vest", "harness"),
     ),
 )
 
@@ -82,26 +94,29 @@ CATEGORY_BY_ID: dict[UnsafeBehavior, BehaviorCategory] = {
 
 
 # VLM Server(`POST /analyze`)의 LLM 단계가 반환하는 ``action`` 키를 키오스크의
-# 불안전행동 카테고리로 직접 매핑한다. 키는 VLM 서버의 DEFAULT_DETECT_ACTIONS
-# 및 README 표와 1:1 로 일치한다(자유텍스트 키워드 매칭 불필요).
-#   hat_action         안전모 미착용 또는 벗는 행동
-#   touch_action       스피커를 만지는 행동
-#   dangerInOut_action 금지 구역 출입
-#   ladder_action      사다리를 올라가거나 단독 사다리 작업
+# 불안전행동 카테고리로 직접 매핑한다. 키는 VLM 서버의 탐지 라벨(LABEL_KO)
+# 키와 1:1 로 일치한다(자유텍스트 키워드 매칭 불필요).
+#   helmet_off      안전모 미착용
+#   cone_touch      라바콘 접촉
+#   fence_crossing  위험 펜스 넘음
+#   ladder_alone    사다리 단독 이용
+#   safety_vest     안전 고리 미착용
 VLM_ACTION_KEY_MAP: dict[str, UnsafeBehavior] = {
-    "hat_action": UnsafeBehavior.HELMET_OFF,
-    "touch_action": UnsafeBehavior.TOUCH_EQUIPMENT,
-    "dangerInOut_action": UnsafeBehavior.UNAUTHORIZED_CROSSING,
-    "ladder_action": UnsafeBehavior.LADDER_ALONE,
+    "helmet_off": UnsafeBehavior.HELMET_OFF,
+    "cone_touch": UnsafeBehavior.CONE_TOUCH,
+    "fence_crossing": UnsafeBehavior.FENCE_CROSSING,
+    "ladder_alone": UnsafeBehavior.LADDER_ALONE,
+    "safety_vest": UnsafeBehavior.SAFETY_VEST,
 }
 
 # 키오스크가 `/analyze` 요청 시 함께 보내는 detect_actions(키+라벨). 키오스크가
 # 매핑의 단일 소유자가 되도록 명시적으로 전달한다(VLM 서버 기본값과 동일).
 VLM_DETECT_ACTIONS: list[dict[str, str]] = [
-    {"key": "hat_action", "label": "안전모를 착용하지 않았거나 벗는 행동"},
-    {"key": "touch_action", "label": "스피커를 만지는 행동"},
-    {"key": "dangerInOut_action", "label": "금지 구역에 출입하는 행동"},
-    {"key": "ladder_action", "label": "사다리를 올라가거나 단독 사다리 작업"},
+    {"key": "helmet_off", "label": "안전모를 착용하지 않은 행동"},
+    {"key": "cone_touch", "label": "라바콘에 접촉하는 행동"},
+    {"key": "fence_crossing", "label": "위험 펜스를 넘는 행동"},
+    {"key": "ladder_alone", "label": "사다리를 단독으로 이용하는 행동"},
+    {"key": "safety_vest", "label": "안전 고리를 착용하지 않은 행동"},
 ]
 
 

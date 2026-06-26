@@ -33,13 +33,14 @@ INSERT INTO cctv_info (cctv_id, rtsp_url) VALUES
   (5, 'rtsp://192.168.0.15:554/stream1');
 
 -- unsafe-behavior counters.
--- columns: hat_removal=helmet_off, ladder_alone, restricted_area=unauthorized_crossing, speaker_touch=touch_equipment
-INSERT INTO unstable_behavior (behavior_id, hat_removal_count, ladder_alone_count, restricted_area_count, speaker_touch_count) VALUES
-  (1, 3, 0, 0, 1),
-  (2, 1, 2, 1, 0),
-  (3, 0, 0, 0, 2),
-  (4, 0, 1, 0, 1),
-  (5, 2, 0, 3, 0);
+-- columns: hat_removal=helmet_off, ladder_alone=ladder_alone, restricted_area=fence_crossing,
+--          speaker_touch=cone_touch, safety_vest=safety_vest
+INSERT INTO unstable_behavior (behavior_id, hat_removal_count, ladder_alone_count, restricted_area_count, speaker_touch_count, safety_vest_count) VALUES
+  (1, 3, 0, 0, 1, 0),
+  (2, 1, 2, 1, 0, 1),
+  (3, 0, 0, 0, 2, 0),
+  (4, 0, 1, 0, 1, 2),
+  (5, 2, 0, 3, 0, 0);
 
 -- processes (central mapping).
 INSERT INTO process (process_id, process_name, behavior_id, th_sensor_id, hb_sensor_id, cctv_id) VALUES
