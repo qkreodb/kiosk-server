@@ -196,6 +196,7 @@
     if (sub) sub.textContent = sensorId + ' · ' + zone;
     setText('envDetailTemp', '--<small>°C</small>', true);
     setText('envDetailHum', '--<small>%</small>', true);
+    if (typeof updateEnvStatus === 'function') updateEnvStatus(NaN, NaN);
     document.getElementById('envDetailOverlay').classList.add('open');
 
     const live = !!sensorName;
@@ -205,6 +206,7 @@
         const dummy = dummyTempHumid(sensorId);
         setText('envDetailTemp', dummy.temp + '<small>°C</small>', true);
         setText('envDetailHum', dummy.humidity + '<small>%</small>', true);
+        if (typeof updateEnvStatus === 'function') updateEnvStatus(parseFloat(dummy.temp), parseFloat(dummy.humidity));
         return;
       }
       const reading = await fetchTempHumidByName(sensorName);
@@ -212,6 +214,7 @@
       if (sub) sub.textContent = sensorId + ' · ' + zone + ' · LIVE';
       setText('envDetailTemp', Number(reading.temp).toFixed(1) + '<small>°C</small>', true);
       setText('envDetailHum', Number(reading.humidity).toFixed(1) + '<small>%</small>', true);
+      if (typeof updateEnvStatus === 'function') updateEnvStatus(Number(reading.temp), Number(reading.humidity));
     }
 
     try { await update(); } catch (_) { /* 모달은 유지 */ }

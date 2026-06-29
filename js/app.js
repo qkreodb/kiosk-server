@@ -171,6 +171,43 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
   });
 });
 
+// 온습도 적정 범위 (모달 카드 표기와 일치)
+const ENV_TEMP_RANGE = { min: 18, max: 28 };
+const ENV_HUM_RANGE = { min: 40, max: 60 };
+
+// 측정값이 기준 범위를 벗어나면 카드 배경/문구를 경고 상태로 갱신
+function updateEnvStatus(temp, hum) {
+  const tempOut = Number.isFinite(temp) && (temp < ENV_TEMP_RANGE.min || temp > ENV_TEMP_RANGE.max);
+  const humOut = Number.isFinite(hum) && (hum < ENV_HUM_RANGE.min || hum > ENV_HUM_RANGE.max);
+
+  const tempCard = document.getElementById('envDetailTemp')?.closest('.env-detail-card');
+  const humCard = document.getElementById('envDetailHum')?.closest('.env-detail-card');
+  if (tempCard) tempCard.classList.toggle('out-of-range', tempOut);
+  if (humCard) humCard.classList.toggle('out-of-range', humOut);
+
+  const note = document.getElementById('envStatusNote');
+  const icon = document.getElementById('envStatusIcon');
+  const text = document.getElementById('envStatusText');
+  if (!note || !icon || !text) return;
+
+  if (tempOut || humOut) {
+    const labels = [];
+    if (tempOut) labels.push('온도');
+    if (humOut) labels.push('습도');
+    note.classList.add('env-warn');
+    note.style.background = '';
+    note.style.borderColor = '';
+    icon.innerHTML = '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>';
+    text.innerHTML = '<b>' + labels.join(' · ') + '</b> 값이 정상 범위를 벗어났습니다. 확인이 필요합니다. 측정 주기 1분 · 마지막 갱신 방금 전.';
+  } else {
+    note.classList.remove('env-warn');
+    note.style.background = '#D8F4E9';
+    note.style.borderColor = '#AADCC8';
+    icon.innerHTML = '<path d="M20 6L9 17l-5-5"/>';
+    text.innerHTML = '모든 환경 지표가 <b style="color:var(--green);">정상 범위</b> 내에 있습니다. 측정 주기 1분 · 마지막 갱신 방금 전.';
+  }
+}
+
 // 온습도 센서 상세 열기
 function openEnvDetail(sensorId, zone) {
   const sub = document.getElementById('envDetailSub');
@@ -180,6 +217,7 @@ function openEnvDetail(sensorId, zone) {
   const hum = Math.floor(52 + Math.random() * 12);
   document.getElementById('envDetailTemp').innerHTML = temp + '<small>°C</small>';
   document.getElementById('envDetailHum').innerHTML = hum + '<small>%</small>';
+  updateEnvStatus(parseFloat(temp), hum);
   setTimeout(() => document.getElementById('envDetailOverlay').classList.add('open'), 0);
 }
 
@@ -254,13 +292,13 @@ function openPolicy(type) {
     title.textContent = '산업안전보건 법령요지';
     body.innerHTML = `
       <div style="padding: 10px 0;">
-        <h4 style="font-size:16px; color:var(--cyan); margin-bottom:12px; font-weight:700; border-left:3px solid var(--cyan); padding-left:10px;">근로자의 주요 권리와 의무 (법 제5조 등)</h4>
+        <h4 style="font-size:16px; color:var(--cyan); margin-bottom:12px; font-weight:700; border-left:3px;">근로자의 주요 권리와 의무 (법 제5조 등)</h4>
         <ul style="list-style:none; padding:0; font-size:14px; color:var(--t-2); line-height:2.0; margin-bottom:24px;">
           <li style="margin-bottom:8px;"><b>• 급박한 위험 시 작업중지권</b>: 급박한 위험이 있을 때 작업을 중지하고 대피할 수 있는 권리.</li>
           <li style="margin-bottom:8px;"><b>• 안전보건수칙 준수 의무</b>: 사업주가 제공하는 보호구 착용 및 안전보건 규칙 준수 의무.</li>
           <li style="margin-bottom:8px;"><b>• 건강진단 수검 의무</b>: 회사가 실시하는 정기 및 특수 건강진단을 적극 수검할 의무.</li>
         </ul>
-        <h4 style="font-size:16px; color:var(--orange); margin-bottom:12px; font-weight:700; border-left:3px solid var(--orange); padding-left:10px;">사업주의 주요 의무 (법 제4조)</h4>
+        <h4 style="font-size:16px; color:var(--orange); margin-bottom:12px; font-weight:700; border-left:3px;">사업주의 주요 의무 (법 제4조)</h4>
         <ul style="list-style:none; padding:0; font-size:14px; color:var(--t-2); line-height:2.0;">
           <li style="margin-bottom:8px;"><b>• 위험성평가 실시 및 이행</b>: 사업장 내 위험 요인을 파악하고 개선 대책을 수립·이행할 의무.</li>
           <li style="margin-bottom:8px;"><b>• 정기 안전보건교육 제공</b>: 신규 채용 및 정기 안전보건 교육을 소속 근로자에게 제공할 의무.</li>

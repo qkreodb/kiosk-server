@@ -597,7 +597,7 @@
 .modal-head-title { font-family: 'Pretendard', sans-serif; font-size: 22px; font-weight: 800; color: var(--t-1); letter-spacing: -0.3px; }
 .modal-head-sub {
   font-family: 'Pretendard', sans-serif;
-  font-size: 13px; color: var(--t-3); margin-left: 12px; letter-spacing: 0.3px;
+  font-size: 13px; color: var(--t-3);
 }
 .modal-close {
   width: 44px; height: 44px; border-radius: 50%;
@@ -730,6 +730,9 @@
 }
 .evac-note svg { width: 22px; height: 22px; color: var(--green); flex-shrink: 0; margin-top: 1px; }
 .evac-note b { color: var(--green); font-weight: 700; }
+.evac-note.env-warn { background: rgba(229, 57, 53, 0.12); border-color: rgba(229, 57, 53, 0.45); }
+.evac-note.env-warn svg { color: #E53935; }
+.evac-note.env-warn b { color: #E53935; }
 
 /* ===== MSDS 목록 모달 ===== */
 .msds-list { display: flex; flex-direction: column; gap: 10px; }
@@ -791,6 +794,12 @@
   border: 1px solid var(--line); border-radius: var(--r-md);
 }
 .env-detail-card svg { width: 34px; height: 34px; }
+.env-detail-card.out-of-range {
+  background: rgba(229, 57, 53, 0.12);
+  border-color: rgba(229, 57, 53, 0.45);
+}
+.env-detail-card.out-of-range .env-detail-val { color: #E53935; }
+.env-detail-card.out-of-range .env-detail-range { color: #E53935; font-weight: 600; }
 .env-detail-val { font-family: 'Pretendard', sans-serif; font-size: 42px; font-weight: 700; line-height: 1; color: #192A84; }
 .env-detail-val small { font-size: 18px; opacity: 0.7; margin-left: 2px; }
 .env-detail-lbl { font-size: 14px; color: var(--t-2); font-weight: 600; }
