@@ -154,17 +154,17 @@ class VlmClient:
 
     @classmethod
     def _extract_action_keys(cls, data: dict) -> list[str]:
-        """탐지 키 추출: labels(현행) → action(레거시) → raw(폴백) 순."""
-        labels = data.get(KEY_LABELS)
-        if isinstance(labels, list):
-            keys = cls._dedupe_known(labels)
-            if keys:
-                return keys
-        action = data.get(KEY_ACTION)
-        if action:
-            keys = cls._dedupe_known(str(action).replace("、", ",").split(","))
-            if keys:
-                return keys
+        """탐지 키 추출: labels(현행) → action(레거시) → raw(폴백) 순.
+
+        ``labels``(또는 레거시 ``action``)가 응답에 존재하면 그것이 정답이다.
+        값이 비어 있으면 "탐지 없음"을 의미하므로 raw 폴백으로 넘어가지 않는다
+        (raw 에 safety_vest 처럼 위반이 아닌 키가 true 로 남아 오탐되는 것 방지).
+        raw 폴백은 labels·action 키가 아예 없는 응답에서만 사용한다.
+        """
+        if isinstance(data.get(KEY_LABELS), list):
+            return cls._dedupe_known(data[KEY_LABELS])
+        if data.get(KEY_ACTION) is not None:
+            return cls._dedupe_known(str(data[KEY_ACTION]).replace("、", ",").split(","))
         return cls._dedupe_known(cls._truthy_keys_from_raw(data.get(KEY_RAW)))
 
     @classmethod
