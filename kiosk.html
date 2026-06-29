@@ -291,7 +291,6 @@
 
     <!-- 안전시설 서브 메뉴 (6개, 정사각형) -->
     <nav class="facility-menu-sq">
-      <button class="facility-btn-sq sq-blue" onclick="openMSDSList()"><i class="ri-flask-line facility-btn-icon"></i><span class="facility-label">MSDS</span></button>
       <button class="facility-btn-sq sq-blue" onclick="openRisk()"><i class="ri-error-warning-line facility-btn-icon"></i><span class="facility-label">위험성평가</span></button>
       <button class="facility-btn-sq sq-blue" onclick="openProcessMgmt()"><i class="ri-settings-3-line facility-btn-icon"></i><span class="facility-label">공정관리</span></button>
       <button class="facility-btn-sq sq-blue" onclick="openIssueMgmt()"><i class="ri-file-warning-line facility-btn-icon"></i><span class="facility-label">현장특이사항</span></button>
@@ -425,7 +424,7 @@
 </div>
 
 <!-- ============== MSDS MODAL ============== -->
-<div class="modal-overlay" id="msdsOverlay">
+<div class="modal-overlay" id="msdsOverlay" style="z-index:1002;">
   <div class="modal-box">
     <div class="modal-head">
       <div class="modal-head-left">
@@ -772,50 +771,6 @@
 </div>
 
 
-<!-- ============== MSDS 열람 MODAL (목록) ============== -->
-<div class="modal-overlay" id="msdsListOverlay">
-  <div class="modal-box" style="max-width: 920px;">
-    <div class="modal-head">
-      <div class="modal-head-left">
-        <div class="modal-head-icon msds">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6.5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2"/><path d="M8 2h8"/><line x1="7" y1="14" x2="17" y2="14"/></svg>
-        </div>
-        <div>
-          <div class="modal-head-title">MSDS 열람 · 물질안전보건자료</div>
-          <div class="modal-head-sub">고양시사업장 · 화학물질 4종 · 클릭하여 상세 조회</div>
-        </div>
-      </div>
-      <button class="modal-close" onclick="closeModal('msdsListOverlay')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="modal-body">
-      <div class="msds-list">
-        <div class="msds-list-item" onclick="closeModal('msdsListOverlay'); openMSDS('염산')">
-          <div class="msds-list-ghs">⚠</div>
-          <div class="msds-list-info"><div class="msds-list-name">염산 (Hydrochloric acid)</div><div class="msds-list-cas">CAS 7647-01-0 · HCl · UN1789</div></div>
-          <div class="msds-list-sig">위험</div>
-        </div>
-        <div class="msds-list-item" onclick="closeModal('msdsListOverlay'); openMSDS('황산')">
-          <div class="msds-list-ghs">⚠</div>
-          <div class="msds-list-info"><div class="msds-list-name">황산 (Sulfuric acid)</div><div class="msds-list-cas">CAS 7664-93-9 · H₂SO₄ · UN1830</div></div>
-          <div class="msds-list-sig">위험</div>
-        </div>
-        <div class="msds-list-item" onclick="closeModal('msdsListOverlay'); openMSDS('에틸 알코올')">
-          <div class="msds-list-ghs">⚠</div>
-          <div class="msds-list-info"><div class="msds-list-name">에탄올 (Ethanol)</div><div class="msds-list-cas">CAS 64-17-5 · C₂H₅OH · UN1170</div></div>
-          <div class="msds-list-sig">위험</div>
-        </div>
-        <div class="msds-list-item" onclick="closeModal('msdsListOverlay'); openMSDS('락카페인트 스프레이 (육각)')">
-          <div class="msds-list-ghs">⚠</div>
-          <div class="msds-list-info"><div class="msds-list-name">락카페인트 스프레이</div><div class="msds-list-cas">혼합물 · Mixture · UN1950</div></div>
-          <div class="msds-list-sig">위험</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- ============== 위험성평가 결과 MODAL ============== -->
 <div class="modal-overlay" id="riskOverlay">
   <div class="modal-box" style="max-width: 960px;">
@@ -1009,35 +964,41 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18M3 12h18M3 17h18"/><circle cx="8" cy="7" r="1.6" fill="currentColor" stroke="none"/><circle cx="14" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="10" cy="17" r="1.6" fill="currentColor" stroke="none"/></svg>
         </div>
         <div>
-          <div class="modal-head-title">공정(작업)관리</div>
-          <div class="modal-head-sub">고양시사업장 · 금일 작업 현황 · PROCESS MANAGEMENT</div>
+          <div class="modal-head-title" id="procHdrTitle">공정(작업)관리</div>
+          <div class="modal-head-sub" id="procHdrSub">고양시사업장 · 금일 작업 현황 · PROCESS MANAGEMENT</div>
         </div>
       </div>
+      <button class="modal-back-btn" id="procBackBtn" onclick="backToProcessList()">← 목록으로</button>
       <button class="modal-close" onclick="closeModal('processOverlay')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
     <div class="modal-body">
-      <div class="risk-summary">
-        <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--cyan);">5</div><div class="risk-sum-lbl">진행중 공정</div></div>
-        <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--green);">3</div><div class="risk-sum-lbl">완료</div></div>
-        <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--amber);">2</div><div class="risk-sum-lbl">대기</div></div>
-        <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--violet);">28</div><div class="risk-sum-lbl">투입 인원</div></div>
+      <!-- 목록 뷰 -->
+      <div id="procListView">
+        <div class="risk-summary">
+          <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--cyan);">5</div><div class="risk-sum-lbl">진행중 공정</div></div>
+          <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--green);">3</div><div class="risk-sum-lbl">완료</div></div>
+          <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--amber);">2</div><div class="risk-sum-lbl">대기</div></div>
+          <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--violet);">28</div><div class="risk-sum-lbl">투입 인원</div></div>
+        </div>
+        <table class="risk-table">
+          <thead><tr><th>공정코드</th><th>공정명</th><th>담당</th><th>인원</th><th>상태</th><th></th></tr></thead>
+          <tbody>
+            <tr class="clickable" onclick="showProcessDetail(0)"><td>PRC-19</td><td>정밀가공 라인</td><td>이*학</td><td>6</td><td><span class="risk-badge low">진행중</span></td><td><span class="row-arrow">›</span></td></tr>
+            <tr class="clickable" onclick="showProcessDetail(1)"><td>PRC-07</td><td>절단·용접 작업</td><td>전*조</td><td>5</td><td><span class="risk-badge low">진행중</span></td><td><span class="row-arrow">›</span></td></tr>
+            <tr class="clickable" onclick="showProcessDetail(2)"><td>PRC-12</td><td>도장 작업</td><td>김*수</td><td>4</td><td><span class="risk-badge mid">대기</span></td><td><span class="row-arrow">›</span></td></tr>
+            <tr class="clickable" onclick="showProcessDetail(3)"><td>PRC-23</td><td>조립 라인</td><td>박*후</td><td>8</td><td><span class="risk-badge low">진행중</span></td><td><span class="row-arrow">›</span></td></tr>
+            <tr class="clickable" onclick="showProcessDetail(4)"><td>PRC-31</td><td>물류·하역</td><td>최*재</td><td>5</td><td><span class="risk-badge low">진행중</span></td><td><span class="row-arrow">›</span></td></tr>
+          </tbody>
+        </table>
+        <div class="evac-note" style="background:rgba(139,124,255,0.06);border-color:rgba(139,124,255,0.25);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v5l3 2"/></svg>
+          <span style="color:var(--t-2);">행을 클릭하면 공정별 세부 작업·사용물질을 확인할 수 있습니다. 금일 진행률 <b style="color:var(--violet);">62%</b> · 작업허가서(PTW) 발급 5건 · 위험작업 2건은 안전관리자 입회 하에 진행 중입니다.</span>
+        </div>
       </div>
-      <table class="risk-table">
-        <thead><tr><th>공정코드</th><th>공정명</th><th>담당</th><th>인원</th><th>상태</th></tr></thead>
-        <tbody>
-          <tr><td>PRC-19</td><td>정밀가공 라인</td><td>이*학</td><td>6</td><td><span class="risk-badge low">진행중</span></td></tr>
-          <tr><td>PRC-07</td><td>절단·용접 작업</td><td>전*조</td><td>5</td><td><span class="risk-badge low">진행중</span></td></tr>
-          <tr><td>PRC-12</td><td>도장 작업</td><td>김*수</td><td>4</td><td><span class="risk-badge mid">대기</span></td></tr>
-          <tr><td>PRC-23</td><td>조립 라인</td><td>박*후</td><td>8</td><td><span class="risk-badge low">진행중</span></td></tr>
-          <tr><td>PRC-31</td><td>물류·하역</td><td>최*재</td><td>5</td><td><span class="risk-badge low">진행중</span></td></tr>
-        </tbody>
-      </table>
-      <div class="evac-note" style="background:rgba(139,124,255,0.06);border-color:rgba(139,124,255,0.25);">
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v5l3 2"/></svg>
-        <span style="color:var(--t-2);">금일 작업 계획 대비 <b style="color:var(--violet);">진행률 62%</b> · 작업허가서(PTW) 발급 5건 · 위험작업 2건은 안전관리자 입회 하에 진행 중입니다.</span>
-      </div>
+      <!-- 상세 뷰 -->
+      <div id="procDetailView" style="display:none;"></div>
     </div>
   </div>
 </div>

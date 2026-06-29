@@ -164,7 +164,7 @@ function switchSiteView(view, btn) {
 
 // ===== Generic modal control =====
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-['hrOverlay','msdsOverlay','photoOverlay','evacOverlay','facilityOverlay','contactOverlay','msdsListOverlay','riskOverlay','aiSiteOverlay','envDetailOverlay','processOverlay','issueOverlay','policyOverlay'].forEach(id => {
+['hrOverlay','msdsOverlay','photoOverlay','evacOverlay','facilityOverlay','contactOverlay','riskOverlay','aiSiteOverlay','envDetailOverlay','processOverlay','issueOverlay','policyOverlay'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('click', e => {
     if (e.target.id === id) closeModal(id);
@@ -310,11 +310,182 @@ function openPolicy(type) {
   document.getElementById('policyOverlay').classList.add('open');
 }
 
-// MSDS 목록 / 위험성평가 / AI 부스 도면 열기
-function openMSDSList() { document.getElementById('msdsListOverlay').classList.add('open'); }
+// 위험성평가 / AI 부스 도면 열기
 function openRisk() { document.getElementById('riskOverlay').classList.add('open'); }
 function openAISite() { document.getElementById('aiSiteOverlay').classList.add('open'); }
-function openProcessMgmt() { document.getElementById('processOverlay').classList.add('open'); }
+// ===== 공정(작업)관리 드릴다운 =====
+// 행 순서는 processOverlay 목록 표의 onclick 인덱스(0~4)와 일치
+const PROCESS_DATA = [
+  { code:'PRC-19', name:'정밀가공 라인', manager:'이*학',
+    locations:['도장부스','도장작업실','밀폐내부 작업존(밀폐)','밀폐작업구역(밀폐)','원자재 이송구역','절단기 작업존','정비투입구역'],
+    desc:'금속 또는 부품을 규격과 도면에 맞게 고정밀로 가공하는 작업',
+    workers:[{name:'김*모',hr:72},{name:'박*철',hr:88},{name:'이*준',hr:65}],
+    subs:[
+      {ord:1,name:'선반 외경 가공',desc:'지름 60mm의 원봉을 선반에 고정한 후, 바깥 지름을 50mm로 깎아내는 작업. 자동차 샤프트의 외경을 일정한 크기로 정밀 가공',machines:'전동식 자주식 고소작업대, 이동식 흄 집진기, 이동차 외벽청소용 곤돌라',chems:['염산','에틸 알코올','황산'],prot:'알루미늄 방열복, 용접용 차광 보안면'},
+      {ord:2,name:'홈 가공',desc:'축 중간에 키(key)가 들어갈 수 있도록 깊이 3mm, 폭 5mm의 홈을 파는 작업',machines:'이동식 흄 집진기',chems:['황산'],prot:'용접용 차광 보안면, 안전고리 추락 방지용 라이프라인'},
+    ]},
+  { code:'PRC-07', name:'절단·용접 작업', manager:'전*조',
+    locations:['절단기 작업존','용접실'],
+    desc:'금속 자재를 절단하고 용접하여 부품을 제작하는 작업',
+    workers:[{name:'최*민',hr:80},{name:'정*호',hr:91}],
+    subs:[
+      {ord:1,name:'금속 절단',desc:'설계 도면에 따라 금속 자재를 정해진 크기로 절단하는 작업',machines:'플라즈마 절단기, 금속 절단기',chems:['절삭유'],prot:'안전장갑, 차광 보안면, 귀마개'},
+      {ord:2,name:'MIG 용접',desc:'절단된 금속 부품을 MIG 용접으로 결합하는 작업',machines:'이동식 흄 집진기, MIG 용접기',chems:['아르곤 가스','이산화탄소'],prot:'용접용 차광 보안면, 방열장갑, 용접 앞치마'},
+    ]},
+  { code:'PRC-12', name:'도장 작업', manager:'김*수',
+    locations:['도장부스','도장작업실'],
+    desc:'제품 표면에 도료를 도포하여 방청 및 미관을 개선하는 작업',
+    workers:[{name:'한*수',hr:68},{name:'오*진',hr:75}],
+    subs:[
+      {ord:1,name:'표면 전처리',desc:'도장 전 제품 표면의 이물질 및 녹을 제거하는 작업',machines:'샌드블라스터, 에어 컴프레서',chems:['신나','프라이머'],prot:'방독마스크, 보호장갑, 보안경'},
+      {ord:2,name:'도료 도포',desc:'스프레이 건을 이용하여 도료를 균일하게 도포하는 작업',machines:'에어 스프레이 건, 도장 부스 환기장치',chems:['우레탄 도료','경화제','신나'],prot:'방독마스크, 보호의, 보호장갑'},
+    ]},
+  { code:'PRC-23', name:'조립 라인', manager:'박*후',
+    locations:['조립 작업구역','품질검사실'],
+    desc:'가공된 부품을 조립하여 완성품을 제작하는 작업',
+    workers:[{name:'장*민',hr:70},{name:'임*혁',hr:82},{name:'강*연',hr:77}],
+    subs:[
+      {ord:1,name:'부품 조립',desc:'도면에 따라 각 부품을 순서대로 조립하는 작업',machines:'전동 드라이버, 토크렌치, 조립 지그',chems:['그리스','나사 고정제'],prot:'안전장갑, 보안경'},
+      {ord:2,name:'품질 검사',desc:'완성된 조립품의 치수 및 기능을 검사하는 작업',machines:'버니어 캘리퍼스, 토크 테스터',chems:[],prot:'안전장갑'},
+    ]},
+  { code:'PRC-31', name:'물류·하역', manager:'최*재',
+    locations:['원자재 이송구역','창고'],
+    desc:'완성품 및 원자재의 입출고 및 보관을 관리하는 작업',
+    workers:[{name:'윤*식',hr:85},{name:'서*찬',hr:73}],
+    subs:[
+      {ord:1,name:'원자재 하역',desc:'입고된 원자재를 지게차로 하역하여 지정 위치에 보관하는 작업',machines:'지게차, 파레트 잭',chems:['지게차 배터리액'],prot:'안전모, 안전화, 안전조끼'},
+      {ord:2,name:'완성품 출고',desc:'완성된 제품을 포장하여 출하 차량에 상차하는 작업',machines:'지게차, 포장기계, 랩핑기',chems:[],prot:'안전모, 안전화, 안전장갑'},
+    ]},
+];
+
+function openProcessMgmt() {
+  backToProcessList();
+  document.getElementById('processOverlay').classList.add('open');
+}
+
+function backToProcessList() {
+  stopProcHr();
+  document.getElementById('procHdrTitle').textContent = '공정(작업)관리';
+  document.getElementById('procHdrSub').textContent = '고양시사업장 · 금일 작업 현황 · PROCESS MANAGEMENT';
+  document.getElementById('procBackBtn').classList.remove('visible');
+  document.getElementById('procListView').style.display = '';
+  document.getElementById('procDetailView').style.display = 'none';
+  document.querySelector('#processOverlay .modal-body').scrollTop = 0;
+}
+
+function showProcessDetail(idx) {
+  const p = PROCESS_DATA[idx];
+  if (!p) return;
+
+  document.getElementById('procHdrTitle').textContent = p.name;
+  document.getElementById('procHdrSub').textContent = p.code + ' · 공정 상세 정보';
+  document.getElementById('procBackBtn').classList.add('visible');
+
+  const locTags = p.locations.map(loc =>
+    `<span class="proc-loc-tag${loc.includes('밀폐') ? ' danger' : ''}">${loc}</span>`
+  ).join('');
+
+  const subRows = p.subs.map(sp => {
+    const chemCells = sp.chems.length
+      ? sp.chems.map(c => `<button class="chem-btn" onclick="openMSDS('${c.replace(/'/g, "\\'")}')">${c}</button>`).join('')
+      : '<span style="color:var(--t-3);">—</span>';
+    return `<tr>
+      <td class="tc">${sp.ord}</td>
+      <td class="tn">${sp.name}</td>
+      <td>${sp.desc}</td>
+      <td>${sp.machines}</td>
+      <td>${chemCells}</td>
+      <td>${sp.prot}</td>
+    </tr>`;
+  }).join('');
+
+  const workerCards = p.workers.map(w => {
+    const col = procHrColor(w.hr);
+    return `<div class="proc-wcard" data-base="${w.hr}">
+      <span class="proc-wname">${w.name}</span>
+      <span class="proc-hrt">♥</span>
+      <span class="proc-hrv" style="color:${col}">${w.hr} BPM</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('procDetailView').innerHTML = `
+    <div class="proc-info-grid">
+      <div class="proc-ig-lbl">공정 코드</div>
+      <div class="proc-ig-val" style="font-weight:700;color:var(--cyan);letter-spacing:.5px">${p.code}</div>
+      <div class="proc-ig-lbl">공정명</div>
+      <div class="proc-ig-val" style="font-weight:700">${p.name}</div>
+      <div class="proc-ig-lbl">현장위치</div>
+      <div class="proc-ig-val">${locTags}</div>
+      <div class="proc-ig-lbl">설명</div>
+      <div class="proc-ig-val" style="line-height:1.6">${p.desc}</div>
+    </div>
+
+    <div class="proc-sec-lbl">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      세부 공정(작업)
+    </div>
+
+    <div class="proc-sub-wrap">
+      <table class="proc-sub-table">
+        <thead>
+          <tr>
+            <th style="width:60px">작업순서</th>
+            <th style="width:110px">작업명</th>
+            <th class="tl">작업 설명</th>
+            <th style="width:180px">기계/기구/설비 등</th>
+            <th style="width:130px">사용물질</th>
+            <th style="width:155px">보호구</th>
+          </tr>
+        </thead>
+        <tbody>${subRows}</tbody>
+      </table>
+    </div>
+
+    <div class="proc-mw-sec">
+      <div class="proc-mw-lbl">담당자</div>
+      <div class="proc-mw-val">
+        <span class="proc-mgr-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          ${p.manager}
+        </span>
+      </div>
+      <div class="proc-mw-lbl last">근로자</div>
+      <div class="proc-mw-val last">${workerCards}</div>
+    </div>
+  `;
+
+  document.getElementById('procListView').style.display = 'none';
+  document.getElementById('procDetailView').style.display = '';
+  document.querySelector('#processOverlay .modal-body').scrollTop = 0;
+
+  startProcHr();
+}
+
+// 근로자 심박: 기준값 ±5 범위로 2초마다 랜덤 변동
+let procHrTimer = null;
+function procHrColor(bpm) { return bpm > 90 ? 'var(--red)' : bpm > 80 ? 'var(--orange)' : 'var(--green)'; }
+function startProcHr() {
+  stopProcHr();
+  procHrTimer = setInterval(updateProcHr, 2000);
+}
+function stopProcHr() {
+  if (procHrTimer) { clearInterval(procHrTimer); procHrTimer = null; }
+}
+function updateProcHr() {
+  const overlay = document.getElementById('processOverlay');
+  const detail = document.getElementById('procDetailView');
+  // 모달이 닫혔거나 목록 뷰면 타이머 정리
+  if (!overlay || !overlay.classList.contains('open') || !detail || detail.style.display === 'none') {
+    stopProcHr();
+    return;
+  }
+  detail.querySelectorAll('.proc-wcard').forEach(card => {
+    const base = +card.dataset.base;
+    const bpm = base + Math.floor(Math.random() * 7) - 3; // -3 ~ +3
+    const el = card.querySelector('.proc-hrv');
+    if (el) { el.textContent = bpm + ' BPM'; el.style.color = procHrColor(bpm); }
+  });
+}
 function openIssueMgmt() { document.getElementById('issueOverlay').classList.add('open'); }
 
 // ===== 시설 위치 안내도 (응급구급함/소화기/AED 공용) =====
@@ -494,13 +665,20 @@ const MSDS = {
     handling:'화기 엄금, 환기되는 곳에서 사용, 방독마스크 착용', storage:'50°C 이하, 직사광선 피함, 점화원과 격리' },
 };
 function openMSDS(key) {
-  const m = MSDS[key];
-  if (!m) return;
-  document.getElementById('msdsSub').textContent = m.name;
+  // 등록되지 않은 물질은 명칭만 표시하고 항목은 비워둔다.
+  const m = MSDS[key] || {};
+  const dash = '<span style="color:var(--t-3);">—</span>';
+  const v = (x) => (x === undefined || x === null || x === '') ? dash : x;
+  const name = m.name || key;
+  const hazardRows = (m.hazard && m.hazard.length)
+    ? m.hazard.map(h => `<div class="msds-hazard">⚠ ${h}</div>`).join('')
+    : `<div class="msds-hazard" style="color:var(--t-3);">등록된 유해·위험 문구가 없습니다.</div>`;
+
+  document.getElementById('msdsSub').textContent = name;
   document.getElementById('msdsBody').innerHTML = `
     <div class="msds-title-row">
-      <span class="msds-cas">CAS ${m.cas}</span>
-      <span class="msds-name">${m.name}</span>
+      <span class="msds-cas">CAS ${v(m.cas)}</span>
+      <span class="msds-name">${name}</span>
     </div>
     <div class="ghs-row">
       <div class="ghs-pic" title="부식성"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l5 5M3 9l4 1 2-3M15 4l-2 6 6-1M20 11l-4 7h-3"/><path d="M6 20h5M14 20h4"/></svg></div>
@@ -509,22 +687,22 @@ function openMSDS(key) {
     <div class="msds-section">
       <div class="msds-section-title">기본 정보</div>
       <dl class="msds-grid">
-        <dt>화학식</dt><dd>${m.formula}</dd>
-        <dt>UN 번호</dt><dd>${m.un}</dd>
-        <dt>신호어</dt><dd style="color:var(--red);font-weight:700;">${m.signal}</dd>
+        <dt>화학식</dt><dd>${v(m.formula)}</dd>
+        <dt>UN 번호</dt><dd>${v(m.un)}</dd>
+        <dt>신호어</dt><dd style="${m.signal ? 'color:var(--red);font-weight:700;' : ''}">${v(m.signal)}</dd>
       </dl>
     </div>
     <div class="msds-section">
       <div class="msds-section-title">유해·위험 문구 (H-code)</div>
       <div class="msds-hazard-list">
-        ${m.hazard.map(h=>`<div class="msds-hazard">⚠ ${h}</div>`).join('')}
+        ${hazardRows}
       </div>
     </div>
     <div class="msds-section">
       <div class="msds-section-title">취급 및 저장</div>
       <dl class="msds-grid">
-        <dt>취급</dt><dd>${m.handling}</dd>
-        <dt>저장</dt><dd>${m.storage}</dd>
+        <dt>취급</dt><dd>${v(m.handling)}</dd>
+        <dt>저장</dt><dd>${v(m.storage)}</dd>
       </dl>
     </div>`;
   document.getElementById('msdsOverlay').classList.add('open');

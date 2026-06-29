@@ -170,7 +170,7 @@ PRC-12(도장), PRC-23(조립), PRC-31(물류·하역)**. 위험성평가는 현
 - `API` 베이스: `file://` 면 `http://localhost:8080`, 아니면 동일 호스트:8080. `?api=` 쿼리로 override.
 - 로드 시: `/space-name`, `/sensor/temp-humid`, `/sensor/watch` 호출해 신호등 카드·환경 카드·캐시 채움.
 - 공정 드롭다운(`#bhProcSelect`) 변경 → 해당 공정으로 재호출.
-- `openMSDSList/openMSDS/openRisk/openHeartRate/openWatchWorker/openEnvDetail/openAISite` 를
+- `openMSDS/openRisk/openHeartRate/openWatchWorker/openEnvDetail/openAISite` 를
   **window 함수 오버라이드**로 백엔드 버전으로 교체 (실패 시 원본 fallback).
 - **AI 현장 상황 모달**에 "분석 실행 ▶" 버튼 주입 → `POST /vlm/infer` 실행 후 결과 표시 + 카운트 갱신.
 - 상단 중앙 **연결 배지**: 🟢 백엔드 연결됨 / 🔴 오프라인.

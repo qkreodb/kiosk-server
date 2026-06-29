@@ -734,29 +734,6 @@
 .evac-note.env-warn svg { color: #E53935; }
 .evac-note.env-warn b { color: #E53935; }
 
-/* ===== MSDS 목록 모달 ===== */
-.msds-list { display: flex; flex-direction: column; gap: 10px; }
-.msds-list-item {
-  display: flex; align-items: center; gap: 16px;
-  padding: 16px 20px;
-  background: rgba(255,255,255,0.02);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--orange);
-  border-radius: var(--r-md);
-  cursor: pointer; transition: all 0.15s;
-}
-.msds-list-item:active { transform: scale(0.99); background: rgba(255,111,44,0.06); }
-.msds-list-ghs {
-  width: 44px; height: 44px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; color: var(--orange);
-  background: rgba(255,111,44,0.12); border-radius: 9px;
-}
-.msds-list-info { flex: 1; min-width: 0; }
-.msds-list-name { font-size: 18px; font-weight: 700; color: var(--t-1); }
-.msds-list-cas { font-size: 13px; color: var(--t-3); font-family: 'Pretendard', sans-serif; margin-top: 3px; }
-.msds-list-sig { font-size: 13px; font-weight: 800; color: var(--red); padding: 5px 14px; background: rgba(255,59,71,0.12); border-radius: 6px; flex-shrink: 0; }
-
 /* ===== 위험성평가 모달 ===== */
 .risk-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
 .risk-sum-card { text-align: center; padding: 16px 8px; background: var(--bg-card-hi); border: 1px solid var(--line); border-radius: var(--r-md); }
@@ -775,6 +752,55 @@
 .risk-badge.high { background: rgba(255,59,71,0.18); color: #ff7080; }
 .risk-badge.mid { background: rgba(255,184,0,0.18); color: #ffd066; }
 .risk-badge.low { background: rgba(0,229,138,0.15); color: #66f5b8; }
+
+/* ===== 공정(작업)관리 드릴다운 ===== */
+.modal-back-btn {
+  display: none; align-items: center; gap: 5px;
+  margin-left: auto; margin-right: 12px; padding: 8px 14px;
+  background: var(--bg-card-hi); border: 1px solid var(--line);
+  border-radius: var(--r-md); font-family: 'Pretendard', sans-serif;
+  font-size: 13px; font-weight: 700; color: var(--t-2);
+  cursor: pointer; transition: background .15s; white-space: nowrap;
+}
+.modal-back-btn:hover { background: var(--line); }
+.modal-back-btn.visible { display: inline-flex; }
+
+.risk-table tbody tr.clickable { cursor: pointer; }
+.risk-table tbody tr.clickable td:last-child { text-align: right; }
+.risk-table .row-arrow { color: var(--t-3); opacity: 0; transition: opacity .12s; font-size: 17px; font-weight: 700; }
+.risk-table tbody tr.clickable:hover .row-arrow { opacity: 1; }
+
+.proc-info-grid { display: grid; grid-template-columns: 120px 1fr; border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; margin-bottom: 20px; font-size: 14px; }
+.proc-ig-lbl { padding: 12px 16px; background: var(--bg-card-hi); color: var(--t-3); font-weight: 600; font-size: 13px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; white-space: nowrap; }
+.proc-ig-val { padding: 12px 16px; color: var(--t-1); border-bottom: 1px solid var(--line); display: flex; align-items: center; flex-wrap: wrap; gap: 6px; line-height: 1.6; }
+.proc-info-grid > :nth-last-child(-n+2) { border-bottom: none; }
+.proc-loc-tag { display: inline-block; padding: 3px 9px; background: rgba(2,132,199,0.1); border-radius: 4px; font-size: 12px; color: var(--cyan); font-weight: 600; }
+.proc-loc-tag.danger { background: rgba(220,38,38,0.1); color: var(--red); }
+
+.proc-sec-lbl { font-size: 15px; font-weight: 800; color: var(--t-1); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.proc-sub-wrap { overflow-x: auto; margin-bottom: 20px; }
+.proc-sub-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 760px; }
+.proc-sub-table thead th { padding: 10px 12px; background: var(--bg-card-hi); color: var(--t-1); font-weight: 700; font-size: 12px; border-bottom: 2px solid var(--line-strong); text-align: center; white-space: nowrap; }
+.proc-sub-table thead th.tl { text-align: left; }
+.proc-sub-table tbody td { padding: 11px 12px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--t-2); line-height: 1.55; }
+.proc-sub-table tbody tr:last-child td { border-bottom: none; }
+.proc-sub-table td.tc { text-align: center; font-weight: 800; color: var(--cyan); }
+.proc-sub-table td.tn { font-weight: 700; color: var(--t-1); white-space: nowrap; }
+.chem-btn { display: inline-block; padding: 4px 9px; margin: 2px; background: rgba(2,132,199,0.08); border: 1px solid var(--cyan); border-radius: 5px; font-size: 12px; font-weight: 700; color: var(--cyan); cursor: pointer; transition: all .12s; font-family: 'Pretendard', sans-serif; }
+.chem-btn:hover { background: var(--cyan); color: #fff; }
+
+.proc-mw-sec { display: grid; grid-template-columns: 120px 1fr; border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; font-size: 14px; }
+.proc-mw-lbl { padding: 14px 16px; background: var(--bg-card-hi); color: var(--t-3); font-weight: 600; font-size: 13px; border-bottom: 1px solid var(--line); display: flex; align-items: center; }
+.proc-mw-lbl.last { border-bottom: none; }
+.proc-mw-val { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.proc-mw-val.last { border-bottom: none; }
+.proc-mgr-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 13px; background: var(--bg-card-hi); border-radius: 6px; font-weight: 700; color: var(--t-1); }
+.proc-mgr-chip svg { width: 14px; height: 14px; }
+.proc-wcard { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; background: var(--bg-card-hi); border: 1px solid var(--line); border-radius: 8px; }
+.proc-wname { font-weight: 700; color: var(--t-1); font-size: 13px; }
+.proc-hrt { color: var(--red); font-size: 14px; display: inline-block; animation: proc-heartbeat 1.3s ease-in-out infinite; }
+.proc-hrv { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+@keyframes proc-heartbeat { 0%,100%{transform:scale(1)} 15%{transform:scale(1.35)} 30%{transform:scale(1)} 45%{transform:scale(1.18)} 60%{transform:scale(1)} }
 
 /* ===== AI 부스 도면 모달 ===== */
 .ai-site-legend {
