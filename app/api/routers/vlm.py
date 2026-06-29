@@ -24,3 +24,10 @@ async def infer(
         frame_ref=req.frame_ref,
         frame_dir=req.frame_dir,
     )
+
+
+@router.post("/stop", summary="대기 중 TTS 취소(재생 중인 건 유지)")
+async def stop(service: VlmService = Depends(get_vlm_service)) -> dict:
+    """CCTV 모달 종료 등에서 호출 — 재생 중인 음성은 끝까지 두고 대기/지연 TTS만 폐기."""
+    service.flush_tts()
+    return {"stopped": True}

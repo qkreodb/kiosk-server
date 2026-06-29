@@ -326,6 +326,8 @@
   };
   window.closeCCTV = function () {
     stopVlmLoop(); // 모달 닫으면 분석 루프 중단
+    // 대기/지연 TTS 폐기(재생 중인 건 끝까지) — 닫은 뒤 음성이 더 나오지 않도록
+    fetch(API + '/vlm/stop', { method: 'POST' }).catch(() => {});
     resetAnalyzeBtn();
     document.querySelectorAll('.cctv-btn-item').forEach(b => b.classList.remove('monitoring'));
     document.getElementById('cctvOverlay').classList.remove('open');

@@ -153,6 +153,10 @@ class VlmService:
     ) -> VlmInferResponse:
         code = process_code or "PRC-19"
 
+        # 재생 세대값을 분석 시작 시점에 캡처 — 분석 중 flush_tts()(예: CCTV 모달 종료)가
+        # 호출되면 이 요청의 늦은 TTS 재생은 폐기된다.
+        play_epoch = self._speaker.current_epoch()
+
         # 1) Call the VLM Server's /analyze (or offline mock).
         vlm = await self._vlm.analyze(frame_dir)
 
@@ -172,7 +176,7 @@ class VlmService:
         tts_text = vlm.warning_text if detected else ""
         tts_result = await self._tts.synthesize(tts_text)
         if tts_result.status in {"synthesized", "stubbed"}:
-            self._speaker.play_async(tts_result.audio_path, tts_result.text)
+            self._speaker.play_async(tts_result.audio_path, tts_result.text, epoch=play_epoch)
         tts = TtsDispatch(**tts_result.model_dump())
 
         # 4) BRANCH B — DB-increment per detected behavior, read resulting counts.
@@ -237,3 +241,7 @@ class VlmService:
             warning_light=warning_light,
             tts=tts,
         )
+
+    def flush_tts(self) -> None:
+        """대기 중인 TTS를 폐기(현재 재생 중인 건 끝까지 재생). CCTV 모달 종료 시 호출."""
+        self._speaker.flush()

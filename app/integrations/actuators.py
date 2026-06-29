@@ -32,6 +32,26 @@ class SpeakerActuator:
         self._lock = threading.Lock()
         self._pending: tuple[str, str] | None = None  # 최신 1건만 보관
         self._worker_running = False
+        self._epoch = 0  # flush() 마다 증가 — 이전 세대의 늦은 요청을 폐기하는 데 사용
+
+    def current_epoch(self) -> int:
+        """현재 재생 세대값. 작업 시작 시 캡처해 ``play_async(epoch=...)`` 로 넘기면,
+        그 사이 ``flush()`` 가 호출됐을 때 늦게 도착한 재생 요청을 폐기할 수 있다."""
+        with self._lock:
+            return self._epoch
+
+    def flush(self) -> None:
+        """대기 중인 TTS를 모두 폐기하고 세대값을 올린다.
+
+        **현재 재생 중인 음성은 중단하지 않고 끝까지 재생**한다(요청 사항). 이후
+        이전 세대에 시작된 작업이 뒤늦게 재생을 요청하더라도 epoch 불일치로 폐기된다.
+        예) CCTV 모달을 끄면 호출 → 재생 중인 1건만 끝나고 나머지는 나오지 않음.
+        """
+        with self._lock:
+            self._epoch += 1
+            if self._pending is not None:
+                logger.info("[SPEAKER] flush: 대기 음성 폐기 '%s'", self._pending[1])
+                self._pending = None
 
     def play(self, audio_path: str | None, text: str) -> bool:
         """Play audio, blocking until playback finishes.
@@ -52,16 +72,20 @@ class SpeakerActuator:
             logger.error("[SPEAKER] playback failed (%s): %s", exc.__class__.__name__, exc)
             return False
 
-    def play_async(self, audio_path: str | None, text: str) -> None:
+    def play_async(self, audio_path: str | None, text: str, epoch: int | None = None) -> None:
         """Fire-and-forget 재생(겹침 방지). 호출 즉시 반환.
 
         재생 중이면 이 요청을 "최신 대기" 슬롯에 넣어 두고(기존 대기분은 폐기) 반환한다.
         현재 재생이 끝나면 단일 워커가 가장 최근 대기분 하나만 재생한다.
+        ``epoch`` 를 주면 그 사이 ``flush()`` 가 호출돼 세대가 바뀐 경우 재생을 폐기한다.
         """
         if not audio_path:
             logger.warning("[SPEAKER] no audio file; cannot play: '%s'", text)
             return
         with self._lock:
+            if epoch is not None and epoch != self._epoch:
+                logger.info("[SPEAKER] 만료된(모달 종료 등) 재생 요청 폐기: '%s'", text)
+                return
             if self._pending is not None:
                 logger.info("[SPEAKER] 이전 대기 음성 폐기(최신으로 교체): '%s'", self._pending[1])
             self._pending = (audio_path, text)
