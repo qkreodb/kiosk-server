@@ -129,18 +129,6 @@
     }).join('');
   }
 
-  function ensureLiveSensorBadge() {
-    let badge = document.getElementById('liveSensorBadge');
-    if (badge) return badge;
-    const host = document.querySelector('.site-env-card .behavior-head-right') || document.querySelector('.site-env-card');
-    if (!host) return null;
-    badge = document.createElement('div');
-    badge.id = 'liveSensorBadge';
-    badge.className = 'live-sensor-badge';
-    badge.innerHTML = '<span class="lsb-temp">TEMP --.-°C</span><span class="lsb-hum">HUM --.-%</span><span class="lsb-hr">HR -- BPM</span>';
-    host.insertBefore(badge, host.firstChild);
-    return badge;
-  }
   function updateLiveSensorBadge() {
     const badge = ensureLiveSensorBadge();
     if (!badge) return;
