@@ -3,5 +3,5 @@
   { "name": "용접 공정", "code": "PRC-07", "label": "용접 공정 · PRC-07" },
   { "name": "도장 공정", "code": "PRC-12", "label": "도장 공정 · PRC-12" },
   { "name": "조립 공정", "code": "PRC-23", "label": "조립 공정 · PRC-23" },
-  { "name": "물류·하역 공정", "code": "PRC-31", "label": "물류·하역 공정 · PRC-31" }
+  { "name": "도장 및 표면처리 공정", "code": "PRC-31", "label": "도장 및 표면처리 공정 · PRC-31" }
 ]

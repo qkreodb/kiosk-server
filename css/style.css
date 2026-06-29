@@ -1017,6 +1017,106 @@
   border-radius: 6px; border-left: 2px solid var(--red);
 }
 
+/* ===== MSDS 전체 자료(제품 정보 MSDS) 형식 ===== */
+.msds2 { font-size: 13px; color: var(--t-1); }
+.msds2-level {
+  font-size: 14px; font-weight: 800; color: #fff;
+  background: var(--cyan); padding: 9px 14px; border-radius: 6px;
+  margin: 22px 0 12px;
+}
+.msds2-level:first-child { margin-top: 0; }
+.msds2-subhead {
+  font-size: 13px; font-weight: 700; color: var(--cyan);
+  margin: 16px 0 8px; display: flex; align-items: center; gap: 7px;
+}
+.msds2-subhead::before { content: ''; width: 3px; height: 14px; background: var(--cyan); border-radius: 2px; }
+
+.msds2-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.msds2-table th, .msds2-table td {
+  border: 1px solid var(--line); padding: 8px 11px; text-align: left;
+  vertical-align: top; line-height: 1.5; color: var(--t-1);
+}
+.msds2-table th {
+  background: var(--bg-card-hi); color: var(--t-2); font-weight: 700;
+  white-space: nowrap; width: 1%;
+}
+.msds2-table td.tc { text-align: center; }
+.msds2-strong { font-weight: 800; color: var(--t-1); }
+.msds2-signal { color: var(--red); font-weight: 800; }
+
+.msds2-class-list { display: flex; flex-direction: column; gap: 5px; }
+.msds2-class {
+  font-size: 13px; color: var(--t-2); line-height: 1.5;
+  padding: 7px 11px; background: rgba(14,165,233,0.06);
+  border-radius: 5px; border-left: 2px solid var(--cyan);
+}
+
+.msds2-pictos { display: flex; gap: 16px; flex-wrap: wrap; }
+.msds2-picto { width: 96px; text-align: center; }
+.msds2-picto-box {
+  width: 72px; height: 72px; margin: 0 auto 6px;
+  border: 2px solid var(--red); transform: rotate(45deg);
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.03);
+}
+.msds2-picto-box svg { width: 36px; height: 36px; transform: rotate(-45deg); color: var(--red); }
+.msds2-picto-lbl { font-size: 12px; font-weight: 700; color: var(--t-1); }
+.msds2-picto-en { font-size: 10px; color: var(--t-3); }
+
+.msds2-hcodes { display: flex; flex-direction: column; gap: 6px; }
+.msds2-hcode {
+  font-size: 13px; color: var(--t-2); line-height: 1.5;
+  padding: 8px 12px; background: rgba(255,59,71,0.05);
+  border-radius: 6px; border-left: 2px solid var(--red);
+}
+
+.msds2-pstatements { display: flex; flex-direction: column; gap: 12px; }
+.msds2-pblock { display: flex; flex-direction: column; gap: 5px; }
+.msds2-pcat { font-size: 13px; font-weight: 800; color: var(--orange); }
+.msds2-plist { display: flex; flex-direction: column; gap: 3px; padding-left: 6px; }
+.msds2-plist > div { font-size: 12.5px; color: var(--t-2); line-height: 1.55; }
+
+.msds2-nfpa th { width: 60%; color: #fff; }
+.msds2-nfpa th.nf-h { background: #1565c0; }
+.msds2-nfpa th.nf-f { background: #c62828; }
+.msds2-nfpa th.nf-r { background: #f9a825; color: #333; }
+.msds2-nfpa th.nf-s { background: var(--bg-card-hi); color: var(--t-2); }
+.msds2-nfpa td { text-align: center; font-weight: 700; }
+
+/* NFPA 704 다이아몬드 */
+.msds2-nfpa-wrap { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.msds2-nfpa-wrap .msds2-nfpa { flex: 1; min-width: 280px; }
+.nfpa-dia {
+  position: relative; width: 116px; height: 116px;
+  transform: rotate(45deg); flex-shrink: 0;
+  margin: 14px 8px;
+  display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+  border-radius: 6px; overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+}
+.nfpa-q {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px; font-weight: 800; line-height: 1;
+  transform: rotate(-45deg);
+  border: 1px solid rgba(0,0,0,0.25);
+}
+.nfpa-fire   { background: #e53935; color: #fff; }   /* 상단 */
+.nfpa-react  { background: #fdd835; color: #222; }   /* 우측 */
+.nfpa-health { background: #1e88e5; color: #fff; }   /* 좌측 */
+.nfpa-spec   { background: #fff;    color: #222; }   /* 하단 */
+
+.msds2-comp thead th, .msds2-phys thead th {
+  background: var(--bg-card-hi); color: var(--t-1); text-align: center; font-weight: 700;
+}
+.msds2-comp tbody td:nth-child(2) { color: var(--t-2); }
+.msds2-phys th { text-align: left; }
+
+.msds2-reg-list { display: flex; flex-direction: column; gap: 4px; }
+.msds2-reg {
+  font-size: 12.5px; color: var(--t-2); line-height: 1.5;
+  padding: 6px 11px; background: var(--bg-card-hi); border-radius: 5px;
+}
+
 /* MSDS clickable chemical chip */
 .chip.chem.clickable { cursor: pointer; transition: all 0.15s; }
 .chip.chem.clickable:active { transform: scale(0.95); }

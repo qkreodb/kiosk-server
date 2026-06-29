@@ -966,20 +966,14 @@
       <!-- 목록 뷰 -->
       <div id="procListView">
         <div class="risk-summary">
-          <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--cyan);">5</div><div class="risk-sum-lbl">진행중 공정</div></div>
+          <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--cyan);" id="procActiveCount">5</div><div class="risk-sum-lbl">진행중 공정</div></div>
           <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--green);">3</div><div class="risk-sum-lbl">완료</div></div>
           <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--amber);">2</div><div class="risk-sum-lbl">대기</div></div>
           <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--violet);">28</div><div class="risk-sum-lbl">투입 인원</div></div>
         </div>
         <table class="risk-table">
           <thead><tr><th>공정코드</th><th>공정명</th><th>담당</th><th>인원</th><th>상태</th><th></th></tr></thead>
-          <tbody>
-            <tr class="clickable" onclick="showProcessDetail(0)"><td>PRC-19</td><td>정밀가공 라인</td><td>이*학</td><td>6</td><td><span class="risk-badge low">진행중</span></td><td><span class="row-arrow">›</span></td></tr>
-            <tr class="clickable" onclick="showProcessDetail(1)"><td>PRC-07</td><td>절단·용접 작업</td><td>전*조</td><td>5</td><td><span class="risk-badge low">진행중</span></td><td><span class="row-arrow">›</span></td></tr>
-            <tr class="clickable" onclick="showProcessDetail(2)"><td>PRC-12</td><td>도장 작업</td><td>김*수</td><td>4</td><td><span class="risk-badge mid">대기</span></td><td><span class="row-arrow">›</span></td></tr>
-            <tr class="clickable" onclick="showProcessDetail(3)"><td>PRC-23</td><td>조립 라인</td><td>박*후</td><td>8</td><td><span class="risk-badge low">진행중</span></td><td><span class="row-arrow">›</span></td></tr>
-            <tr class="clickable" onclick="showProcessDetail(4)"><td>PRC-31</td><td>물류·하역</td><td>최*재</td><td>5</td><td><span class="risk-badge low">진행중</span></td><td><span class="row-arrow">›</span></td></tr>
-          </tbody>
+          <tbody id="procListBody"><!-- PROCESS_DATA 기반 JS 자동 생성 --></tbody>
         </table>
         <div class="evac-note" style="background:rgba(139,124,255,0.06);border-color:rgba(139,124,255,0.25);">
           <svg viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v5l3 2"/></svg>
@@ -1079,8 +1073,8 @@
               <thead>
                   <tr>
                     <th>유해·위험요인</th>
-                    <th style="width:70px;">가능성</th>
-                    <th style="width:70px;">중대성</th>
+                    <th style="width:70px;">빈도</th>
+                    <th style="width:70px;">강도</th>
                     <th style="width:90px;">위험성</th>
                     <th>개선대책</th>
                   </tr>
