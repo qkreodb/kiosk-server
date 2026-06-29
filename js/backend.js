@@ -410,7 +410,7 @@
    * 분석 버튼은 이 루프의 일시정지/재개 토글로 동작한다.            */
   // VLM 분석 요청 주기(성공 응답 후 다음 요청까지 대기). 응답 속도를 정확도보다
   // 우선하는 환경이라 2~3초로 단축. 값은 이 상수 하나로만 조정한다(하드코딩 금지).
-  const VLM_POLL_INTERVAL_MS = 2500; // 성공 응답 후 다음 요청까지 대기(2~3초)
+  const VLM_POLL_INTERVAL_MS = 0; // 성공 응답 후 다음 요청까지 대기(2~3초)
   const VLM_ERROR_BACKOFF_MS = 1500; // 오류 시 재시도 전 대기
   const vlmLoop = { token: 0, paused: false };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
