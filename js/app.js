@@ -573,8 +573,6 @@ function showProcessDetail(idx) {
       <div class="proc-ig-val" style="font-weight:700;color:var(--cyan);letter-spacing:.5px">${p.code}</div>
       <div class="proc-ig-lbl">공정명</div>
       <div class="proc-ig-val" style="font-weight:700">${p.name}</div>
-      <div class="proc-ig-lbl">현장위치</div>
-      <div class="proc-ig-val">${locTags}</div>
       <div class="proc-ig-lbl">설명</div>
       <div class="proc-ig-val" style="line-height:1.6">${p.desc}</div>
     </div>
