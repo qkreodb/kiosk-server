@@ -164,7 +164,7 @@ function switchSiteView(view, btn) {
 
 // ===== Generic modal control =====
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-['hrOverlay','msdsOverlay','photoOverlay','evacOverlay','facilityOverlay','contactOverlay','riskOverlay','aiSiteOverlay','envDetailOverlay','processOverlay','issueOverlay','policyOverlay'].forEach(id => {
+['hrOverlay','msdsOverlay','photoOverlay','evacOverlay','facilityOverlay','contactOverlay','aiSiteOverlay','envDetailOverlay','processOverlay','issueOverlay','policyOverlay'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('click', e => {
     if (e.target.id === id) closeModal(id);
@@ -310,8 +310,8 @@ function openPolicy(type) {
   document.getElementById('policyOverlay').classList.add('open');
 }
 
-// 위험성평가 / AI 부스 도면 열기
-function openRisk() { document.getElementById('riskOverlay').classList.add('open'); }
+// 위험성평가: 현장 통합 관리 모달의 공정 탭으로 통합
+function openRisk() { openIssueMgmt(); }
 function openAISite() { document.getElementById('aiSiteOverlay').classList.add('open'); }
 // ===== 공정(작업)관리 드릴다운 =====
 // 행 순서는 processOverlay 목록 표의 onclick 인덱스(0~4)와 일치
@@ -486,7 +486,105 @@ function updateProcHr() {
     if (el) { el.textContent = bpm + ' BPM'; el.style.color = procHrColor(bpm); }
   });
 }
-function openIssueMgmt() { document.getElementById('issueOverlay').classList.add('open'); }
+// ===== 현장 통합 관리 모달 (공정 특성 + 위험성평가 / 현장 특이사항) =====
+// 공정별 위험성평가 더미 데이터
+const RISK_ASSESSMENT_DATA = {
+  'PRC-19': {
+    title: '정밀가공 공정 (PRC-19) 위험성평가 결과',
+    meta: '평가일 2026-05-12 · 4M 기법',
+    stats: { high: 2, mid: 3, low: 4, total: 9 },
+    list: [
+      { factor: '고속 회전체 협착·말림', p: 3, s: 5, r: '15 높음', cls: 'high', solution: '방호덮개 설치·연동장치' },
+      { factor: '화학물질(염산) 누출 노출', p: 3, s: 5, r: '15 높음', cls: 'high', solution: '국소배기·내산 PPE' },
+      { factor: '절삭칩 비산 안구 손상', p: 4, s: 3, r: '12 중간', cls: 'mid', solution: '보안경 착용 의무화' },
+      { factor: '소음(76dB) 청력 영향', p: 3, s: 3, r: '9 중간', cls: 'mid', solution: '귀마개·소음원 격리' }
+    ]
+  },
+  'PRC-07': {
+    title: '용접 공정 (PRC-07) 위험성평가 결과',
+    meta: '평가일 2026-06-10 · 4M 기법',
+    stats: { high: 1, mid: 4, low: 2, total: 7 },
+    list: [
+      { factor: '용접 아크 광선에 의한 안구 화상', p: 4, s: 4, r: '16 높음', cls: 'high', solution: '용접 보안면 및 차광 유리 사용 필수' },
+      { factor: '흄 및 유해가스 흡입 위험', p: 3, s: 3, r: '9 중간', cls: 'mid', solution: '송풍 마스크 및 국소배기장치 가동 정기 점검' },
+      { factor: '용접 불꽃 비산으로 인한 주변 화재', p: 2, s: 4, r: '8 중간', cls: 'mid', solution: '불티방지패드 설치 및 소화기 전면 배치' }
+    ]
+  },
+  'PRC-12': {
+    title: '도장 공정 (PRC-12) 위험성평가 결과',
+    meta: '평가일 2026-06-15 · 4M 기법',
+    stats: { high: 3, mid: 2, low: 3, total: 8 },
+    list: [
+      { factor: '유기용제 증기 폭발 및 화재', p: 3, s: 5, r: '15 높음', cls: 'high', solution: '방폭형 설비 도입 및 정전기 제거 패드 설치' },
+      { factor: '밀폐공간 내 질식 및 가스중독', p: 2, s: 5, r: '10 중간', cls: 'mid', solution: '작업 전 유해가스 측정 및 송풍기 상시 가동' }
+    ]
+  }
+};
+
+let activeRiskCode = null;
+
+function openIssueMgmt() {
+  resetIssueModal();
+  document.getElementById('issueOverlay').classList.add('open');
+}
+
+// 모달을 열 때마다 기본 상태(공정 탭 + 위험성평가 접힘)로 초기화
+function resetIssueModal() {
+  switchTab('tab-process', document.querySelector('#issueOverlay .tab-btn'));
+  const section = document.getElementById('integratedRiskSection');
+  if (section) section.classList.remove('active');
+  document.querySelectorAll('#issueOverlay .btn-table-risk').forEach(b => b.classList.remove('active'));
+  activeRiskCode = null;
+}
+
+function switchTab(tabId, btnEl) {
+  document.querySelectorAll('#issueOverlay .tab-pane').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#issueOverlay .tab-btn').forEach(b => b.classList.remove('active'));
+  const pane = document.getElementById(tabId);
+  if (pane) pane.classList.add('active');
+  if (btnEl) btnEl.classList.add('active');
+}
+
+// 테이블 내 위험성평가 버튼 → 하단 인라인 상세 섹션 토글
+function toggleRiskAssessment(code, btn) {
+  const section = document.getElementById('integratedRiskSection');
+
+  // 같은 공정 버튼을 다시 누르면 접기
+  if (activeRiskCode === code) {
+    section.classList.remove('active');
+    btn.classList.remove('active');
+    activeRiskCode = null;
+    return;
+  }
+
+  document.querySelectorAll('#issueOverlay .btn-table-risk').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeRiskCode = code;
+
+  const data = RISK_ASSESSMENT_DATA[code];
+  if (!data) return;
+
+  document.getElementById('riskTargetTitle').textContent = data.title;
+  document.getElementById('riskTargetMeta').textContent = data.meta;
+  document.getElementById('riskStatsContainer').innerHTML = `
+    <div class="stat-box"><div class="num red">${data.stats.high}</div><div class="label">높음 (15+)</div></div>
+    <div class="stat-box"><div class="num orange">${data.stats.mid}</div><div class="label">중간 (8~12)</div></div>
+    <div class="stat-box"><div class="num green">${data.stats.low}</div><div class="label">낮음 (1~6)</div></div>
+    <div class="stat-box"><div class="num blue">${data.stats.total}</div><div class="label">총 위험요인</div></div>
+  `;
+  document.getElementById('riskTableBody').innerHTML = data.list.map(item => `
+    <tr>
+      <td><strong>${item.factor}</strong></td>
+      <td>${item.p}</td>
+      <td>${item.s}</td>
+      <td><span class="risk-score-badge ${item.cls}">${item.r}</span></td>
+      <td>${item.solution}</td>
+    </tr>
+  `).join('');
+
+  section.classList.add('active');
+  setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+}
 
 // ===== 시설 위치 안내도 (응급구급함/소화기/AED 공용) =====
 const FACILITY = {

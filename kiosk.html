@@ -771,46 +771,6 @@
 </div>
 
 
-<!-- ============== 위험성평가 결과 MODAL ============== -->
-<div class="modal-overlay" id="riskOverlay">
-  <div class="modal-box" style="max-width: 960px;">
-    <div class="modal-head">
-      <div class="modal-head-left">
-        <div class="modal-head-icon" style="background:rgba(255,59,71,0.12);border:1px solid rgba(255,59,71,0.3);color:var(--red);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.86L1.82 18a2 2 0 0 0 1.7 3h16.96a2 2 0 0 0 1.7-3L13.7 3.86a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>
-        </div>
-        <div>
-          <div class="modal-head-title">위험성평가 결과</div>
-          <div class="modal-head-sub">정밀가공 공정 (PRC-19) · 평가일 2026-05-12 · 4M 기법</div>
-        </div>
-      </div>
-      <button class="modal-close" onclick="closeModal('riskOverlay')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="modal-body">
-      <div class="risk-summary">
-        <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--red);">2</div><div class="risk-sum-lbl">높음 (15+)</div></div>
-        <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--amber);">3</div><div class="risk-sum-lbl">중간 (8~12)</div></div>
-        <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--green);">4</div><div class="risk-sum-lbl">낮음 (1~6)</div></div>
-        <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--cyan);">9</div><div class="risk-sum-lbl">총 위험요인</div></div>
-      </div>
-      <table class="risk-table">
-        <thead><tr><th>유해·위험요인</th><th>가능성</th><th>중대성</th><th>위험성</th><th>개선대책</th></tr></thead>
-        <tbody>
-          <tr><td>고속 회전체 협착·말림</td><td>3</td><td>5</td><td><span class="risk-badge high">15 높음</span></td><td>방호덮개 설치·연동장치</td></tr>
-          <tr><td>화학물질(염산) 누출 노출</td><td>3</td><td>5</td><td><span class="risk-badge high">15 높음</span></td><td>국소배기·내산 PPE</td></tr>
-          <tr><td>절삭칩 비산 안구 손상</td><td>4</td><td>3</td><td><span class="risk-badge mid">12 중간</span></td><td>보안경 착용 의무화</td></tr>
-          <tr><td>소음(76dB) 청력 영향</td><td>3</td><td>3</td><td><span class="risk-badge mid">9 중간</span></td><td>귀마개·소음원 격리</td></tr>
-          <tr><td>고소작업 추락</td><td>2</td><td>4</td><td><span class="risk-badge mid">8 중간</span></td><td>안전대·작업발판</td></tr>
-          <tr><td>중량물 취급 근골격계</td><td>3</td><td>2</td><td><span class="risk-badge low">6 낮음</span></td><td>운반보조구·작업순환</td></tr>
-          <tr><td>전기 감전</td><td>2</td><td>3</td><td><span class="risk-badge low">6 낮음</span></td><td>접지·누전차단기</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
 <!-- ============== AI 현장 상황 정보 MODAL (부스 TopView 블루프린트) ============== -->
 <div class="modal-overlay" id="aiSiteOverlay">
   <div class="modal-box" style="max-width: 1000px;">
@@ -1020,46 +980,129 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-    <div class="modal-body">
-      <div class="issue-list">
-        <div class="issue-item sev-high">
-          <div class="issue-time">09:24</div>
-          <div class="issue-body">
-            <div class="issue-title">정밀가공 라인 안전모 미착용 감지</div>
-            <div class="issue-desc">AI VISION이 PRC-19 구역에서 안전모 미착용 1건 감지 · 안전관리자 현장 조치 완료</div>
-          </div>
-          <span class="issue-badge high">조치완료</span>
-        </div>
-        <div class="issue-item sev-mid">
-          <div class="issue-time">10:47</div>
-          <div class="issue-body">
-            <div class="issue-title">절단·용접존 국소배기 풍량 저하</div>
-            <div class="issue-desc">2번 후드 풍량 기준치 85% · 설비팀 점검 요청 접수</div>
-          </div>
-          <span class="issue-badge mid">처리중</span>
-        </div>
-        <div class="issue-item sev-low">
-          <div class="issue-time">11:30</div>
-          <div class="issue-body">
-            <div class="issue-title">중앙 통로 자재 적치 정리</div>
-            <div class="issue-desc">관람객 통로 일부 자재 적치 → 즉시 정리 완료</div>
-          </div>
-          <span class="issue-badge low">완료</span>
-        </div>
-        <div class="issue-item sev-mid">
-          <div class="issue-time">13:15</div>
-          <div class="issue-body">
-            <div class="issue-title">작업자 심박 일시 상승 (W-02)</div>
-            <div class="issue-desc">절단·용접존 작업자 심박 128bpm 일시 도달 · 휴식 후 정상 회복</div>
-          </div>
-          <span class="issue-badge mid">모니터링</span>
-        </div>
-      </div>
-      <div class="evac-note" style="background:rgba(255,111,44,0.06);border-color:rgba(255,111,44,0.25);">
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.86L1.82 18a2 2 0 0 0 1.7 3h16.96a2 2 0 0 0 1.7-3L13.7 3.86a2 2 0 0 0-3.4 0z"/></svg>
-        <span style="color:var(--t-2);">금일 특이사항 <b style="color:var(--orange);">4건</b> · 조치완료 2건 · 처리중 2건 · 모든 사항은 실시간으로 안전상황실에 공유됩니다.</span>
-      </div>
+
+    <!-- 여기부턴 사용자 수정 -->
+    <div class="modal-tabs">
+      <button class="tab-btn active" onclick="switchTab('tab-process', this)">공정명·공정코드</button>
+      <button class="tab-btn" onclick="switchTab('tab-issues', this)">현장 특이사항</button>
     </div>
+    <!-- 여기까지 -->
+
+    <div class="modal-body">
+      <!-- 여기부터 -->
+       <div id="tab-process" class="tab-pane active">
+        <table class="process-table">
+          <thead>
+            <tr>
+              <th>공정명·공정코드</th>
+              <th>현장 특성</th>
+              <th style="text-align: center; width: 120px;">위험성평가</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="process-code">정밀가공·PRC-19</td>
+              <td>
+                <div class="traits">
+                  <span class="trait-badge red">밀폐공간</span>
+                  <span class="trait-badge red">온열질환관리지역</span>
+                  <span class="trait-badge blue">한랭질환관리지역</span>
+                </div>
+              </td>
+              <td>
+                <button class="btn-table-risk" onclick="toggleRiskAssessment('PRC-19', this)">위험성평가</button>
+              </td>
+            </tr>
+            <tr>
+              <td class="process-code">용접·PRC-07</td>
+              <td>
+                <div class="traits">
+                  <span class="trait-badge orange">PSM공정</span>
+                  <span class="trait-badge red">온열질환관리지역</span>
+                </div>
+              </td>
+              <td>
+                <button class="btn-table-risk" onclick="toggleRiskAssessment('PRC-07', this)">위험성평가</button>
+              </td>
+            </tr>
+            <tr>
+              <td class="process-code">도장·PRC-12</td>
+              <td>
+                <div class="traits">
+                  <span class="trait-badge red">밀폐공간</span>
+                  <span class="trait-badge blue">한랭질환관리지역</span>
+                </div>
+              </td>
+              <td>
+                <button class="btn-table-risk" onclick="toggleRiskAssessment('PRC-12', this)">위험성평가</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div id="integratedRiskSection" class="risk-detail-section">
+          <div class="section-title-group">
+            <h3 id="riskTargetTitle">위험성평가 결과</h3>
+            <p id="riskTargetMeta">평가일: -</p>
+          </div>
+          <div class="risk-stats" id="riskStatsContainer">
+          </div>
+          <table class="risk-detail-table">
+              <thead>
+                  <tr>
+                    <th>유해·위험요인</th>
+                    <th style="width:70px;">가능성</th>
+                    <th style="width:70px;">중대성</th>
+                    <th style="width:90px;">위험성</th>
+                    <th>개선대책</th>
+                  </tr>
+              </thead>
+              <tbody id="riskTableBody">
+                </tbody>
+          </table>
+        </div>
+       </div>
+
+      <div id="tab-issues" class="tab-pane">
+        <div class="issue-list">
+          <div class="issue-item sev-high">
+            <div class="issue-time">09:24</div>
+            <div class="issue-body">
+              <div class="issue-title">정밀가공 라인 안전모 미착용 감지</div>
+              <div class="issue-desc">AI VISION이 PRC-19 구역에서 안전모 미착용 1건 감지 · 안전관리자 현장 조치 완료</div>
+            </div>
+            <span class="issue-badge high">조치완료</span>
+          </div>
+          <div class="issue-item sev-mid">
+            <div class="issue-time">10:47</div>
+            <div class="issue-body">
+              <div class="issue-title">절단·용접존 국소배기 풍량 저하</div>
+              <div class="issue-desc">2번 후드 풍량 기준치 85% · 설비팀 점검 요청 접수</div>
+            </div>
+            <span class="issue-badge mid">처리중</span>
+          </div>
+          <div class="issue-item sev-low">
+            <div class="issue-time">11:30</div>
+            <div class="issue-body">
+              <div class="issue-title">중앙 통로 자재 적치 정리</div>
+              <div class="issue-desc">관람객 통로 일부 자재 적치 → 즉시 정리 완료</div>
+            </div>
+            <span class="issue-badge low">완료</span>
+          </div>
+          <div class="issue-item sev-mid">
+            <div class="issue-time">13:15</div>
+            <div class="issue-body">
+              <div class="issue-title">작업자 심박 일시 상승 (W-02)</div>
+              <div class="issue-desc">절단·용접존 작업자 심박 128bpm 일시 도달 · 휴식 후 정상 회복</div>
+            </div>
+            <span class="issue-badge mid">모니터링</span>
+          </div>
+        </div>
+
+        <div class="evac-note" style="background:rgba(255,111,44,0.06);border-color:rgba(255,111,44,0.25); margin-top: 16px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.86L1.82 18a2 2 0 0 0 1.7 3h16.96a2 2 0 0 0-3.4 0z"/></svg>
+          <span style="color:var(--t-2);">금일 특이사항 <b style="color:var(--orange);">4건</b> · 조치완료 2건 · 처리중 2건 · 모든 사항은 실시간으로 안전상황실에 공유됩니다.</span>
+        </div>
+      </div>
     </div>
   </div>
 </div>

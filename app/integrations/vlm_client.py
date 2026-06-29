@@ -9,23 +9,27 @@ Request body::
 
     {"dir_path": "/path/to/frames"}
 
-Response::
+Response (current VLM Server schema)::
 
     {
       "request_id": "string",
-      "description": "string",
-      "action": "string",
+      "detected": true,
+      "labels": ["cone_touch", "fence_crossing"],
       "tts_message": "string",
+      "raw": "{\"cone_touch\": \"true\", \"helmet_off\": \"true\", ...}",
       "elapsed_sec": 0
     }
 
-``action`` keys map 1:1 to the kiosk's unsafe-behavior categories via
-``VLM_ACTION_KEY_MAP`` (see app/domain/constants.py).
-Used fields: ``action`` (count +1), ``tts_message`` (TTS 알림).
+탐지 키는 ``labels`` (키 리스트) 에서 읽는다. 구버전 호환을 위해 ``action``
+(쉼표 구분 문자열) 과 ``raw`` (키→"true"/"false" 문자열 dict) 도 폴백으로
+지원한다. 이 키들은 ``VLM_ACTION_KEY_MAP`` 으로 키오스크의 불안전행동
+카테고리에 1:1 매핑된다(see app/domain/constants.py).
+Used fields: ``labels``/``action``/``raw`` (count +1), ``tts_message`` (TTS 알림).
 """
 
 from __future__ import annotations
 
+import json
 import random
 
 import httpx
@@ -38,7 +42,9 @@ from app.domain.constants import VLM_ACTION_KEY_MAP
 logger = get_logger(__name__)
 
 # Response keys exactly as the VLM Server's /analyze emits them.
-KEY_ACTION = "action"
+KEY_ACTION = "action"        # 레거시: 쉼표 구분 문자열
+KEY_LABELS = "labels"        # 현행: 탐지 키 리스트
+KEY_RAW = "raw"              # 폴백: 키→"true"/"false" (dict 또는 JSON 문자열)
 KEY_TTS = "tts_message"
 KEY_DESCRIPTION = "description"
 
@@ -120,20 +126,52 @@ class VlmClient:
             return self._mock_result()
 
     @staticmethod
-    def _parse_action_keys(action: str) -> list[str]:
-        """Split the comma-separated ``action`` string into known keys."""
+    def _dedupe_known(parts: list[str]) -> list[str]:
+        """Keep only known action keys, in order, without duplicates."""
         keys: list[str] = []
-        for part in (action or "").replace("、", ",").split(","):
-            key = part.strip()
+        for part in parts:
+            key = str(part).strip()
             if key and key in VLM_ACTION_KEY_MAP and key not in keys:
                 keys.append(key)
         return keys
+
+    @staticmethod
+    def _truthy_keys_from_raw(raw: object) -> list[str]:
+        """``raw`` dict(또는 JSON 문자열)에서 값이 truthy 인 키만 추출."""
+        if isinstance(raw, str):
+            try:
+                raw = json.loads(raw)
+            except (ValueError, TypeError):
+                return []
+        if not isinstance(raw, dict):
+            return []
+        out: list[str] = []
+        for key, val in raw.items():
+            truthy = val.strip().lower() == "true" if isinstance(val, str) else bool(val)
+            if truthy:
+                out.append(key)
+        return out
+
+    @classmethod
+    def _extract_action_keys(cls, data: dict) -> list[str]:
+        """탐지 키 추출: labels(현행) → action(레거시) → raw(폴백) 순."""
+        labels = data.get(KEY_LABELS)
+        if isinstance(labels, list):
+            keys = cls._dedupe_known(labels)
+            if keys:
+                return keys
+        action = data.get(KEY_ACTION)
+        if action:
+            keys = cls._dedupe_known(str(action).replace("、", ",").split(","))
+            if keys:
+                return keys
+        return cls._dedupe_known(cls._truthy_keys_from_raw(data.get(KEY_RAW)))
 
     @classmethod
     def _normalize(cls, data: dict, source: str) -> VlmResult:
         if not isinstance(data, dict):
             data = {}
-        action_keys = cls._parse_action_keys(str(data.get(KEY_ACTION, "")))
+        action_keys = cls._extract_action_keys(data)
         # detection 요약 = 감지된 카테고리 한글 이름들을 합친 것.
         from app.domain.constants import CATEGORY_BY_ID  # 지역 import (순환 방지)
 

@@ -2915,6 +2915,62 @@
 .issue-badge.mid { background: rgba(255,184,0,0.18); color: #ffd066; }
 .issue-badge.low { background: rgba(0,229,138,0.15); color: #66f5b8; }
 
+/* ============== 현장 통합 관리 모달 (탭 / 공정특성 / 위험성평가) ============== */
+.modal-tabs { display: flex; border-bottom: 1px solid var(--line); background: var(--bg-card-hi); flex-shrink: 0; }
+.tab-btn {
+  flex: 1; padding: 15px 0; border: none; background: transparent;
+  font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 700; color: var(--t-3);
+  cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;
+}
+.tab-btn:hover { color: var(--t-2); }
+.tab-btn.active { color: var(--t-1); border-bottom-color: var(--cyan); background: #fff; }
+
+.tab-pane { display: none; }
+.tab-pane.active { display: block; animation: tab-fade 0.25s ease; }
+@keyframes tab-fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 공정 특성 테이블 */
+.process-table { width: 100%; border-collapse: collapse; text-align: left; }
+.process-table th { background: var(--bg-card-hi); padding: 13px 16px; color: var(--t-2); font-weight: 700; font-size: 13px; border-bottom: 2px solid var(--line-strong); }
+.process-table td { padding: 14px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.process-code { font-weight: 800; color: var(--t-1); font-size: 15px; white-space: nowrap; width: 180px; }
+.traits { display: flex; flex-wrap: wrap; gap: 6px; }
+.trait-badge { padding: 4px 11px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1.5px solid; background: #fff; white-space: nowrap; }
+.trait-badge.red { border-color: var(--red); color: var(--red); }
+.trait-badge.orange { border-color: var(--orange); color: var(--orange); }
+.trait-badge.blue { border-color: var(--cyan); color: var(--cyan); }
+.trait-badge.gray { border-color: var(--t-3); color: var(--t-3); }
+.btn-table-risk {
+  background: var(--t-1); color: #fff; border: none; padding: 9px 16px;
+  border-radius: var(--r-md); font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: 0.18s; white-space: nowrap;
+}
+.btn-table-risk:hover { background: var(--t-2); }
+.btn-table-risk.active { background: var(--cyan); }
+
+/* 인라인 위험성평가 상세 */
+.risk-detail-section { border-top: 2px dashed var(--line-strong); padding-top: 24px; margin-top: 20px; display: none; }
+.risk-detail-section.active { display: block; animation: tab-fade 0.3s ease; }
+.section-title-group { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px; }
+.section-title-group h3 { font-family: 'Pretendard', sans-serif; font-size: 17px; font-weight: 800; color: var(--t-1); }
+.section-title-group p { font-size: 13px; color: var(--t-3); }
+.risk-stats { display: flex; gap: 12px; margin-bottom: 20px; }
+.stat-box { flex: 1; background: var(--bg-card-hi); border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px 0; text-align: center; }
+.stat-box .num { font-family: 'Pretendard', sans-serif; font-size: 26px; font-weight: 800; margin-bottom: 3px; }
+.stat-box .label { font-size: 12px; color: var(--t-3); }
+.stat-box .num.red { color: var(--red); }
+.stat-box .num.orange { color: var(--amber); }
+.stat-box .num.green { color: var(--green); }
+.stat-box .num.blue { color: var(--cyan); }
+.risk-detail-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.risk-detail-table th { background: var(--bg-card-hi); padding: 10px 12px; text-align: left; color: var(--t-2); font-weight: 700; border-bottom: 1px solid var(--line-strong); }
+.risk-detail-table td { padding: 12px; border-bottom: 1px solid var(--line); color: var(--t-1); vertical-align: top; line-height: 1.5; }
+.risk-detail-table tbody tr:last-child td { border-bottom: none; }
+.risk-score-badge { padding: 3px 9px; border-radius: 5px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.risk-score-badge.high { background: rgba(220,38,38,0.12); color: var(--red); }
+.risk-score-badge.mid { background: rgba(217,119,6,0.14); color: var(--amber); }
+.risk-score-badge.low { background: rgba(22,163,74,0.14); color: var(--green); }
+
 /* ============== AI 현장 상황 패널 ============== */
 .ai-panel {
   flex-shrink: 0;
