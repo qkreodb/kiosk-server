@@ -2,12 +2,12 @@
 
 Flow:
   1. Call the external VLM Server's /analyze (client + offline mock fallback).
-  2. BRANCH A — TTS: ``tts_message`` -> Edge TTS -> speaker (actuator).
-  3. BRANCH B — DB:  ``action`` 키 -> 불안전행동 카테고리로 매핑 ->
-     increment counts in the DB -> read resulting count ->
-     generate a warning-light control signal from configurable thresholds ->
-     dispatch to the warning light (actuator).
-  4. Combine everything into one response DTO.
+  2. ``action``/``labels`` 키 -> 불안전행동 카테고리로 매핑(탐지 여부 판단).
+  3. BRANCH A — TTS: 탐지된 행동이 있을 때만 ``tts_message`` -> Edge TTS -> speaker.
+     이상 없음(탐지 0건)이면 음성 안내를 울리지 않는다(시연 시 음성 겹침 방지).
+  4. BRANCH B — DB:  매핑된 카테고리의 카운트를 증가 -> 결과 카운트 조회 ->
+     임계값 기반 경광등 제어 신호 생성 -> 경광등(actuator)으로 전송.
+  5. Combine everything into one response DTO.
 """
 
 from __future__ import annotations
@@ -156,20 +156,26 @@ class VlmService:
         # 1) Call the VLM Server's /analyze (or offline mock).
         vlm = await self._vlm.analyze(frame_dir)
 
-        # 2) BRANCH A — TTS -> speaker.
-        #    재생은 백그라운드 스레드(fire-and-forget)로 — 오디오 재생 시간 동안
-        #    /vlm/infer 응답과 이벤트 루프가 막히지 않도록 한다(실시간 재생 유지).
-        tts_result = await self._tts.synthesize(vlm.warning_text)
-        if tts_result.status in {"synthesized", "stubbed"}:
-            self._speaker.play_async(tts_result.audio_path, tts_result.text)
-        tts = TtsDispatch(**tts_result.model_dump())
-
-        # 3) BRANCH B — map detected behaviors & DB-increment, read resulting counts.
+        # 2) 탐지된 불안전행동 매핑 (TTS 발동 여부 판단에도 사용).
         #    구조화된 action 키가 있으면 직접 매핑, 없으면 자유텍스트 키워드 폴백.
         if vlm.action_keys:
             matches = categories_from_action_keys(vlm.action_keys)
         else:
             matches = match_categories(split_detection(vlm.detection))
+        detected = bool(matches)
+
+        # 3) BRANCH A — TTS -> speaker.
+        #    이상 없음(탐지된 행동 없음)이면 음성 안내를 울리지 않는다 — 시연 시
+        #    안전 상황에도 안내가 나와 음성이 겹치는 문제를 방지.
+        #    재생은 백그라운드 스레드(fire-and-forget)로 — 오디오 재생 시간 동안
+        #    /vlm/infer 응답과 이벤트 루프가 막히지 않도록 한다(실시간 재생 유지).
+        tts_text = vlm.warning_text if detected else ""
+        tts_result = await self._tts.synthesize(tts_text)
+        if tts_result.status in {"synthesized", "stubbed"}:
+            self._speaker.play_async(tts_result.audio_path, tts_result.text)
+        tts = TtsDispatch(**tts_result.model_dump())
+
+        # 4) BRANCH B — DB-increment per detected behavior, read resulting counts.
         labels = [label for _, label in matches]
         deltas: list[BehaviorDelta] = []
         for cat_id, matched_label in matches:
@@ -218,7 +224,7 @@ class VlmService:
             led=led_dispatch,
         )
 
-        # 4) Combine.
+        # 5) Combine.
         return VlmInferResponse(
             camera_id=camera_id,
             process_code=code,
