@@ -164,7 +164,7 @@ function switchSiteView(view, btn) {
 
 // ===== Generic modal control =====
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-['hrOverlay','msdsOverlay','photoOverlay','evacOverlay','facilityOverlay','contactOverlay','aiSiteOverlay','envDetailOverlay','processOverlay','issueOverlay','policyOverlay'].forEach(id => {
+['hrOverlay','msdsOverlay','photoOverlay','evacOverlay','facilityOverlay','contactOverlay','aiSiteOverlay','envDetailOverlay','processOverlay','issueOverlay','policyOverlay','lawDetailOverlay'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('click', e => {
     if (e.target.id === id) closeModal(id);
@@ -232,6 +232,157 @@ function openContact() {
 }
 
 // 경영방침 및 법령요지 모달 열기
+// 산업안전보건법령요지 (2025.1 기준). content/penalty는 개행 유지를 위해 템플릿 리터럴 사용.
+const LAW_ITEMS = [
+  { law: '제14조[이사회 보고 및 승인 등]',
+    content: `「상법」 제170조에 따른 주식회사 중 상시근로자 500명 이상을 사용하는 회사, 건설산업기본법 제23조에 따라 시공능력의 순위 상위 1천위 이내의 건설회사의 대표이사는 매년 회사의 안전 및 보건에 관한 계획을 수립하여 이사회에 보고하고 승인을 받아야 함`,
+    penalty: `1천만원 이하의 과태료` },
+  { law: '제15조[안전보건관리책임자]',
+    content: `사업주는 산업재해를 실질적으로 총괄하여 관리하는 사람에게 해당 사업장에 해당계획 수립, 안전관리감독(강진감 등), 산업재해의 원인 조사, 재발 방지대책 수립, 통계의 기록 유지 등 산업장의 안전 보건 업무를 총괄하여 관리하도록 하여야 함`,
+    penalty: `500만원 이하의 과태료` },
+  { law: '제16조[관리감독자]',
+    content: `관리감독자는 근로자의 작업배분, 보호구 및 방호장치의 점검, 작동 교육/작업의 지위 감독, 교육 등을 실시하여야 함`,
+    penalty: `500만원 이하의 과태료` },
+  { law: '제17조[안전관리자] / 제18조[보건관리자] / 제19조[안전보건담당자]',
+    content: `상시근로자의 인원과 건설공사의 규모 별 안전관리자, 보건관리자, 안전보건관리담당자를 선임 또는 보건(안전)관리전문기관에 위탁하여 사업주를 보좌하고 관리감독자에게 지도, 조언 업무수행
+※ 건설업의 상시근로자 300인 이상 사업장은 보건관리전문기관 위탁 불가`,
+    penalty: `500만원 이하의 과태료 (각 조항별)` },
+  { law: '제24조[산업안전보건위원회]',
+    content: `(해당 시) 노사 동수로 구성되는 산업안전보건위원회를 구성 운영`,
+    penalty: `500만원 이하의 과태료` },
+  { law: '제26조[안전보건관리규정의 작성]',
+    content: `(해당 시) 사업장의 안전 및 보건을 유지하기 위하여 안전보건관리규정 작성 (시행규칙 [별표 3] 안전보건관리규정의 세부 내용 참조)`,
+    penalty: `500만원 이하의 과태료` },
+  { law: '제29조[근로자에 대한 안전보건교육]',
+    content: `▷ 정기교육: 비사무직(12시간 이상/매반기), 사무직(6시간 이상/매반기)
+▷ 관리감독자 교육: 방문, 포장, 생산직장, 생산부장 등 관리감독자 (연간 16시간 이상)
+▷ 채용 시 교육: 일용근로자 및 근로계약기간이 1주일 이하인 기간제근로자(1시간 이상), 근로계약기간이 1주일 초과 1개월 이하인 기간제근로자(4시간 이상), 그 밖의 근로자(8시간 이상)
+▷ 작업내용 변경 시: 일용근로자 및 근로계약기간이 1주일 이하인 기간제근로자(1시간 이상), 그 밖의 근로자(2시간 이상)
+▷ 특별안전보건교육: 일용근로자 및 근로계약기간이 1주일 이하인 기간제근로자(2시간 이상) ※ 타워크레인 작업 시 신호업무 작업자는 8시간 이상, 그 밖의 근로자에 대한 작업에 준하는 교육(16시간 이상)
+▷ 건설업 기초안전보건교육: 건설 일용근로자(4시간 이상)`,
+    penalty: `500만원 이하의 과태료 (특별안전보건교육 미실시 시 3천만원 이하의 과태료)` },
+  { law: '제32조[안전보건관리책임자 등에 대한 직무교육]',
+    content: `사업주는 안전보건관리책임자, 안전관리자, 보건관리자, 안전보건관리담당자 및 안전 보건 전문기관 등에서 안전과 보건에 관련된 업무에 종사하는 사람 등에게 직무에 관한 안전보건교육을 이수하도록 해야 함`,
+    penalty: `500만원 이하의 과태료` },
+  { law: '제34조[법령 요지 등의 게시 등]',
+    content: `법령요지 및 안전보건관리규정을 각 사업장의 근로자가 쉽게 볼 수 있는 장소에 게시하거나 갖추어 두어 근로자에게 널리 알려야 함`,
+    penalty: `500만원 이하의 과태료` },
+  { law: '제36조[위험성평가의 실시]',
+    content: `사업장의 위험요인을 찾아내어 평가하고 이 법에 따른 조치를 하고 기록 보존 하여야 함
+(안전보건관리책임자가 총괄관리 : 해당 작업장의 근로자 참여 필수)`,
+    penalty: `안전보건관리책임자, 보건(안전)관리자 등 업무 500만원 이하의 과태료` },
+  { law: '제37조[안전보건표지의 설치, 부착]',
+    content: `사업주는 유해하거나 위험한 장소·시설·물질에 대한 경고 비상시 대피 등 안전의식 보건의식 고취를 위한 표지를 부착하여야 함
+('산업안전보건법', 시행규칙 [별표 7, 8, 9] 기준) [금지표지/경고표지/지시표지/안내표지/관계자외 출입금지]
+※ 외국인근로자를 사용하는 경우는 외국인근로자의 모국어로 별도 작성하여 설치 및 부착`,
+    penalty: `500만원 이하의 과태료` },
+  { law: '제38조[안전조치] / 제39조[보건조치] / 제40조[근로자의 안전조치 및 보건조치의 이행]',
+    content: `▷ 기계/폭발성물질/전기 및 굴착/터파기/중량물 취급 금지 또는 제한·예방을 위하여 적절한 조치를 하여야 함
+▷ 증기/폭발/미스트 및 방사선/분진 등의 발생으로 인한 건강의 적절한 조치를 하여야 함
+▷ 근로자는 제38조[안전조치] 및 제39조[보건조치]에 따라 사업주가 한 조치에 따라야 할 사항을 이행하여야 함`,
+    penalty: `근로자 사망시 7년 이하의 징역 또는 1억원 이하의 벌금 / 15만원 이하의 과태료(행위별)` },
+  { law: '제41조[고객의 폭언 등으로 인한 건강장해 예방조치 등]',
+    content: `사업주는 주로 고객을 직접 대면하거나 정보통신망을 통한 서비스 업무에 종사하는 고객응대근로자에 대하여 고객의 폭언 등으로 인한 건강장해를 예방하기 위하여 필요한 조치를 하여야 함`,
+    penalty: `(근로자 해고, 불리한 처우) 1년 이하의 징역 또는 1천만원 이하의 벌금
+(필요한 조치 불이행) 1천만원 이하의 과태료` },
+  { law: '제42조[유해위험방지계획서의 작성·제출 등]',
+    content: `유해위험방지계획서 제출 대상(시행령 42조)에 해당하는 사업으로서 해당 물질의 생산 공정과 직접적으로 관련된 건설물 기계 기구 및 설비 등 전부를 설치 이전 구조변경을 하려는 경우 작성하여 고용노동부장관에게 제출 심사를 받아야 함`,
+    penalty: `1천만원 이하의 과태료 또는 5년 이하의 징역 또는 5천만원 이하의 벌금` },
+  { law: '제44조[공정안전보고서의 작성·제출]',
+    content: `유해하거나 위험한 설비를 보유한 사업주는 고용노동부령에 따라 공정안전관리보고서(PSM)을 작성하고 고용노동부장관에게 제출하여 심사를 받아야 함
+(공정안전보고서의 적정통보 전에는 유해하거나 위험한 설비를 가동 불가)`,
+    penalty: `공정안전보고서 미적정: 3년 이하의 징역 또는 3천만원 이하의 벌금
+미제출: 1천만원 이하의 과태료` },
+  { law: '제51조[사업주의 작업중지]',
+    content: `사업주는 산업재해가 발생할 급박한 위험이 있을 때에는 즉시 작업을 중지시키고 근로자를 작업장소에서 대피시키는 등 안전 및 보건에 관하여 필요한 조치를 하여야 함`,
+    penalty: `위반 시: 5년 이하의 징역 또는 5천만원 이하의 벌금` },
+  { law: '제52조[근로자의 작업중지]',
+    content: `▷ 산업재해가 발생할 급박한 위험이 있는 경우에는 즉시 해당 작업을 중지시키고 대피시키는 등 안전 및 보건에 관하여 필요한 조치를 하여야 하며, 지체 없이 작업공동노동자의 경우에 전화·팩스 등의 적절한 방법으로 보고하여야 함
+▷ 근로자는 산업재해가 발생할 급박한 위험이 있는 경우에는 작업을 중지하고 대피할 수 있으며, 지체 없이 그 사실을 관리감독자 또는 그 밖에 부서의 장에게 보고하여야 함
+▷ 사업주는 합리적인 이유가 있을 때에는 해당 근로자에 대하여 해고나 그 밖의 불리한 처우를 하여서는 아니 됨`,
+    penalty: `미기소료·3천만원 이하의 과태료` },
+  { law: '제57조[산업재해 발생 은폐 금지 및 보고 등]',
+    content: `▷ 산업재해발생 은폐하지 않으며, 발생현황 등을 기록하여 3년간 보존하여야 함
+▷ 사망자가 발생하거나 3일 이상의 휴업이 필요한 부상을 입거나 질병에 관한 사항 발생 시 산업재해가 발생한 날부터 1개월 이내에 산업재해조사표 작성 제출`,
+    penalty: `은폐: 1년 이하의 징역 또는 1천만원 이하의 벌금
+미기록·미각, 1천 500만원 이하의 과태료` },
+  { law: '제58조[유해한 작업의 도급금지]',
+    content: `근로자의 안전 및 보건에 유해하거나 위험한 작업 도급 금지`,
+    penalty: `10억원 이하의 과징금` },
+  { law: '제59조[도급인의 안전조치 및 보건조치]',
+    content: `도급인은 관계수급인 근로자가 도급인 사업장에서 작업을 하는 경우 근무 모두의 산재를 예방하기 위하여 안전 및 보건 시설의 설치 등 필요한 조치를 해야 함 (보호구 착용 등 직접 지시 사례)`,
+    penalty: `근로자 사망시 7년 이하의 징역 또는 1억원 이하의 벌금` },
+  { law: '제64조[도급에 따른 산업재해 예방조치]',
+    content: `도급인은 관계수급인 근로자가 도급인의 사업장에서 작업을 하는 경우
+· 도급인과 수급인을 구성원으로 하는 안전 및 보건에 관한 협의체의 구성 및 운영
+· 작업장 순회점검
+· 안전보건교육의 실시 확인 및 장소, 자재 지원
+· 정보체계 대비방안 제출
+· 위생시설 이용, 설치 협조
+· 관계수급인 등에 대한 작업개시, 내용, 안전조치 및 보건조치 확인`,
+    penalty: `1년 이하의 징역 또는 1천만원 이하의 벌금
+위생시설 미설치: 1500만원 이하의 과태료` },
+  { law: '제65조[도급인의 안전 및 보건에 관한 정보 제공 등]',
+    content: `도급인은 자신 해당 작업 시작 전에 수급인에게 안전 및 보건에 관한 정보를 문서로 제공
+유해성·위험성이 있는 화학물질 또는 그 화학물질을 포함한 혼합물을 제조·사용·운반·취급 또는 보관의 위험이 있는 작업 등`,
+    penalty: `1년 이하의 징역 또는 1천만원 이하의 벌금` },
+  { law: '제80조[유해하거나 위험한 기계·기구]',
+    content: `누구든지 형식에 맞지 않는 기계·기구 등을 대통령령으로 정하는 것을 고용노동부장관으로 정하는 유해 위험 방지를 위한 방호조치를 하지 아니하고는, 양도, 대여, 설치 또는 사용에 제공하거나 이들의 목적으로 화시하지 않아야 함`,
+    penalty: `1년 이하의 징역 또는 1천만원 이하의 벌금` },
+  { law: '제93조[안전검사]',
+    content: `프레스(크랭크), 크레인(2톤 이상), 리프트, 압력용기, 곤돌라, 소기계기계(이동식 제외), 원심기(산업용 한정), 롤러기(밀폐형 구조 제외), 사출성형기(형 체결력 294킬로뉴턴 이상), 고소작업대(화물 적재 포함 등 특수 작업을 위한 장치로 결합), 컨베이어, 산업용 로봇
+검사 주기: 「산업안전보건법 시행령」 제126조 참고`,
+    penalty: `1천만원 이하의 과태료` },
+  { law: '제114조[물질안전보건자료의 게시 및 교육] / 제115조[물질안전보건자료 대상물질의 경고표시]',
+    content: `▷ 물질안전보건자료 대상 물질을 취급하는 작업장 내에 이를 취급하는 근로자가 쉽게 볼 수 있는 장소에 게시하거나 갖추어 두어야 하며, 취급하는 작업공정별 물질안전보건자료 관리 요령 게시 및 해당 근로자 교육
+▷ 물질안전보건자료 대상물질을 담은 용기 및 포장에 경고표시`,
+    penalty: `미게시: 500만원 이하의 과태료(게시/게5분)
+미교육: 300만원 이하의 과태료(미실시 1분당)
+미경고표시: 300만원 이하의 과태료` },
+  { law: '제119조[석면조사] / 제119조[석면해체·제거]',
+    content: `▷ 건축물 등을 철거 시 지정기관에서 석면조사를 실시하고 작업 기준을 준수하여야 함
+▷ 일정 면적 이상 석면함유 건축물 철거 시 석면해체제거자에 인가를 득하여 해체하여야 함`,
+    penalty: `3년 이하의 징역 또는 3천만원 이하의 벌금
+미석면조사: 1년 이하의 징역 또는 1천만원 이하의 벌금` },
+  { law: '제125조[작업환경측정]',
+    content: `소음(80dB 이상), 화학물질, 분진, 고열 등에 근로자가 노출되는 사업장은 작업환경측정 실시 및 결과보고 ('산업안전보건법', 시행규칙 [별표21])
+해당 시설 설비의 설치 개선 또는 건강진단의 실시 등의 조치를 하지 아니한 시`,
+    penalty: `1천만원 이하의 벌금` },
+  { law: '제128조의2[휴게시설의 설치]',
+    content: `사업주는 근로자(관계수급인의 근로자 포함)가 신체적 피로와 정신적 스트레스를 해소할 수 있도록 휴식시간에 이용할 수 있는 휴게시설을 갖추어야 하며 해당 시설의 청결, 위생, 온도 등을 위하여 관리기준을 준수하여야 함`,
+    penalty: `미설치: 1천5백만원 이하의 과태료
+기준위반: 1천만원 이하의 과태료` },
+  { law: '제129조[일반건강진단] / 제130조[특수수건강진단 등]',
+    content: `▷ 일반건강진단: 사무직(1회 이상/2년), 비사무직(1회 이상/1년)
+▷ 특수건강진단: 소음, 화학물질 등 노출 근로자(오기/마감일별로 1회 이상/6~24개월, 「산업안전보건법」, 시행규칙 [별표22, 23])
+▷ 배치전건강진단: 특수건강진단 해당 작업 배치하기 전, 작업전환 시 작업 전 실시`,
+    penalty: `1천만원 이하의 과태료` },
+  { law: '제164조[자료의 보존]',
+    content: `사업주는 다음의 서류를 3년 보존:
+· 안전보건관리책임자·안전관리자·보건관리자
+· 안전보건관리담당자 및 산업보건의의 선임에 관한 서류
+· 산업안전보건위원회, 노사협의체 회의록(2년)
+· 안전조치 및 보건조치에 관한 사항을 기록한 서류
+· 화학물질의 유해성 검사에 관한 서류
+· 작업환경측정에 관한 서류
+· 건강진단에 관한 서류
+· 산업재해발생기록에 대한 기재 및 그에 관하여 기록한 서류`,
+    penalty: `300만원 이하의 과태료 (각 서류마다 적용)` },
+];
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function openLawDetail(i) {
+  const it = LAW_ITEMS[i];
+  if (!it) return;
+  document.getElementById('lawDetailTitle').textContent = (i + 1) + '. ' + it.law;
+  document.getElementById('lawDetailContent').textContent = it.content;   // 개행은 CSS white-space:pre-wrap 로 유지
+  document.getElementById('lawDetailPenalty').textContent = it.penalty;
+  document.getElementById('lawDetailOverlay').classList.add('open');
+}
+
 function openPolicy(type) {
   const title = document.getElementById('policyTitle');
   const body = document.getElementById('policyBody');
@@ -240,7 +391,7 @@ function openPolicy(type) {
 
   if (type === 'management') {
     // 문서형(document) 레이아웃 — 참고: 안전보건경영방침.dc.html
-    if (box) box.classList.add('policy-doc-mode');
+    if (box) { box.classList.add('policy-doc-mode'); box.style.maxWidth = '780px'; }
     title.textContent = '안전보건경영방침';
     const triSvg = `
       <svg viewBox="0 0 52 600" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
@@ -288,30 +439,38 @@ function openPolicy(type) {
       </div>
     `;
   } else {
-    if (box) box.classList.remove('policy-doc-mode');
+    if (box) { box.classList.remove('policy-doc-mode'); box.style.maxWidth = '1040px'; }
     title.textContent = '산업안전보건 법령요지';
+    const rows = LAW_ITEMS.map((it, i) => {
+      const flat = it.content.replace(/\s+/g, ' ').trim();
+      const preview = flat.length > 50 ? flat.slice(0, 50) + '…' : flat;
+      return `<tr class="law-row" onclick="openLawDetail(${i})">
+        <td class="law-no">${i + 1}</td>
+        <td class="law-name">${escapeHtml(it.law)}</td>
+        <td class="law-preview">${escapeHtml(preview)}</td>
+        <td class="law-penalty">${escapeHtml(it.penalty.replace(/\s+/g, ' ').trim())}</td>
+      </tr>`;
+    }).join('');
     body.innerHTML = `
-      <div style="padding: 10px 0;">
-        <h4 style="font-size:16px; color:var(--cyan); margin-bottom:12px; font-weight:700; border-left:3px;">근로자의 주요 권리와 의무 (법 제5조 등)</h4>
-        <ul style="list-style:none; padding:0; font-size:14px; color:var(--t-2); line-height:2.0; margin-bottom:24px;">
-          <li style="margin-bottom:8px;"><b>• 급박한 위험 시 작업중지권</b>: 급박한 위험이 있을 때 작업을 중지하고 대피할 수 있는 권리.</li>
-          <li style="margin-bottom:8px;"><b>• 안전보건수칙 준수 의무</b>: 사업주가 제공하는 보호구 착용 및 안전보건 규칙 준수 의무.</li>
-          <li style="margin-bottom:8px;"><b>• 건강진단 수검 의무</b>: 회사가 실시하는 정기 및 특수 건강진단을 적극 수검할 의무.</li>
-        </ul>
-        <h4 style="font-size:16px; color:var(--orange); margin-bottom:12px; font-weight:700; border-left:3px;">사업주의 주요 의무 (법 제4조)</h4>
-        <ul style="list-style:none; padding:0; font-size:14px; color:var(--t-2); line-height:2.0;">
-          <li style="margin-bottom:8px;"><b>• 위험성평가 실시 및 이행</b>: 사업장 내 위험 요인을 파악하고 개선 대책을 수립·이행할 의무.</li>
-          <li style="margin-bottom:8px;"><b>• 정기 안전보건교육 제공</b>: 신규 채용 및 정기 안전보건 교육을 소속 근로자에게 제공할 의무.</li>
-          <li style="margin-bottom:8px;"><b>• 안전보건관리체계 구축</b>: 중대재해처벌법에 따른 전담 조직 및 안전 예산 편성 의무.</li>
-        </ul>
+      <div class="law-caption">기준일: 2025.1 기준 · 행을 클릭하면 조항 상세를 볼 수 있습니다.</div>
+      <div class="law-wrap">
+        <table class="law-table">
+          <thead>
+            <tr>
+              <th style="width:52px;">순번</th>
+              <th style="width:260px;">산업안전보건법</th>
+              <th>주요내용</th>
+              <th style="width:200px;">벌칙</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
       </div>
     `;
   }
   document.getElementById('policyOverlay').classList.add('open');
 }
 
-// 위험성평가: 현장 통합 관리 모달의 공정 탭으로 통합
-function openRisk() { openIssueMgmt(); }
 function openAISite() { document.getElementById('aiSiteOverlay').classList.add('open'); }
 // ===== 공정(작업)관리 드릴다운 =====
 // 행 순서는 processOverlay 목록 표의 onclick 인덱스(0~4)와 일치

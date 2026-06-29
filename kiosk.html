@@ -88,7 +88,7 @@
             </div>
           </div>
 
-          <div class="bh-matrix-row" data-active="3">
+          <div class="bh-matrix-row" data-active="-1">
             <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><i class="ri-edit-line"></i></button>
             <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
               <input type="checkbox" class="bhm-focus-cb" data-focus-key="helmet_off" data-focus-label="안전모를 착용하지 않은 행동" checked onchange="onFocusToggle()">
@@ -98,10 +98,10 @@
               <span class="bhm-lamp interest"></span>
               <span class="bhm-lamp caution"></span>
               <span class="bhm-lamp warning"></span>
-              <span class="bhm-lamp danger on"></span>
+              <span class="bhm-lamp danger"></span>
             </div>
           </div>
-          <div class="bh-matrix-row" data-active="1">
+          <div class="bh-matrix-row" data-active="-1">
             <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><i class="ri-edit-line"></i></button>
             <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
               <input type="checkbox" class="bhm-focus-cb" data-focus-key="cone_touch" data-focus-label="라바콘에 접촉하는 행동" checked onchange="onFocusToggle()">
@@ -109,25 +109,25 @@
             </label>
             <div class="bhm-lamps">
               <span class="bhm-lamp interest"></span>
-              <span class="bhm-lamp caution on"></span>
+              <span class="bhm-lamp caution"></span>
               <span class="bhm-lamp warning"></span>
               <span class="bhm-lamp danger"></span>
             </div>
           </div>
-          <div class="bh-matrix-row" data-active="0">
+          <div class="bh-matrix-row" data-active="-1">
             <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><i class="ri-edit-line"></i></button>
             <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
               <input type="checkbox" class="bhm-focus-cb" data-focus-key="fence_crossing" data-focus-label="위험 펜스를 넘는 행동" checked onchange="onFocusToggle()">
               <span class="bhm-focus-text">위험 펜스 침범</span>
             </label>
             <div class="bhm-lamps">
-              <span class="bhm-lamp interest on"></span>
+              <span class="bhm-lamp interest"></span>
               <span class="bhm-lamp caution"></span>
               <span class="bhm-lamp warning"></span>
               <span class="bhm-lamp danger"></span>
             </div>
           </div>
-          <div class="bh-matrix-row" data-active="2">
+          <div class="bh-matrix-row" data-active="-1">
             <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><i class="ri-edit-line"></i></button>
             <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
               <input type="checkbox" class="bhm-focus-cb" data-focus-key="ladder_alone" data-focus-label="사다리를 단독으로 이용하는 행동" checked onchange="onFocusToggle()">
@@ -136,11 +136,11 @@
             <div class="bhm-lamps">
               <span class="bhm-lamp interest"></span>
               <span class="bhm-lamp caution"></span>
-              <span class="bhm-lamp warning on"></span>
+              <span class="bhm-lamp warning"></span>
               <span class="bhm-lamp danger"></span>
             </div>
           </div>
-          <div class="bh-matrix-row" data-active="0">
+          <div class="bh-matrix-row" data-active="-1">
             <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><i class="ri-edit-line"></i></button>
             <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
               <input type="checkbox" class="bhm-focus-cb" data-focus-key="safety_vest" data-focus-label="안전 고리를 착용하지 않은 행동" checked onchange="onFocusToggle()">
@@ -289,9 +289,8 @@
       </button>
     </nav>
 
-    <!-- 안전시설 서브 메뉴 (6개, 정사각형) -->
+    <!-- 안전시설 서브 메뉴 (4개, 정사각형) -->
     <nav class="facility-menu-sq">
-      <button class="facility-btn-sq sq-blue" onclick="openRisk()"><i class="ri-error-warning-line facility-btn-icon"></i><span class="facility-label">위험성평가</span></button>
       <button class="facility-btn-sq sq-blue" onclick="openProcessMgmt()"><i class="ri-settings-3-line facility-btn-icon"></i><span class="facility-label">공정관리</span></button>
       <button class="facility-btn-sq sq-blue" onclick="openIssueMgmt()"><i class="ri-file-warning-line facility-btn-icon"></i><span class="facility-label">현장특이사항</span></button>
       <button class="facility-btn-sq sq-teal" onclick="openPolicy('management')"><span class="facility-label">안전보건<br>경영방침</span></button>
@@ -505,6 +504,36 @@
     </div>
     <div class="modal-body" id="policyBody" style="padding: 28px 36px 36px;">
       <!-- JS로 주입 -->
+    </div>
+  </div>
+</div>
+
+<!-- ============== 산업안전보건법령요지 조항 상세 MODAL ============== -->
+<div class="modal-overlay" id="lawDetailOverlay" style="z-index:1003;">
+  <div class="modal-box" style="max-width: 760px;">
+    <div class="modal-head" style="background:#003087;">
+      <div class="modal-head-left">
+        <div class="modal-head-icon" style="background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.3); color:#fff; display:flex; align-items:center; justify-content:center; width:48px; height:48px; border-radius:10px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:26px; height:26px;"><path d="M12 3v18M3 7l9-4 9 4M5 7v6a7 7 0 0 0 14 0V7"/></svg>
+        </div>
+        <div>
+          <div class="modal-head-title" id="lawDetailTitle" style="color:#fff;">조항 상세</div>
+          <div class="modal-head-sub" style="color:rgba(255,255,255,0.75);">산업안전보건법령요지 · 2025.1 기준</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal('lawDetailOverlay')" style="color:#fff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="law-detail-section">
+        <div class="law-detail-label">주요내용</div>
+        <div class="law-detail-content" id="lawDetailContent"></div>
+      </div>
+      <div class="law-detail-section">
+        <div class="law-detail-label">벌칙</div>
+        <div class="law-detail-penalty" id="lawDetailPenalty"></div>
+      </div>
     </div>
   </div>
 </div>
