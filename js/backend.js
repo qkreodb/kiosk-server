@@ -44,10 +44,12 @@
 
   /* ===================== 라이브 센서 (온습도 / 심박) ===================== */
   const liveSensors = { tempHumid: null, watch: null };
+  // 화면 하단 라이브 배지에 표시할 온습도 센서(요청: sonoff 값 사용).
+  const BADGE_TH_SENSOR = 'sonoff_1';
 
   async function refreshLiveSensors() {
     const [th, watch] = await Promise.allSettled([
-      fetchJson('/sensor/temp-humid'),
+      fetchJson('/sensor/temp-humid?sensor_name=' + encodeURIComponent(BADGE_TH_SENSOR)),
       fetchJson('/sensor/watch')
     ]);
     if (th.status === 'fulfilled') liveSensors.tempHumid = th.value;
@@ -160,6 +162,9 @@
   // 온습도 실센서별 모달 갱신 주기: shelly 4분(완만), sonoff 5초(직관적 실시간).
   const TH_POLL_MS = { shelly_1: 240000, sonoff_1: 5000 };
   const modalPollers = {}; // overlayId -> intervalId
+  // 메인 화면 자동 갱신 주기(F5 없이 실시간): 신호등 행렬 + 라이브 배지.
+  const MATRIX_POLL_MS = 2000;
+  const LIVE_POLL_MS = 2000;
 
   function stopModalPoll(overlayId) {
     if (modalPollers[overlayId]) {
@@ -663,18 +668,19 @@
     document.body.appendChild(badge);
     setConn(false, '연결 중…');
 
-    // 라이브 센서 배지 + 폴링 시작
+    // 라이브 센서 배지(sonoff 온습도 + 심박) + 2초 폴링
     ensureLiveSensorBadge();
     refreshLiveSensors().catch(() => updateLiveSensorBadge());
-    setInterval(() => refreshLiveSensors().catch(() => updateLiveSensorBadge()), 5000);
+    setInterval(() => refreshLiveSensors().catch(() => updateLiveSensorBadge()), LIVE_POLL_MS);
 
     // 공정 드롭다운을 실제 DB 목록으로 채움(실패해도 하드코딩 옵션 유지)
     try { await populateProcesses(); }
     catch (e) { console.warn('[공정 목록] 동적 로드 실패, 기본 옵션 사용:', e.message); }
 
-    // 신호등 행렬 초기 동기화
+    // 신호등 행렬 초기 동기화 + 2초마다 자동 갱신(F5 불필요)
     try { await hydrateMatrix(currentProcessCode()); setConn(true, '신호등 동기화 완료'); }
     catch (e) { setConn(false, e.message); }
+    setInterval(() => hydrateMatrix(currentProcessCode()).catch(() => {}), MATRIX_POLL_MS);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
