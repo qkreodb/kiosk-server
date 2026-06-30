@@ -392,6 +392,8 @@
   // paused : (모달 내 [분석] 버튼) 가동 중 일시정지/재개. CCTV 모달 개폐와 무관.
   const vlmLoop = { token: 0, paused: false, enabled: false };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  // 가장 최근 VLM 분석 결과 — 현장 특이사항 탭의 "VLM 위험행동 감지" 항목 소스.
+  let lastVlmDetection = null;
 
   function cctvModalOpen() {
     const o = document.getElementById('cctvOverlay');
@@ -453,6 +455,7 @@
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const d = await resp.json();
     if (vlmLoop.token !== token || !vlmLoop.enabled) return; // 응답 도착 시 이미 중단/전환됨
+    lastVlmDetection = d;
     renderVlmResult(d);
     // 결과 오버레이는 CCTV 모달이 열려 있을 때만 노출(분석은 모달과 무관하게 계속).
     if (cctvModalOpen()) document.getElementById('cctvVlmOverlay').classList.add('show');
@@ -687,6 +690,140 @@
       '<span class="conn-dot" style="background:' + col + ';box-shadow:0 0 8px ' + col + ';"></span>' +
       (ok ? '백엔드 연결됨' : '백엔드 오프라인') + ' · :8080' + (msg ? ' · ' + msg : '');
   }
+
+  /* ===================== 현장 특이사항 관리 모달 ===================== */
+  // 온습도 이상 임계값(현장 특이사항 감지 기준).
+  const HEAT_HI = 31, HEAT_LO = 5, HUM_HI = 70, HUM_LO = 20;
+
+  function nowHMS() {
+    const d = new Date(), p = (n) => ('0' + n).slice(-2);
+    return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+  }
+
+  // 탭1: VLM 위험행동 · 작업자 심박 · 현장 온습도 이상을 실시간으로 모아 [감지] 카드로 렌더.
+  async function renderSiteIssues() {
+    const list = document.getElementById('siteIssueList');
+    if (!list) return;
+    const items = [];
+
+    // 1) VLM 위험행동(가장 최근 분석 결과)
+    if (lastVlmDetection && lastVlmDetection.detection) {
+      items.push({
+        sev: 'high',
+        title: 'VLM 위험행동 감지: ' + lastVlmDetection.detection,
+        desc: lastVlmDetection.warning_text || '안전관리자 확인 필요',
+      });
+    }
+
+    // 2) 작업자 심박 이상(정상이 아닌 워치)
+    try {
+      const w = await fetchJson('/sensor/watch');
+      (w.workers || []).forEach((x) => {
+        if (x.status && x.status !== '정상') {
+          items.push({
+            sev: x.status === '위험' ? 'high' : 'mid',
+            title: '작업자 심박 이상 (' + (x.name || x.watch_id) + ')',
+            desc: [x.zone, Number(x.hr || 0) + 'bpm', x.status].filter(Boolean).join(' · '),
+          });
+        }
+      });
+    } catch (e) { /* 백엔드 일시 오류는 무시 */ }
+
+    // 3) 현장 온습도 이상
+    try {
+      const t = await fetchJson('/sensor/temp-humid');
+      (t.readings || []).forEach((r) => {
+        const temp = Number(r.temp), hum = Number(r.humidity);
+        const z = r.zone || r.sensor_name || '센서';
+        if (temp >= HEAT_HI) items.push({ sev: 'mid', title: '고온 이상 (' + z + ')', desc: '현재 ' + temp.toFixed(1) + '°C · 온열질환 주의' });
+        else if (temp <= HEAT_LO) items.push({ sev: 'mid', title: '저온 이상 (' + z + ')', desc: '현재 ' + temp.toFixed(1) + '°C · 한랭질환 주의' });
+        if (hum >= HUM_HI) items.push({ sev: 'low', title: '다습 이상 (' + z + ')', desc: '현재 습도 ' + hum.toFixed(0) + '%' });
+        else if (hum <= HUM_LO) items.push({ sev: 'low', title: '건조 이상 (' + z + ')', desc: '현재 습도 ' + hum.toFixed(0) + '%' });
+      });
+    } catch (e) { /* 무시 */ }
+
+    const stamp = nowHMS();
+    if (!items.length) {
+      list.innerHTML = '<div class="issue-empty">현재 감지된 이상이 없습니다 · 실시간 모니터링 중</div>';
+    } else {
+      list.innerHTML = items.map((it) => `
+        <div class="issue-item sev-${it.sev}">
+          <div class="issue-time">${stamp}</div>
+          <div class="issue-body">
+            <div class="issue-title">${it.title}</div>
+            <div class="issue-desc">${it.desc}</div>
+          </div>
+          <span class="issue-badge detect">감지</span>
+        </div>`).join('');
+    }
+    const sum = document.getElementById('issueSummary');
+    if (sum) sum.textContent = '현재 ' + items.length + '건 감지 · ' + stamp;
+  }
+
+  // 탭2: 현장 특성 — '현장 위치 이름' 기준. level 0=상위 구역, 1=하위 작업존.
+  // 참조 이미지 기준으로 밀폐공간만 일부 해당(나머지 컬럼은 미해당).
+  // proc: 연결 공정(대표 1개), more: 추가 연결 공정 수("외 N개"). 참조 이미지 기준.
+  const SITE_TRAITS = [
+    { name: '도장부스',            level: 0, psm: false, confined: false, heat: false, cold: false, proc: '도장 및 표면처리 공정', more: 2, moreList: ['기계조립공정', '정밀가공공정'] },
+    { name: '도장 전 준비구역',     level: 1, psm: false, confined: false, heat: false, cold: false, proc: '' },
+    { name: '도장작업실',          level: 1, psm: false, confined: false, heat: false, cold: false, proc: '정밀가공 공정' },
+    { name: '출하대기장',          level: 0, psm: false, confined: false, heat: false, cold: false, proc: '' },
+    { name: '포장라인',            level: 1, psm: false, confined: false, heat: false, cold: false, proc: '' },
+    { name: '검수존',              level: 1, psm: false, confined: false, heat: false, cold: false, proc: '' },
+    { name: '밀폐작업구역',         level: 0, psm: false, confined: true,  heat: false, cold: false, proc: '기계조립공정', more: 1, moreList: ['정밀가공 공정'] },
+    { name: '밀폐내부 작업존',      level: 1, psm: false, confined: true,  heat: false, cold: false, proc: '시료채취 작업', more: 1, moreList: ['정밀가공공정'] },
+    { name: '정비투입구역',         level: 1, psm: false, confined: true,  heat: false, cold: false, proc: '정밀가공 공정' },
+    { name: '안전보건교육장',       level: 0, psm: false, confined: false, heat: false, cold: false, proc: '' },
+    { name: '작업허가서 발급창구',   level: 0, psm: false, confined: false, heat: false, cold: false, proc: '' },
+    { name: '용접실1',             level: 0, psm: false, confined: false, heat: false, cold: false, proc: '' },
+    { name: '용접대기존',          level: 1, psm: false, confined: false, heat: false, cold: false, proc: '' },
+    { name: '용접작업대',          level: 1, psm: false, confined: false, heat: false, cold: false, proc: '' },
+    { name: '직원휴게실',          level: 0, psm: false, confined: false, heat: false, cold: false, proc: '' },
+    { name: '가공라인2',           level: 0, psm: false, confined: true,  heat: false, cold: false, proc: '' },
+    { name: 'CNC가공존',           level: 1, psm: false, confined: false, heat: false, cold: false, proc: 'CNC 가공공정' },
+    { name: '공구교환 및 보정구역',  level: 1, psm: false, confined: false, heat: false, cold: false, proc: '' },
+    { name: '가공라인1',           level: 0, psm: false, confined: true,  heat: false, cold: false, proc: '' },
+    { name: '절단기 작업존',        level: 1, psm: false, confined: false, heat: false, cold: false, proc: '정밀가공 공정' },
+  ];
+
+  function renderSiteTraits() {
+    const tb = document.getElementById('traitTableBody');
+    if (!tb) return;
+    const cell = (v) => v
+      ? '<td><i class="ri-checkbox-circle-fill tc-on"></i></td>'
+      : '<td><i class="ri-close-circle-fill tc-off"></i></td>';
+    const procCell = (s) => {
+      if (!s.proc) return '<td class="tt-proc tt-proc-none">-</td>';
+      let more = '';
+      if (s.more) {
+        const tip = (s.moreList && s.moreList.length)
+          ? ' data-tip="' + s.moreList.join(', ').replace(/"/g, '&quot;') + '"' : '';
+        more = ' <span class="tt-more"' + tip + '>외 ' + s.more + '개</span>';
+      }
+      return '<td class="tt-proc">' + s.proc + more + '</td>';
+    };
+    tb.innerHTML = SITE_TRAITS.map((s) => {
+      const cls = s.level ? 'tt-label tt-child' : 'tt-label tt-parent';
+      const toggle = s.level ? '' : '<span class="tt-toggle">−</span>';
+      return `<tr>
+        <td class="tt-name"><div class="${cls}">${toggle}<span>${s.name}</span></div></td>
+        ${cell(s.psm)}${cell(s.confined)}${cell(s.heat)}${cell(s.cold)}${procCell(s)}
+      </tr>`;
+    }).join('');
+  }
+
+  // app.js 더미 버전 덮어쓰기 — 첫 탭(현장 특이사항) 실시간, 둘째 탭(현장 특성) 표.
+  window.openIssueMgmt = function () {
+    const ov = document.getElementById('issueOverlay');
+    if (!ov) return;
+    if (window.switchTab) switchTab('tab-issues', document.querySelector('#issueOverlay .tab-btn'));
+    renderSiteTraits();
+    ov.classList.add('open');
+    renderSiteIssues();                              // 즉시 1회
+    startModalPoll('issueOverlay', renderSiteIssues); // 열려 있는 동안 실시간 갱신
+  };
+  window.renderSiteIssues = renderSiteIssues;
+  window.renderSiteTraits = renderSiteTraits;
 
   /* ===================== 초기화 ===================== */
   async function init() {

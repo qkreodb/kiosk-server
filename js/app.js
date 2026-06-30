@@ -555,17 +555,17 @@ function showProcessDetail(idx) {
     `<span class="proc-loc-tag${loc.includes('밀폐') ? ' danger' : ''}">${loc}</span>`
   ).join('');
 
-  const subRows = p.subs.map(sp => {
+  const subRows = p.subs.map((sp, si) => {
     const chemCells = sp.chems.length
       ? sp.chems.map(c => `<button class="chem-btn" onclick="openMSDS('${c.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}')">${escapeHtml(c)}</button>`).join('')
       : '<span style="color:var(--t-3);">—</span>';
     return `<tr>
       <td class="tc">${sp.ord}</td>
-      <td class="tn">${sp.name}</td>
-      <td>${sp.desc}</td>
+      <td class="tnd"><div class="tnd-name">${sp.name}</div><div class="tnd-desc">${sp.desc}</div></td>
       <td>${sp.machines}</td>
       <td>${chemCells}</td>
       <td>${sp.prot}</td>
+      <td class="tc"><button class="btn-risk-eval" onclick="openRiskEval(${idx}, ${si})">위험성평가</button></td>
     </tr>`;
   }).join('');
 
@@ -597,12 +597,12 @@ function showProcessDetail(idx) {
       <table class="proc-sub-table">
         <thead>
           <tr>
-            <th style="width:60px">작업순서</th>
-            <th style="width:110px">작업명</th>
-            <th class="tl">작업 설명</th>
-            <th style="width:180px">기계/기구/설비 등</th>
-            <th style="width:130px">사용물질</th>
-            <th style="width:155px">보호구</th>
+            <th style="width:56px">작업순서</th>
+            <th class="tl" style="width:280px">작업명/설명</th>
+            <th style="width:165px">기계/기구/설비 등</th>
+            <th style="width:120px">사용물질</th>
+            <th style="width:140px">보호구</th>
+            <th style="width:92px">위험성평가</th>
           </tr>
         </thead>
         <tbody>${subRows}</tbody>
@@ -654,6 +654,140 @@ function updateProcHr() {
     if (el) { el.textContent = bpm + ' BPM'; el.style.color = procHrColor(bpm); }
   });
 }
+
+/* ===== 위험성평가 상세 (빈도 × 강도, 4×4 기법) ===== */
+// 세부 작업별 유해·위험요인. [공정 인덱스][작업 인덱스] = [{factor, freq(빈도1~4), sev(강도1~4), measure(감소대책)}]
+const HAZARDS = {
+  0: [ // PRC-19 정밀가공
+    [ { factor: '고속 회전체 협착·말림', freq: 3, sev: 4, measure: '방호덮개 설치, 비상정지장치 점검, 회전부 접근 금지' },
+      { factor: '절삭칩 비산 안구 손상', freq: 3, sev: 2, measure: '보안경 착용 의무화, 비산 방지 커버 설치' },
+      { factor: '절삭유 피부 접촉 피부질환', freq: 2, sev: 2, measure: '내유성 장갑 착용, 세척시설 비치' } ],
+    [ { factor: '공구 파손 파편 비산', freq: 2, sev: 3, measure: '적정 절삭조건 준수, 차광 보안면 착용' },
+      { factor: '고소작업 추락', freq: 2, sev: 4, measure: '안전대·작업발판 사용, 라이프라인 체결' } ],
+  ],
+  1: [ // PRC-07 금속산세척
+    [ { factor: '황·염산 취급 중 화학화상', freq: 3, sev: 4, measure: '내산 PPE 착용, 물에 산을 천천히 투입, 비상샤워기 비치' },
+      { factor: '산성 증기 흡입 호흡기 손상', freq: 3, sev: 3, measure: '국소배기장치 가동, 산성가스용 방독마스크 착용' } ],
+    [ { factor: '산 용액 비산 눈·피부 접촉', freq: 3, sev: 3, measure: '전면보호면·내산 앞치마 착용, 비산 방지 덮개' },
+      { factor: '침지물 인양 근골격계 부담', freq: 2, sev: 2, measure: '인양보조구 사용, 2인 1조 작업' } ],
+    [ { factor: '잔류 산 접촉', freq: 2, sev: 2, measure: '중화 확인 후 취급, 내산 장갑 착용' } ],
+  ],
+  2: [ // PRC-23 도장·코팅
+    [ { factor: '유기용제 증기 흡입', freq: 3, sev: 3, measure: '유기증기용 방독마스크 착용, 환기 유지' },
+      { factor: '인화성 도료 화재·폭발', freq: 2, sev: 4, measure: '점화원 제거, 정전기 방지 접지, 소화기 비치' } ],
+    [ { factor: '스프레이 미스트 흡입', freq: 3, sev: 2, measure: '도장부스 배기 가동, 방독마스크 착용' } ],
+    [ { factor: '유기용제 중독', freq: 3, sev: 3, measure: '방독마스크·보호의 착용, 작업시간 관리' },
+      { factor: '분진·미스트 폭발 분위기', freq: 2, sev: 4, measure: '방폭 설비 사용, 환기·접지 확보' } ],
+    [ { factor: '건조기 고온 표면 화상', freq: 1, sev: 2, measure: '내열장갑 착용, 접촉 주의표지 부착' } ],
+  ],
+  3: [ // PRC-31 도장 및 표면처리
+    [ { factor: '분체도료 분진 흡입·분진폭발', freq: 2, sev: 3, measure: '집진설비 가동, 방진마스크 착용, 접지' },
+      { factor: '정전기에 의한 착화', freq: 2, sev: 2, measure: '정전기 제거장치, 도전성 작업화 착용' } ],
+  ],
+};
+// 위험성 수준 정의 — 빈도강도 기준표 그대로(점수 → 등급/허용범위/개선방안/관리기준).
+const RISK_GRADES = [
+  { cls: 'rg-vh', label: '매우높음', range: '16',  scores: [16],   allow: '허용불가능', plan: '허용불가 위험',       mgmt: '작업 즉시 중단(작업을 지속하려면 즉시 개선을 실행해야 하는 위험)' },
+  { cls: 'rg-h',  label: '높음',     range: '12',  scores: [12],   allow: '허용불가능', plan: '중대한 위험',         mgmt: '긴급 임시안전대책을 세운 후 작업을 하되 정기보수기간에 안전대책을 세워야 하는 위험' },
+  { cls: 'rg-sh', label: '약간높음', range: '8~9', scores: [8, 9], allow: '허용가능',   plan: '상당한 위험',         mgmt: '정기보수기간에 안전대책을 세워야 하는 위험' },
+  { cls: 'rg-m',  label: '보통',     range: '6',   scores: [6],    allow: '허용가능',   plan: '개선이 필요한 위험',   mgmt: '안전대책을 세워야 하는 위험' },
+  { cls: 'rg-l',  label: '낮음',     range: '3~4', scores: [3, 4], allow: '허용가능',   plan: '경미한 위험',         mgmt: '위험표시 부착, 작업절차서 표기 등 관리적 대책이 필요한 위험' },
+  { cls: 'rg-vl', label: '매우낮음', range: '1~2', scores: [1, 2], allow: '허용가능',   plan: '무시할 수 있는 위험', mgmt: '추가적인 안전대책이 필요없음' },
+];
+function gradeForScore(score) {
+  return RISK_GRADES.find(g => g.scores.includes(score)) || RISK_GRADES[RISK_GRADES.length - 1];
+}
+
+function openRiskEval(pIdx, sIdx) {
+  const p = PROCESS_DATA[pIdx];
+  const sp = p && p.subs[sIdx];
+  if (!sp) return;
+  const hazards = (HAZARDS[pIdx] && HAZARDS[pIdx][sIdx]) || [];
+  const maxScore = hazards.reduce((m, h) => Math.max(m, h.freq * h.sev), 0);
+  const topGrade = gradeForScore(maxScore || 1);
+
+  document.getElementById('riskEvalSub').textContent = p.code + ' · ' + sp.name;
+
+  // 본문: 작업의 유해·위험요인별 위험성평가 표
+  const hazardRows = hazards.length ? hazards.map((h, i) => {
+    const sc = h.freq * h.sev, gg = gradeForScore(sc);
+    return `<tr>
+      <td class="tc">${i + 1}</td>
+      <td class="rae-factor">${escapeHtml(h.factor)}</td>
+      <td class="tc">${h.freq}</td>
+      <td class="tc">${h.sev}</td>
+      <td class="tc"><span class="rlv-badge ${gg.cls}">${gg.label} (${sc})</span></td>
+      <td class="rae-measure">${escapeHtml(h.measure)}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--t-3);padding:18px;">등록된 유해·위험요인이 없습니다.</td></tr>';
+
+  // 참고: 빈도×강도 매트릭스 (채점 기준)
+  let matrix = '<table class="risk-mx"><thead>'
+    + '<tr><th class="rmx-corner" rowspan="2" colspan="2">빈도 × 강도</th><th colspan="4">중대성 (강도)</th></tr>'
+    + '<tr>' + [4, 3, 2, 1].map(s => `<th>${s}</th>`).join('') + '</tr></thead><tbody>';
+  [4, 3, 2, 1].forEach((f, i) => {
+    matrix += '<tr>';
+    if (i === 0) matrix += '<th class="rmx-side" rowspan="4">가능성<br>(빈도)</th>';
+    matrix += `<th class="rmx-fn">${f}</th>`;
+    [4, 3, 2, 1].forEach(s => {
+      const sc = f * s, gg = gradeForScore(sc);
+      matrix += `<td class="rmx-cell ${gg.cls}">${gg.label}<span class="rmx-score">(${sc})</span></td>`;
+    });
+    matrix += '</tr>';
+  });
+  matrix += '</tbody></table>';
+
+  // 참고: 위험성 수준 평가 기준 표 (해당 작업의 최고 등급 강조)
+  let levels = '<table class="risk-lv"><thead><tr>'
+    + '<th>위험성 수준</th><th>허용가능 범위</th><th>개선 방안</th><th>관리기준</th>'
+    + '</tr></thead><tbody>';
+  RISK_GRADES.forEach(gr => {
+    const sel = gr.cls === topGrade.cls ? ' rlv-sel' : '';
+    levels += `<tr class="${sel}">
+      <td class="rlv-grade"><span class="rlv-range">${gr.range}</span><span class="rlv-badge ${gr.cls}">${gr.label}</span></td>
+      <td>${gr.allow}</td>
+      <td>${gr.plan}</td>
+      <td class="rlv-mgmt">${gr.mgmt}</td>
+    </tr>`;
+  });
+  levels += '</tbody></table>';
+
+  document.getElementById('riskEvalBody').innerHTML = `
+    <div class="risk-eval-summary">
+      <div class="res-task">
+        <div class="res-task-name">${escapeHtml(sp.name)}</div>
+        <div class="res-task-desc">${escapeHtml(sp.desc)}</div>
+      </div>
+      <div class="res-top">
+        <span class="res-top-lbl">최고 위험성</span>
+        <span class="rlv-badge ${topGrade.cls} res-grade">${topGrade.label} (${maxScore})</span>
+        <span class="res-top-cnt">유해·위험요인 ${hazards.length}건</span>
+      </div>
+    </div>
+
+    <div class="proc-sec-lbl" style="margin-top:18px;">위험성평가 (빈도 × 강도 = 위험성)</div>
+    <div class="risk-ae-wrap">
+      <table class="risk-ae">
+        <thead><tr>
+          <th style="width:42px">No.</th>
+          <th class="tl">유해·위험요인</th>
+          <th style="width:50px">빈도</th>
+          <th style="width:50px">강도</th>
+          <th style="width:118px">위험성</th>
+          <th class="tl" style="width:300px">위험성 감소대책</th>
+        </tr></thead>
+        <tbody>${hazardRows}</tbody>
+      </table>
+    </div>
+
+    <div class="proc-sec-lbl" style="margin-top:18px;">평가 기준 (참고)</div>
+    <div class="risk-criteria">
+      <div class="risk-mx-wrap">${matrix}</div>
+      ${levels}
+    </div>
+  `;
+  document.getElementById('riskEvalOverlay').classList.add('open');
+}
 // ===== 현장 통합 관리 모달 (공정 특성 + 위험성평가 / 현장 특이사항) =====
 // 공정별 위험성평가 더미 데이터
 const RISK_ASSESSMENT_DATA = {
@@ -696,13 +830,10 @@ function openIssueMgmt() {
   document.getElementById('issueOverlay').classList.add('open');
 }
 
-// 모달을 열 때마다 기본 상태(공정 탭 + 위험성평가 접힘)로 초기화
+// 모달을 열 때마다 기본 상태(현장 특이사항 탭)로 초기화.
+// 실제 열기/렌더는 backend.js의 openIssueMgmt가 덮어쓴다(실서버 연동 버전).
 function resetIssueModal() {
-  switchTab('tab-process', document.querySelector('#issueOverlay .tab-btn'));
-  const section = document.getElementById('integratedRiskSection');
-  if (section) section.classList.remove('active');
-  document.querySelectorAll('#issueOverlay .btn-table-risk').forEach(b => b.classList.remove('active'));
-  activeRiskCode = null;
+  switchTab('tab-issues', document.querySelector('#issueOverlay .tab-btn'));
 }
 
 function switchTab(tabId, btnEl) {
@@ -1312,15 +1443,16 @@ function ghsIcon(code) {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/></svg>`;
 }
 
-// NFPA 704 다이아몬드(4분할) — 값 문자열에서 앞 숫자만 추출해 표시
+// NFPA 704 물리화학적유해등급 — 제공 이미지를 배경으로, 각 분면에 등급 숫자를 오버레이.
 function nfpaDiamond(n) {
   const num = (s) => { const mt = String(s == null ? '' : s).match(/^\s*(\d)/); return mt ? mt[1] : '-'; };
   return `
-    <div class="nfpa-dia">
-      <span class="nfpa-q nfpa-fire">${num(n.fire)}</span>
-      <span class="nfpa-q nfpa-react">${num(n.react)}</span>
-      <span class="nfpa-q nfpa-health">${num(n.health)}</span>
-      <span class="nfpa-q nfpa-spec">${escapeHtml(num(n.specific))}</span>
+    <div class="nfpa-img-wrap">
+      <img class="nfpa-img" src="images/nfpa_diamond.png" alt="NFPA 704 물리화학적유해등급 다이아몬드" />
+      <span class="nfpa-n nfpa-n-fire">${num(n.fire)}</span>
+      <span class="nfpa-n nfpa-n-health">${num(n.health)}</span>
+      <span class="nfpa-n nfpa-n-react">${num(n.react)}</span>
+      <span class="nfpa-n nfpa-n-spec">${escapeHtml(num(n.specific))}</span>
     </div>`;
 }
 

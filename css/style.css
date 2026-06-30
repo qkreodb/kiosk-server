@@ -1029,7 +1029,6 @@
   font-size: 13px; font-weight: 700; color: var(--cyan);
   margin: 16px 0 8px; display: flex; align-items: center; gap: 7px;
 }
-.msds2-subhead::before { content: ''; width: 3px; height: 14px; background: var(--cyan); border-radius: 2px; }
 
 .msds2-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .msds2-table th, .msds2-table td {
@@ -1044,12 +1043,8 @@
 .msds2-strong { font-weight: 800; color: var(--t-1); }
 .msds2-signal { color: var(--red); font-weight: 800; }
 
-.msds2-class-list { display: flex; flex-direction: column; gap: 5px; }
-.msds2-class {
-  font-size: 13px; color: var(--t-2); line-height: 1.5;
-  padding: 7px 11px; background: rgba(14,165,233,0.06);
-  border-radius: 5px; border-left: 2px solid var(--cyan);
-}
+.msds2-class-list { display: flex; flex-direction: column; gap: 3px; padding-left: 6px; }
+.msds2-class { font-size: 12.5px; color: var(--t-2); line-height: 1.55; }
 
 .msds2-pictos { display: flex; gap: 16px; flex-wrap: wrap; }
 .msds2-picto { width: 96px; text-align: center; }
@@ -1062,12 +1057,8 @@
 .msds2-picto-lbl { font-size: 12px; font-weight: 700; color: var(--t-1); }
 .msds2-picto-en { font-size: 10px; color: var(--t-3); }
 
-.msds2-hcodes { display: flex; flex-direction: column; gap: 6px; }
-.msds2-hcode {
-  font-size: 13px; color: var(--t-2); line-height: 1.5;
-  padding: 8px 12px; background: rgba(255,59,71,0.05);
-  border-radius: 6px; border-left: 2px solid var(--red);
-}
+.msds2-hcodes { display: flex; flex-direction: column; gap: 3px; padding-left: 6px; }
+.msds2-hcode { font-size: 12.5px; color: var(--t-2); line-height: 1.55; }
 
 .msds2-pstatements { display: flex; flex-direction: column; gap: 12px; }
 .msds2-pblock { display: flex; flex-direction: column; gap: 5px; }
@@ -1085,24 +1076,16 @@
 /* NFPA 704 다이아몬드 */
 .msds2-nfpa-wrap { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
 .msds2-nfpa-wrap .msds2-nfpa { flex: 1; min-width: 280px; }
-.nfpa-dia {
-  position: relative; width: 116px; height: 116px;
-  transform: rotate(45deg); flex-shrink: 0;
-  margin: 14px 8px;
-  display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
-  border-radius: 6px; overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+.nfpa-img-wrap { position: relative; width: 128px; height: 128px; flex-shrink: 0; margin: 6px 16px; }
+.nfpa-img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.nfpa-n {
+  position: absolute; transform: translate(-50%, -50%);
+  font-size: 30px; font-weight: 800; line-height: 1; pointer-events: none;
 }
-.nfpa-q {
-  display: flex; align-items: center; justify-content: center;
-  font-size: 30px; font-weight: 800; line-height: 1;
-  transform: rotate(-45deg);
-  border: 1px solid rgba(0,0,0,0.25);
-}
-.nfpa-fire   { background: #e53935; color: #fff; }   /* 상단 */
-.nfpa-react  { background: #fdd835; color: #222; }   /* 우측 */
-.nfpa-health { background: #1e88e5; color: #fff; }   /* 좌측 */
-.nfpa-spec   { background: #fff;    color: #222; }   /* 하단 */
+.nfpa-n-fire   { top: 27%; left: 50%; color: #fff; }   /* 상단 빨강 */
+.nfpa-n-health { top: 50%; left: 27%; color: #fff; }   /* 좌측 파랑 */
+.nfpa-n-react  { top: 50%; left: 73%; color: #222; }   /* 우측 노랑 */
+.nfpa-n-spec   { top: 73%; left: 50%; color: #222; }   /* 하단 흰색 */
 
 .msds2-comp thead th, .msds2-phys thead th {
   background: var(--bg-card-hi); color: var(--t-1); text-align: center; font-weight: 700;
