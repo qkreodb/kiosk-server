@@ -344,23 +344,6 @@
         <div class="cctv-head-title">실시간 CCTV</div>
         <div class="cctv-head-sub" id="cctvHeadSub">정밀가공 공정 · PRC-19</div>
       </div>
-      <div class="cctv-head-actions">
-        <button class="cctv-tts-btn" id="cctvTtsBtn" onclick="playTtsDemo()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-          </svg>
-          TTS
-        </button>
-        <button class="cctv-analyze-btn" id="cctvAnalyzeBtn" onclick="analyzeCurrentCam()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-            <path d="M11 8v6M8 11h6"/>
-          </svg>
-          분석
-        </button>
-      </div>
     </div>
     <div class="cctv-body">
       <div class="cctv-screen">
@@ -389,31 +372,6 @@
           allowfullscreen></iframe>
         <!-- IP 카메라 RTSP→MJPEG 라이브 스트림 (중앙 전시홀) -->
         <img id="cctvImage" class="cctv-video cctv-image" alt="IP camera live stream" />
-      </div>
-
-      <!-- Camera selector -->
-      <div class="cctv-cams">
-        <div class="cctv-cam-chip active" onclick="switchCam(this,'CAM-03 · 정밀가공 라인','정밀가공 공정 (PRC-19) · 도장작업실')">
-          <span class="cctv-cam-dot"></span>
-          <div class="cctv-cam-info">
-            <div class="cctv-cam-id">CAM-03</div>
-            <div class="cctv-cam-loc">정밀가공 라인 (도장작업실)</div>
-          </div>
-        </div>
-        <div class="cctv-cam-chip" onclick="switchCam(this,'CAM-04 · 절단기 작업존','정밀가공 공정 (PRC-19) · 절단기 작업존')">
-          <span class="cctv-cam-dot"></span>
-          <div class="cctv-cam-info">
-            <div class="cctv-cam-id">CAM-04</div>
-            <div class="cctv-cam-loc">절단기 작업존</div>
-          </div>
-        </div>
-        <div class="cctv-cam-chip" onclick="switchCam(this,'CAM-05 · 밀폐내부 작업존','정밀가공 공정 (PRC-19) · 밀폐내부 작업존')">
-          <span class="cctv-cam-dot"></span>
-          <div class="cctv-cam-info">
-            <div class="cctv-cam-id">CAM-05</div>
-            <div class="cctv-cam-loc">밀폐내부 작업존</div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
