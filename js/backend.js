@@ -615,6 +615,59 @@
     return -1;                                         // 0회 소등
   }
 
+  /* ----- 신호등 카운트 기준치 설정 패널 (상단 [기준치] 버튼) -----
+   * ▲▼로 관심/주의/경고/위험 임계값을 조절하고 [설정]을 누르면 LIGHT_THRESHOLDS에
+   * 반영 + localStorage 저장(새로고침 후 유지) + 매트릭스 즉시 재렌더한다.        */
+  const THR_KEYS = ['interest', 'caution', 'warning', 'danger'];
+  const THR_STORAGE_KEY = 'kioskLightThresholds';
+  let thrDraft = { ...LIGHT_THRESHOLDS }; // 패널에서 편집 중인 임시값(설정 전까지 미반영)
+
+  function loadSavedThresholds() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(THR_STORAGE_KEY) || 'null');
+      if (!saved) return;
+      THR_KEYS.forEach((k) => { if (Number.isFinite(saved[k])) LIGHT_THRESHOLDS[k] = saved[k]; });
+    } catch (_) { /* 손상된 저장값 무시 */ }
+  }
+  function renderThrValues() {
+    THR_KEYS.forEach((k) => {
+      const el = document.getElementById('thrVal-' + k);
+      if (el) el.textContent = String(thrDraft[k]);
+    });
+  }
+  window.toggleThrPanel = function () {
+    const p = document.getElementById('thrPanel');
+    if (!p) return;
+    if (p.classList.contains('open')) { window.closeThrPanel(); return; }
+    thrDraft = { ...LIGHT_THRESHOLDS }; // 열 때 현재 적용값으로 초기화
+    renderThrValues();
+    p.classList.add('open');
+  };
+  window.closeThrPanel = function () {
+    const p = document.getElementById('thrPanel');
+    if (p) p.classList.remove('open');
+  };
+  // ▲▼ 스테퍼: 임시값만 조절(최소 1). 실제 반영은 [설정]을 눌러야 한다.
+  window.stepThr = function (key, delta) {
+    if (!(key in thrDraft)) return;
+    thrDraft[key] = Math.max(1, (Number(thrDraft[key]) || 0) + delta);
+    renderThrValues();
+  };
+  // [설정]: 오름차순(관심<주의<경고<위험) 검증 후 반영 + 저장 + 재렌더.
+  window.applyThr = function () {
+    const t = thrDraft;
+    if (!(t.interest < t.caution && t.caution < t.warning && t.warning < t.danger)) {
+      if (window.showToast) showToast('기준치는 관심 < 주의 < 경고 < 위험 순으로 커야 합니다', 'warn');
+      return;
+    }
+    THR_KEYS.forEach((k) => { LIGHT_THRESHOLDS[k] = t[k]; });
+    try { localStorage.setItem(THR_STORAGE_KEY, JSON.stringify(LIGHT_THRESHOLDS)); } catch (_) {}
+    hydrateMatrix(currentProcessCode()).catch(() => {}); // 즉시 재렌더(실패해도 다음 폴링이 갱신)
+    window.closeThrPanel();
+    if (window.showToast) showToast('신호등 기준치를 적용했습니다', 'ok');
+  };
+  loadSavedThresholds(); // 스크립트 로드 시 저장된 기준치 반영
+
   async function hydrateMatrix(processCode) {
     const path = '/space-name' + (processCode ? '?process_code=' + encodeURIComponent(processCode) : '');
     const resp = await fetch(API + path, { cache: 'no-store' });

@@ -426,6 +426,88 @@
   background: #111a2e;
 }
 
+/* ===== 신호등 카운트 기준치 설정: 상단 버튼 + 패널 ===== */
+.thr-cfg-btn {
+  display: flex; align-items: center; gap: 6px;
+  margin-right: 18px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.14);   /* 약간 불투명 */
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.92);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s, opacity 0.15s;
+}
+.thr-cfg-btn:hover { background: rgba(255, 255, 255, 0.26); }
+.thr-cfg-btn svg { width: 17px; height: 17px; }
+
+.thr-panel {
+  display: none;
+  position: fixed; top: 96px; right: 40px; z-index: 1100;
+  width: 268px;
+  background: #0f1830;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  padding: 14px 16px 16px;
+  font-family: 'Pretendard', sans-serif;
+}
+.thr-panel.open { display: block; }
+.thr-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.thr-panel-title { font-size: 15px; font-weight: 800; color: #fff; }
+.thr-panel-x {
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; padding: 0;
+  background: transparent; border: none; border-radius: 6px;
+  color: #9fb2cf; cursor: pointer;
+}
+.thr-panel-x:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+.thr-panel-x svg { width: 16px; height: 16px; }
+
+.thr-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.thr-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+.thr-name { font-size: 14px; font-weight: 700; color: #e5edf7; }
+.thr-stepper {
+  display: flex; align-items: center; gap: 8px;
+  margin-left: auto;
+}
+.thr-step {
+  width: 28px; height: 28px; padding: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 7px;
+  color: #fff; font-size: 12px; line-height: 1; cursor: pointer;
+}
+.thr-step:hover { background: rgba(255, 255, 255, 0.22); }
+.thr-step:active { transform: scale(0.92); }
+.thr-val {
+  min-width: 34px; text-align: center;
+  font-size: 16px; font-weight: 800; color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.thr-actions { display: flex; gap: 8px; margin-top: 14px; }
+.thr-cancel, .thr-apply {
+  flex: 1; padding: 9px 0;
+  border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
+}
+.thr-cancel {
+  background: transparent; color: #b6c6df;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.thr-cancel:hover { background: rgba(255, 255, 255, 0.06); }
+.thr-apply {
+  background: var(--cyan, #2bb8e0); color: #06121f;
+  border: none;
+}
+.thr-apply:hover { filter: brightness(1.08); }
+
 /* ===== 라이브 센서 배지 (온습도 카드 헤더) ===== */
 .live-sensor-badge {
   display: flex;

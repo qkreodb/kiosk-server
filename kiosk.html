@@ -28,9 +28,59 @@
       <span class="stat-val">정상</span>
     </div>
     <div class="sb-right">
+      <button type="button" class="thr-cfg-btn" title="신호등 카운트 기준치 설정" onclick="toggleThrPanel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>기준치</span>
+      </button>
       <img src="images/logo_v.png" class="statusbar-logo" alt="로고" />
     </div>
   </header>
+
+  <!-- 신호등 카운트 기준치 설정 패널 (기본 숨김) -->
+  <div class="thr-panel" id="thrPanel">
+    <div class="thr-panel-head">
+      <span class="thr-panel-title">신호등 카운트 기준치</span>
+      <button type="button" class="thr-panel-x" onclick="closeThrPanel()" title="닫기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="thr-row">
+      <span class="thr-dot" style="background:var(--green);"></span><span class="thr-name">관심</span>
+      <div class="thr-stepper">
+        <button type="button" class="thr-step" onclick="stepThr('interest',-1)">▼</button>
+        <span class="thr-val" id="thrVal-interest">10</span>
+        <button type="button" class="thr-step" onclick="stepThr('interest',1)">▲</button>
+      </div>
+    </div>
+    <div class="thr-row">
+      <span class="thr-dot" style="background:var(--amber);"></span><span class="thr-name">주의</span>
+      <div class="thr-stepper">
+        <button type="button" class="thr-step" onclick="stepThr('caution',-1)">▼</button>
+        <span class="thr-val" id="thrVal-caution">20</span>
+        <button type="button" class="thr-step" onclick="stepThr('caution',1)">▲</button>
+      </div>
+    </div>
+    <div class="thr-row">
+      <span class="thr-dot" style="background:var(--orange);"></span><span class="thr-name">경고</span>
+      <div class="thr-stepper">
+        <button type="button" class="thr-step" onclick="stepThr('warning',-1)">▼</button>
+        <span class="thr-val" id="thrVal-warning">40</span>
+        <button type="button" class="thr-step" onclick="stepThr('warning',1)">▲</button>
+      </div>
+    </div>
+    <div class="thr-row">
+      <span class="thr-dot" style="background:var(--red);"></span><span class="thr-name">위험</span>
+      <div class="thr-stepper">
+        <button type="button" class="thr-step" onclick="stepThr('danger',-1)">▼</button>
+        <span class="thr-val" id="thrVal-danger">50</span>
+        <button type="button" class="thr-step" onclick="stepThr('danger',1)">▲</button>
+      </div>
+    </div>
+    <div class="thr-actions">
+      <button type="button" class="thr-cancel" onclick="closeThrPanel()">취소</button>
+      <button type="button" class="thr-apply" onclick="applyThr()">설정</button>
+    </div>
+  </div>
 
   <img src="images/man.png" class="kiosk-character" alt="" />
 
