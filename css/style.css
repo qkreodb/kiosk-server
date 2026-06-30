@@ -490,6 +490,8 @@
   letter-spacing: 1px;
   z-index: 3;
 }
+/* 좌측 하단 위치 라벨. CCTV 모달에서는 제거됨(현장 특이사항 로그로 대체)되었으나
+   현장 사진 모달이 동일 클래스를 재사용하므로 스타일은 유지한다. */
 .cctv-loc-overlay {
   position: absolute;
   bottom: 16px; left: 16px;

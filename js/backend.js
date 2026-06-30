@@ -310,8 +310,7 @@
   window.switchCam = function (el, locName, locProc) {
     document.querySelectorAll('.cctv-cam-chip').forEach(c => c.classList.remove('active'));
     el.classList.add('active');
-    document.getElementById('cctvLocName').textContent = locName;
-    document.getElementById('cctvLocProc').textContent = locProc;
+    // 좌측 하단 위치 라벨은 제거됨(현장 특이사항 로그로 대체). locName/locProc 미사용.
     const frame = document.getElementById('cctvFrame');
     const image = document.getElementById('cctvImage');
     if (image) { image.src = ''; image.style.display = 'none'; }
@@ -320,8 +319,7 @@
   };
   window.openCCTVFor = function (region) {
     document.getElementById('cctvHeadSub').textContent = region + ' · 실시간';
-    document.getElementById('cctvLocName').textContent = region + ' CCTV';
-    document.getElementById('cctvLocProc').textContent = region + ' · 작업 현장';
+    // 좌측 하단 위치 라벨은 제거됨(현장 특이사항 로그로 대체).
     const frame = document.getElementById('cctvFrame');
     const image = document.getElementById('cctvImage');
     const vlm = document.getElementById('cctvVlmOverlay');

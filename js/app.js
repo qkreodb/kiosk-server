@@ -77,8 +77,7 @@ document.getElementById('cctvOverlay').addEventListener('click', e => {
 function switchCam(el, locName, locProc) {
   document.querySelectorAll('.cctv-cam-chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
-  document.getElementById('cctvLocName').textContent = locName;
-  document.getElementById('cctvLocProc').textContent = locProc;
+  // 좌측 하단 위치 라벨은 제거됨(현장 특이사항 로그로 대체). locName/locProc 미사용.
   // 카메라 전환 시 영상 리로드 (실제 운영 시 카메라별 스트림 URL 적용)
   const frame = document.getElementById('cctvFrame');
   if (frame) frame.src = cctvSrc(true);
@@ -1099,8 +1098,7 @@ function openWatchWorker(name, watchId, proc) {
 // ===== 현장사진 / CCTV =====
 function openCCTVFor(region) {
   document.getElementById('cctvHeadSub').textContent = region + ' · 실시간';
-  document.getElementById('cctvLocName').textContent = region + ' CCTV';
-  document.getElementById('cctvLocProc').textContent = region + ' · 작업 현장';
+  // 좌측 하단 위치 라벨은 제거됨(현장 특이사항 로그로 대체).
   const frame = document.getElementById('cctvFrame');
   if (frame) frame.src = cctvSrc(true);
   document.getElementById('cctvOverlay').classList.add('open');

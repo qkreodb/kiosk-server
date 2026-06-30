@@ -13,6 +13,7 @@ Flow:
 from __future__ import annotations
 
 import re
+import time
 
 from fastapi import HTTPException
 
@@ -110,6 +111,11 @@ class VlmService:
         self._light = warning_light
         self._settings = settings
         self._led = led
+        # 행동별 독립 쿨다운 타이머. (process_code, category_id) -> 만료 monotonic 시각.
+        # 5가지 불안전행동 각각이 상호 간섭 없이 독립적으로 디바운싱된다(동시에 여러
+        # 행동이 감지돼도 각자의 만료 시각만 본다). 타임스탬프 기반이라 해제할 타이머
+        # 핸들이 없어 자원 누수가 없고, 키는 행동 수만큼만(공정당 5개) 유지된다.
+        self._cooldown_until: dict[tuple[str, str], float] = {}
 
     def _warning_light_state(self, count: int) -> WarningLightState:
         """누적 카운트 → 경광등 단계 (임계값 3/6/9/12)."""
@@ -166,23 +172,43 @@ class VlmService:
             matches = categories_from_action_keys(vlm.action_keys)
         else:
             matches = match_categories(split_detection(vlm.detection))
-        detected = bool(matches)
+
+        # 2-b) 행동별 독립 쿨다운(디바운스) 적용.
+        #    같은 행동이 쿨다운 중이면 이번 사이클에서는 무시(allowed에서 제외)하여
+        #    DB 카운트·TTS·경광등을 발동하지 않는다. 쿨다운이 풀린(또는 처음인) 행동만
+        #    allowed 로 통과시키고 즉시 해당 행동의 타이머를 재가동한다. 각 행동의
+        #    만료 시각이 독립이므로 A가 쿨다운 중이어도 B는 곧바로 통과한다.
+        now = time.monotonic()
+        cooldown = self._settings.behavior_cooldown_seconds
+        allowed: list[tuple[UnsafeBehavior, str]] = []
+        for cat_id, matched_label in matches:
+            key = (code, cat_id.value)
+            if self._cooldown_until.get(key, 0.0) > now:
+                logger.info(
+                    "[쿨다운] %s 디바운스 — 카운트/TTS/경광등 무시(만료까지 %.1fs)",
+                    cat_id.value,
+                    self._cooldown_until[key] - now,
+                )
+                continue
+            allowed.append((cat_id, matched_label))
+            if cooldown > 0:
+                self._cooldown_until[key] = now + cooldown
 
         # 3) BRANCH A — TTS -> speaker.
-        #    이상 없음(탐지된 행동 없음)이면 음성 안내를 울리지 않는다 — 시연 시
-        #    안전 상황에도 안내가 나와 음성이 겹치는 문제를 방지.
+        #    이상 없음(통과한 행동 없음 — 미탐지이거나 전부 쿨다운 중)이면 음성 안내를
+        #    울리지 않는다 — 시연 시 안전 상황·연속 감지에서 음성이 겹치는 문제를 방지.
         #    재생은 백그라운드 스레드(fire-and-forget)로 — 오디오 재생 시간 동안
         #    /vlm/infer 응답과 이벤트 루프가 막히지 않도록 한다(실시간 재생 유지).
-        tts_text = vlm.warning_text if detected else ""
+        tts_text = vlm.warning_text if allowed else ""
         tts_result = await self._tts.synthesize(tts_text)
         if tts_result.status in {"synthesized", "stubbed"}:
             self._speaker.play_async(tts_result.audio_path, tts_result.text, epoch=play_epoch)
         tts = TtsDispatch(**tts_result.model_dump())
 
-        # 4) BRANCH B — DB-increment per detected behavior, read resulting counts.
+        # 4) BRANCH B — DB-increment per allowed behavior (쿨다운 통과분만), read counts.
         labels = [label for _, label in matches]
         deltas: list[BehaviorDelta] = []
-        for cat_id, matched_label in matches:
+        for cat_id, matched_label in allowed:
             new_count = self._repo.increment_behavior(code, cat_id.value, 1)
             cat = CATEGORY_BY_ID[cat_id]
             deltas.append(
@@ -197,8 +223,9 @@ class VlmService:
             )
 
         # 경광등 발동 규칙:
-        #  1) 안전 결과(이번 사이클 탐지 없음)면 카운트가 높아도 절대 울리지 않는다.
-        #     트리거는 반드시 "이번 사이클에 VLM 탐지가 존재"할 때만 발동한다.
+        #  1) 안전 결과(이번 사이클 탐지 없음, 또는 탐지돼도 전부 쿨다운 중)면 카운트가
+        #     높아도 절대 울리지 않는다. 트리거는 반드시 "이번 사이클에 쿨다운을 통과한
+        #     VLM 탐지가 존재"할 때만 발동한다(deltas 가 곧 쿨다운 통과분).
         #  2) 다중 탐지 우선순위: 한 번에 여러 행동이 탐지되면, 그중 카운트가 가장
         #     높은 항목의 단계를 경광등에 반영한다(예: A=5, B=15 → 15의 점멸).
         has_detection = bool(deltas)

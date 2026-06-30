@@ -104,6 +104,13 @@ class Settings(BaseSettings):
     light_warning_threshold: int = Field(default=10, ge=1)    # 경고 (빨간색)
     light_danger_threshold: int = Field(default=15, ge=1)     # 위험 (순차 점멸)
 
+    # --- 불안전행동 디바운스(쿨다운) ---
+    # VLM 분석이 루프로 반복되며 같은 행동이 연속 감지될 때 TTS 중첩·DB 카운트
+    # 급증을 막는다. 5가지 행동 각각에 대해 완전히 독립적으로 적용되는 쿨다운(초):
+    # 한 행동이 카운트되면 이 시간 동안 같은 행동의 재카운트·TTS·경광등을 무시하고,
+    # 만료 후 재감지되면 다시 카운트한다(vlm_service.infer 참고).
+    behavior_cooldown_seconds: float = Field(default=5.0, ge=0)
+
     # --- Warning light LED (실물 경광등, ST80EL-USB HID) ---
     # ``led_dry_run=False`` 이면 실제 HID 장치로 전송을 시도하고, hidapi 미설치/
     # 장치 미연결이면 자동으로 시뮬레이션(simulated) 응답으로 폴백한다. Jetson에
