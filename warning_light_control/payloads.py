@@ -33,8 +33,6 @@ class SignalMode(StrEnum):
 
 
 NORMAL_SIGNAL_DURATION_MS = 5000
-NORMAL_BLINK_ON_MS = 150
-NORMAL_BLINK_OFF_MS = 150
 DANGER_SEQUENCE_STEP_MS = 500
 
 
@@ -143,14 +141,12 @@ def resolve_severity(count: int) -> tuple[SeverityPayload, SignalPayload] | None
     for threshold, level, label, color, mode, duration_ms in SEVERITY_RULES:
         if count >= threshold:
             blink_interval_ms = (
-                NORMAL_BLINK_ON_MS + NORMAL_BLINK_OFF_MS
-                if mode == SignalMode.BLINK
-                else 500
+                DANGER_SEQUENCE_STEP_MS
                 if mode == SignalMode.SEQUENCE
                 else None
             )
-            blink_on_ms = NORMAL_BLINK_ON_MS if mode == SignalMode.BLINK else None
-            blink_off_ms = NORMAL_BLINK_OFF_MS if mode == SignalMode.BLINK else None
+            blink_on_ms = None
+            blink_off_ms = None
             sequence = (
                 [SignalColor.GREEN.value, SignalColor.YELLOW.value, SignalColor.RED.value]
                 if mode == SignalMode.SEQUENCE

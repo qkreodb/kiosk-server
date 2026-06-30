@@ -119,19 +119,9 @@ class ST80ELHidController:
             raise IOError(f"HID write failed: wrote {written} bytes (expected >= {len(command)})")
 
     def _apply_blink(self, payload: WarningLightPayload) -> None:
-        default_phase_ms = payload.signal.blink_interval_ms or 300
-        on_seconds = (payload.signal.blink_on_ms or default_phase_ms) / 1000
-        off_seconds = (payload.signal.blink_off_ms or default_phase_ms) / 1000
-        deadline = time.monotonic() + (payload.signal.duration_ms / 1000)
-        on_command = self.encoder.encode_lamp(payload.signal.color, SignalMode.STEADY.value)
-        off_command = self.encoder.encode_off()
-
         try:
-            while time.monotonic() < deadline:
-                self._write(on_command)
-                time.sleep(min(on_seconds, max(0, deadline - time.monotonic())))
-                self._write(off_command)
-                time.sleep(min(off_seconds, max(0, deadline - time.monotonic())))
+            self._write(self.encoder.encode_lamp(payload.signal.color, SignalMode.BLINK.value))
+            time.sleep(payload.signal.duration_ms / 1000)
         finally:
             self.off()
 

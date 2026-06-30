@@ -12,3 +12,4 @@ venv/
 tts_out/
 shared_dir/
 *.log
+cloudflared-linux-arm64.deb

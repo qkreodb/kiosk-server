@@ -12,11 +12,27 @@ implementations for real device I/O without touching services/routers.
 from __future__ import annotations
 
 import threading
+from pathlib import Path
 
 from app.core.logging import get_logger
 from app.domain.constants import WarningLightState
 
 logger = get_logger(__name__)
+
+
+def _delete_audio_file(audio_path: str | None) -> None:
+    """Best-effort cleanup for synthesized TTS audio after playback."""
+    if not audio_path:
+        return
+    path = Path(audio_path)
+    if path.suffix.lower() != ".mp3":
+        logger.warning("[SPEAKER] skip deleting non-mp3 audio file: %s", audio_path)
+        return
+    try:
+        path.unlink(missing_ok=True)
+        logger.info("[SPEAKER] deleted TTS audio file: %s", audio_path)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[SPEAKER] failed to delete TTS audio file %s: %s", audio_path, exc)
 
 
 class SpeakerActuator:
@@ -47,11 +63,14 @@ class SpeakerActuator:
         이전 세대에 시작된 작업이 뒤늦게 재생을 요청하더라도 epoch 불일치로 폐기된다.
         예) CCTV 모달을 끄면 호출 → 재생 중인 1건만 끝나고 나머지는 나오지 않음.
         """
+        stale_audio_path: str | None = None
         with self._lock:
             self._epoch += 1
             if self._pending is not None:
                 logger.info("[SPEAKER] flush: 대기 음성 폐기 '%s'", self._pending[1])
+                stale_audio_path = self._pending[0]
                 self._pending = None
+        _delete_audio_file(stale_audio_path)
 
     def play(self, audio_path: str | None, text: str) -> bool:
         """Play audio, blocking until playback finishes.
@@ -71,6 +90,8 @@ class SpeakerActuator:
         except Exception as exc:  # noqa: BLE001
             logger.error("[SPEAKER] playback failed (%s): %s", exc.__class__.__name__, exc)
             return False
+        finally:
+            _delete_audio_file(audio_path)
 
     def play_async(self, audio_path: str | None, text: str, epoch: int | None = None) -> None:
         """Fire-and-forget 재생(겹침 방지). 호출 즉시 반환.
@@ -80,19 +101,27 @@ class SpeakerActuator:
         ``epoch`` 를 주면 그 사이 ``flush()`` 가 호출돼 세대가 바뀐 경우 재생을 폐기한다.
         """
         if not audio_path:
-            logger.warning("[SPEAKER] no audio file; cannot play: '%s'", text)
+            logger.warning("[SPEAKER] no audio file; cannot play: %s", text)
             return
+
+        stale_audio_path: str | None = None
+        start_worker = False
         with self._lock:
             if epoch is not None and epoch != self._epoch:
-                logger.info("[SPEAKER] 만료된(모달 종료 등) 재생 요청 폐기: '%s'", text)
-                return
-            if self._pending is not None:
-                logger.info("[SPEAKER] 이전 대기 음성 폐기(최신으로 교체): '%s'", self._pending[1])
-            self._pending = (audio_path, text)
-            if self._worker_running:
-                return  # 진행 중인 워커가 끝나고 대기분을 가져간다
-            self._worker_running = True
-        threading.Thread(target=self._drain, daemon=True).start()
+                logger.info("[SPEAKER] 만료된(모달 종료 등) 재생 요청 폐기: %s", text)
+                stale_audio_path = audio_path
+            else:
+                if self._pending is not None:
+                    logger.info("[SPEAKER] 이전 대기 음성 폐기(최신으로 교체): %s", self._pending[1])
+                    stale_audio_path = self._pending[0]
+                self._pending = (audio_path, text)
+                if not self._worker_running:
+                    self._worker_running = True
+                    start_worker = True
+
+        _delete_audio_file(stale_audio_path)
+        if start_worker:
+            threading.Thread(target=self._drain, daemon=True).start()
 
     def _drain(self) -> None:
         """대기 슬롯이 빌 때까지 '가장 최근 1건'만 순차 재생하는 단일 워커."""

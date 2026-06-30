@@ -82,6 +82,7 @@ class LedService:
             "off_command": [f"0x{b:02X}" for b in self._encoder.encode_off()],
         }
 
+
     def trigger(self, level: str, dry_run: bool | None = None) -> dict[str, Any]:
         spec = LEVEL_SPEC.get(level)
         if spec is None:
