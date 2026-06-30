@@ -159,6 +159,8 @@ function switchSiteView(view, btn) {
   if (envG) envG.style.display = (view === 'env') ? '' : 'none';
   if (cctvG) cctvG.style.display = (view === 'cctv') ? '' : 'none';
   if (hrG) hrG.style.display = (view === 'hr') ? '' : 'none';
+  // CCTV 탭을 벗어나면 이상현상 미니 팝업/스트림 정리.
+  if (view !== 'cctv' && window.hideCctvAlert) window.hideCctvAlert();
 }
 
 // ===== Generic modal control =====

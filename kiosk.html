@@ -231,11 +231,27 @@
                 <circle cx="790" cy="185" r="18" fill="#6628E1" fill-opacity="0.18"/>
                 <image x="776" y="171" width="28" height="28" href="images/icon_cctv.svg"/>
               </g>
-              <g class="ai-marker" style="cursor:pointer;" onclick="openCCTVFor('CAM-05 · 중앙 전시홀')">
+              <g class="ai-marker" id="cctvCentralMarker" style="cursor:pointer;" onclick="openCCTVFor('CAM-05 · 중앙 전시홀')">
                 <circle cx="525" cy="225" r="22" fill="#6628E1"><animate attributeName="opacity" values="0.5;0;0.5" dur="1.6s" repeatCount="indefinite"/></circle>
                 <circle cx="525" cy="225" r="18" fill="#6628E1" fill-opacity="0.18"/>
+                <!-- 이상현상 수신 시 빨간 점멸 링(기본 숨김) -->
+                <circle id="cctvAlertRing" cx="525" cy="225" r="26" fill="none" stroke="#FF2B33" stroke-width="3" style="display:none;">
+                  <animate attributeName="opacity" values="1;0.2;1" dur="0.8s" repeatCount="indefinite"/>
+                  <animate attributeName="r" values="24;32;24" dur="0.8s" repeatCount="indefinite"/>
+                </circle>
                 <image x="511" y="211" width="28" height="28" href="images/icon_cctv.svg"/>
               </g>
+              <!-- 이상현상 수신 시 중앙 CCTV 미니 팝업(기본 숨김). 클릭 시 전체 CCTV 모달. -->
+              <foreignObject id="cctvAlertPopup" x="556" y="108" width="244" height="192" style="display:none;overflow:visible;">
+                <div xmlns="http://www.w3.org/1999/xhtml" class="cctv-mini" onclick="hideCctvAlert();openCCTVFor('CAM-05 · 중앙 전시홀')">
+                  <div class="cctv-mini-head"><span class="cctv-mini-dot"></span>이상현상 감지 · CAM-05 중앙 전시홀</div>
+                  <div class="cctv-mini-screen">
+                    <img id="cctvMiniImg" class="cctv-mini-img" alt="CCTV" />
+                    <span class="cctv-mini-rec">● LIVE</span>
+                  </div>
+                  <div class="cctv-mini-foot">클릭하여 전체 화면 보기</div>
+                </div>
+              </foreignObject>
             </g>
 
             <!-- 심박 뷰 (작업자 위치 분산, 초기 숨김) -->

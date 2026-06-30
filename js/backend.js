@@ -288,6 +288,39 @@
     return String(region || '').includes('중앙 전시홀') || String(region || '').includes('Central Hall');
   }
 
+  /* ----- 이상현상 수신 시 중앙 CCTV 미니 팝업 알림 -----
+   * VLM이 실제 이상행동을 카운트(쿨다운 통과)하면 사업장 지도 CCTV 탭의 중앙
+   * CCTV 아이콘 주위를 빨갛게 점멸시키고, 옆에 작은 라이브 CCTV 영상을 띄운다.
+   * 팝업은 CCTV 탭(siteCctvMarkers)이 보일 때만 노출되며 클릭 시 전체 모달로 연결.   */
+  let cctvAlertTimer = null;
+  const CCTV_ALERT_MS = 8000; // 표시 후 자동 닫힘(새 감지 시 갱신)
+  function showCctvAlert() {
+    const ring = document.getElementById('cctvAlertRing');
+    const popup = document.getElementById('cctvAlertPopup');
+    const img = document.getElementById('cctvMiniImg');
+    if (!ring || !popup) return;
+    // CCTV 탭이 보일 때만 의미 있음 — 다른 탭이면 불필요한 MJPEG 스트림/점멸 생략.
+    const markers = document.getElementById('siteCctvMarkers');
+    if (markers && markers.style.display === 'none') return;
+    ring.style.display = '';
+    popup.style.display = '';
+    // 미니 화면도 실제 중앙 CCTV 라이브(MJPEG) — 아직 스트리밍 중이 아니면 시작.
+    if (img && !img.getAttribute('src')) img.src = cctvLiveSrc();
+    if (cctvAlertTimer) clearTimeout(cctvAlertTimer);
+    cctvAlertTimer = setTimeout(hideCctvAlert, CCTV_ALERT_MS);
+  }
+  function hideCctvAlert() {
+    const ring = document.getElementById('cctvAlertRing');
+    const popup = document.getElementById('cctvAlertPopup');
+    const img = document.getElementById('cctvMiniImg');
+    if (ring) ring.style.display = 'none';
+    if (popup) popup.style.display = 'none';
+    if (img) img.removeAttribute('src'); // 스트림 중단(자원 절약)
+    if (cctvAlertTimer) { clearTimeout(cctvAlertTimer); cctvAlertTimer = null; }
+  }
+  window.showCctvAlert = showCctvAlert;
+  window.hideCctvAlert = hideCctvAlert;
+
   window.openCCTV = function () {
     const frame = document.getElementById('cctvFrame');
     const image = document.getElementById('cctvImage');
@@ -455,6 +488,8 @@
     if (vlmLoop.token !== token || !vlmLoop.enabled) return; // 응답 도착 시 이미 중단/전환됨
     lastVlmDetection = d;
     renderVlmResult(d);
+    // 이상현상(쿨다운 통과한 실제 카운트 발생) 시 중앙 CCTV 아이콘에 미니 팝업 알림.
+    if (d.behaviors && d.behaviors.length) showCctvAlert();
     // 결과 오버레이는 CCTV 모달이 열려 있을 때만 노출(분석은 모달과 무관하게 계속).
     if (cctvModalOpen()) document.getElementById('cctvVlmOverlay').classList.add('show');
     hydrateMatrix(processCode).catch(() => {}); // 메인화면 신호등 행렬은 항상 갱신
