@@ -103,6 +103,7 @@ class VlmService:
         warning_light: WarningLightActuator,
         settings: Settings,
         led: LedService | None = None,
+        cooldown_state: dict[tuple[str, str], float] | None = None,
     ) -> None:
         self._repo = repo
         self._vlm = vlm_client
@@ -115,7 +116,13 @@ class VlmService:
         # 5가지 불안전행동 각각이 상호 간섭 없이 독립적으로 디바운싱된다(동시에 여러
         # 행동이 감지돼도 각자의 만료 시각만 본다). 타임스탬프 기반이라 해제할 타이머
         # 핸들이 없어 자원 누수가 없고, 키는 행동 수만큼만(공정당 5개) 유지된다.
-        self._cooldown_until: dict[tuple[str, str], float] = {}
+        #
+        # ⚠ VlmService 는 요청마다 새로 생성되므로(deps.get_vlm_service), 이 dict 를
+        # 인스턴스 안에서 만들면 매 요청 초기화되어 쿨다운이 동작하지 않는다. 따라서
+        # 요청 간 공유되는 캐시 dict 를 주입받아 상태를 유지한다(없으면 단독 dict).
+        self._cooldown_until: dict[tuple[str, str], float] = (
+            cooldown_state if cooldown_state is not None else {}
+        )
 
     def _warning_light_state(self, count: int) -> WarningLightState:
         """누적 카운트 → 경광등 단계 (임계값 3/6/9/12)."""
