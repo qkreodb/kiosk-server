@@ -84,9 +84,10 @@
   function isCentralTempHumid(sensorId, zone) {
     return sensorId === 'TH-03' || String(zone || '').includes('중앙 전시홀');
   }
-  function isCentralWatch(watchId, proc) {
-    return watchId === 'WATCH-03' || String(proc || '').includes('중앙 전시홀');
-  }
+  // DB의 실제 갤럭시워치 1대는 백엔드에서 workers[0]=WATCH-01(가장 왼쪽)에 매핑된다.
+  // 이 워치만 /sensor/watch 라이브값을 쓰고, 나머지 작업자는 더미(랜덤) 심박을 보여준다.
+  const LIVE_WATCH_ID = 'WATCH-01';
+  function isLiveWatch(watchId) { return watchId === LIVE_WATCH_ID; }
   function dummyTempHumid(sensorId) {
     const idx = Number(String(sensorId || '').replace(/\D/g, '')) || 1;
     return {
@@ -226,11 +227,14 @@
     const names = ['이*학', '전*조', '김*수', '박*후', '최*재', '정*진', '강*준', '윤*성'];
     const zones = ['부스 A', '부스 C', '중앙 전시홀', '부스 B', '세미나실', '중앙 통로', '부스 D', '하역장'];
     async function update() {
-      await refreshLiveSensors();
-      const live = latestWatchWorkers()[0] || null;
+      // 실제 워치(WATCH-01)만 라이브, 나머지는 더미. 라이브 호출이 실패해도
+      // 나머지 더미 작업자는 정상 렌더되도록 라이브값은 별도로 try/catch.
+      let live = null;
+      try { await refreshLiveSensors(); live = latestWatchWorkers()[0] || null; }
+      catch (e) { live = null; }
       const workers = Array.from({ length: n }, (_, i) => {
         const watch = 'WATCH-' + String(i + 1).padStart(2, '0');
-        if (watch === 'WATCH-03' && live) {
+        if (watch === LIVE_WATCH_ID && live) {
           return { watch_id: watch, name: names[i], hr: live.hr, status: live.status, zone: zones[i], device: live.device || 'Galaxy Watch' };
         }
         const bpm = dummyHeartRate(watch);
@@ -251,7 +255,7 @@
     if (sub) sub.textContent = proc + ' · ' + name;
     document.getElementById('hrOverlay').classList.add('open');
 
-    const live = isCentralWatch(watchId, proc);
+    const live = isLiveWatch(watchId);
     async function update() {
       if (!live) {
         const bpm = dummyHeartRate(watchId);
@@ -264,7 +268,7 @@
       const bpm = Number(worker.hr || 0);
       if (grid) grid.innerHTML = workerCard(
         name || worker.name || 'Worker',
-        watchId || worker.watch_id || 'WATCH-03',
+        watchId || worker.watch_id || LIVE_WATCH_ID,
         worker.device || 'Galaxy Watch',
         proc || worker.zone || '',
         bpm || '-', heartStatus(bpm, worker.status), heartClass(bpm));
