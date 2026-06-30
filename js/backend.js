@@ -698,6 +698,21 @@
     return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
   }
 
+  // 현장 특이사항 누적 로그: 스냅샷이 아니라 "가장 위가 최신"인 이력으로 최대 5개까지
+  // 쌓고, 새 항목이 들어오면 가장 오래된 것이 아래로 밀려 사라진다(rolling window).
+  //
+  // 누적 규칙(소스별 연속 중복 제거):
+  //  - 어떤 소스(VLM / 워커별 심박 / 구역별 온습도)의 최신 감지가 직전과 "같으면"
+  //    새 줄을 만들지 않고 해당 줄의 시간만 갱신한다.
+  //  - "다르면" 새 줄로 맨 위에 쌓는다.
+  //  예) A,B 누적 상태에서 B가 계속 감지되면 B의 시간만 갱신(A B), C가 감지되면
+  //      A B C, 다시 B가 감지되면 A B C B (직전 최신이 C라 새 B 줄이 쌓임).
+  //  소스별로 비교하므로 VLM·심박·온습도가 동시에 떠도 서로 번갈아 도배되지 않는다.
+  const SITE_ISSUE_MAX = 5;
+  let siteIssueLog = [];        // [{src, sig, sev, title, desc, time}] — newest first
+  const issueLastSig = {};      // 소스 -> 그 소스의 직전 시그니처(연속 중복 판정용)
+  const issueSig = (it) => it.src + '|' + it.sev + '|' + it.title + '|' + it.desc;
+
   // 탭1: VLM 위험행동 · 작업자 심박 · 현장 온습도 이상을 실시간으로 모아 [감지] 카드로 렌더.
   async function renderSiteIssues() {
     const list = document.getElementById('siteIssueList');
@@ -707,6 +722,7 @@
     // 1) VLM 위험행동(가장 최근 분석 결과)
     if (lastVlmDetection && lastVlmDetection.detection) {
       items.push({
+        src: 'vlm',
         sev: 'high',
         title: 'VLM 위험행동 감지: ' + lastVlmDetection.detection,
         desc: lastVlmDetection.warning_text || '안전관리자 확인 필요',
@@ -719,6 +735,7 @@
       (w.workers || []).forEach((x) => {
         if (x.status && x.status !== '정상') {
           items.push({
+            src: 'hr:' + (x.name || x.watch_id),
             sev: x.status === '위험' ? 'high' : 'mid',
             title: '작업자 심박 이상 (' + (x.name || x.watch_id) + ')',
             desc: [x.zone, Number(x.hr || 0) + 'bpm', x.status].filter(Boolean).join(' · '),
@@ -733,20 +750,33 @@
       (t.readings || []).forEach((r) => {
         const temp = Number(r.temp), hum = Number(r.humidity);
         const z = r.zone || r.sensor_name || '센서';
-        if (temp >= HEAT_HI) items.push({ sev: 'mid', title: '고온 이상 (' + z + ')', desc: '현재 ' + temp.toFixed(1) + '°C · 온열질환 주의' });
-        else if (temp <= HEAT_LO) items.push({ sev: 'mid', title: '저온 이상 (' + z + ')', desc: '현재 ' + temp.toFixed(1) + '°C · 한랭질환 주의' });
-        if (hum >= HUM_HI) items.push({ sev: 'low', title: '다습 이상 (' + z + ')', desc: '현재 습도 ' + hum.toFixed(0) + '%' });
-        else if (hum <= HUM_LO) items.push({ sev: 'low', title: '건조 이상 (' + z + ')', desc: '현재 습도 ' + hum.toFixed(0) + '%' });
+        if (temp >= HEAT_HI) items.push({ src: 'th:' + z + ':t', sev: 'mid', title: '고온 이상 (' + z + ')', desc: '현재 ' + temp.toFixed(1) + '°C · 온열질환 주의' });
+        else if (temp <= HEAT_LO) items.push({ src: 'th:' + z + ':t', sev: 'mid', title: '저온 이상 (' + z + ')', desc: '현재 ' + temp.toFixed(1) + '°C · 한랭질환 주의' });
+        if (hum >= HUM_HI) items.push({ src: 'th:' + z + ':h', sev: 'low', title: '다습 이상 (' + z + ')', desc: '현재 습도 ' + hum.toFixed(0) + '%' });
+        else if (hum <= HUM_LO) items.push({ src: 'th:' + z + ':h', sev: 'low', title: '건조 이상 (' + z + ')', desc: '현재 습도 ' + hum.toFixed(0) + '%' });
       });
     } catch (e) { /* 무시 */ }
 
     const stamp = nowHMS();
-    if (!items.length) {
+    // 소스별로 직전 시그니처와 비교: 같으면 해당 줄 시간만 갱신, 다르면 새 줄로 누적.
+    for (const it of items) {
+      const sig = issueSig(it);
+      if (issueLastSig[it.src] === sig) {
+        const e = siteIssueLog.find((x) => x.sig === sig); // 최신 동일 줄의 시간만 갱신
+        if (e) { e.time = stamp; continue; }
+        // 로그 5개 밖으로 밀려나 사라진 경우엔 아래 분기로 떨어져 다시 쌓는다.
+      }
+      issueLastSig[it.src] = sig;
+      siteIssueLog.unshift({ src: it.src, sev: it.sev, title: it.title, desc: it.desc, sig, time: stamp });
+    }
+    if (siteIssueLog.length > SITE_ISSUE_MAX) siteIssueLog.length = SITE_ISSUE_MAX; // 최대 5개 유지
+
+    if (!siteIssueLog.length) {
       list.innerHTML = '<div class="issue-empty">현재 감지된 이상이 없습니다 · 실시간 모니터링 중</div>';
     } else {
-      list.innerHTML = items.map((it) => `
+      list.innerHTML = siteIssueLog.map((it) => `
         <div class="issue-item sev-${it.sev}">
-          <div class="issue-time">${stamp}</div>
+          <div class="issue-time">${it.time}</div>
           <div class="issue-body">
             <div class="issue-title">${it.title}</div>
             <div class="issue-desc">${it.desc}</div>
@@ -755,7 +785,7 @@
         </div>`).join('');
     }
     const sum = document.getElementById('issueSummary');
-    if (sum) sum.textContent = '현재 ' + items.length + '건 감지 · ' + stamp;
+    if (sum) sum.textContent = '최근 ' + siteIssueLog.length + '건 · ' + stamp;
   }
 
   // 탭2: 현장 특성 — '현장 위치 이름' 기준. level 0=상위 구역, 1=하위 작업존.
