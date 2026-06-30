@@ -560,8 +560,8 @@
 
   /* ===================== 신호등 행렬 / 공정 / 경광등 ===================== */
   // 카운트 → 램프 단계 임계값. 백엔드(KIOSK_LIGHT_*_THRESHOLD)와 동일하게 유지할 것.
-  // 0 소등 / 1~4 관심(초록) / 5~9 주의(노랑) / 10~14 경고(빨강) / 15+ 위험(점멸)
-  const LIGHT_THRESHOLDS = { interest: 1, caution: 5, warning: 10, danger: 15 };
+  // 0~9 소등 / 10~19 관심(초록) / 20~39 주의(노랑) / 40~49 경고(빨강) / 50+ 위험(점멸)
+  const LIGHT_THRESHOLDS = { interest: 10, caution: 20, warning: 40, danger: 50 };
   function countToLevel(count) {
     if (count >= LIGHT_THRESHOLDS.danger)   return 3;  // 위험(점멸)
     if (count >= LIGHT_THRESHOLDS.warning)  return 2;  // 경고(빨강)

@@ -94,15 +94,15 @@ class Settings(BaseSettings):
     # 탐지된 불안전행동 카운트가 각 임계값 이상이면 해당 단계로 점등한다.
     # 단, 경광등은 "이번 분석 사이클에 VLM 탐지 결과가 존재할 때"만 발동하며
     # (vlm_service.infer 참고), 카운트 단독으로는 울리지 않는다.
-    #   count==0   : 소등
-    #   1<=count<5 : 관심(초록)   — 첫 탐지(count==1)부터 초록 유지
-    #   5<=count<10: 주의(노랑)
-    #   10<=count<15: 경고(빨강)
-    #   count>=15  : 위험(점멸 — 색상 교번 반복)
-    light_interest_threshold: int = Field(default=1, ge=1)    # 관심 (초록 점등)
-    light_caution_threshold: int = Field(default=5, ge=1)     # 주의 (노란색)
-    light_warning_threshold: int = Field(default=10, ge=1)    # 경고 (빨간색)
-    light_danger_threshold: int = Field(default=15, ge=1)     # 위험 (순차 점멸)
+    #   count<10    : 소등
+    #   10<=count<20: 관심(초록)   — 첫 탐지부터가 아니라 10회 이상부터 초록
+    #   20<=count<40: 주의(노랑)
+    #   40<=count<50: 경고(빨강)
+    #   count>=50   : 위험(점멸 — 색상 교번 반복)
+    light_interest_threshold: int = Field(default=10, ge=1)   # 관심 (초록 점등)
+    light_caution_threshold: int = Field(default=20, ge=1)    # 주의 (노란색)
+    light_warning_threshold: int = Field(default=40, ge=1)    # 경고 (빨간색)
+    light_danger_threshold: int = Field(default=50, ge=1)     # 위험 (순차 점멸)
 
     # --- 불안전행동 디바운스(쿨다운) ---
     # VLM 분석이 루프로 반복되며 같은 행동이 연속 감지될 때 TTS 중첩·DB 카운트
