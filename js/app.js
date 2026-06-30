@@ -1604,6 +1604,9 @@ function openMSDSFull(key) {
       <div class="msds2-reg-list">${regList}</div>
     </div>`;
   document.getElementById('msdsOverlay').classList.add('open');
+  // 모달을 새로 열 때마다 본문 스크롤을 최상단으로 초기화(이전 물질의 스크롤 위치가
+  // innerHTML 교체 후에도 픽셀값으로 유지되는 문제 방지).
+  document.getElementById('msdsBody').scrollTop = 0;
 }
 
 function openMSDS(key) {
@@ -1650,4 +1653,6 @@ function openMSDS(key) {
       </dl>
     </div>`;
   document.getElementById('msdsOverlay').classList.add('open');
+  // 모달을 새로 열 때마다 본문 스크롤을 최상단으로 초기화.
+  document.getElementById('msdsBody').scrollTop = 0;
 }

@@ -79,7 +79,7 @@
 
           <div class="bh-matrix-head">
             <span></span>
-            <span class="bhm-col-name">감시 항목<small class="bhm-col-hint bhm-focus-hint">☑ 체크 → 분석 대상</small><small class="bhm-col-hint">칸 클릭 → 경광등 점등</small></span>
+            <span class="bhm-col-name">감시 항목</span>
             <div class="bhm-lamps-head">
               <button type="button" class="bhm-led-btn" style="color:var(--green);" title="관심 — 초록 점멸 5초" onclick="triggerLed('interest', this)">관심</button>
               <button type="button" class="bhm-led-btn" style="color:var(--amber);" title="주의 — 노랑 점멸 5초" onclick="triggerLed('caution', this)">주의</button>
@@ -967,10 +967,10 @@
       <!-- 목록 뷰 -->
       <div id="procListView">
         <div class="risk-summary">
-          <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--cyan);" id="procActiveCount">5</div><div class="risk-sum-lbl">진행중 공정</div></div>
-          <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--green);">3</div><div class="risk-sum-lbl">완료</div></div>
-          <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--amber);">2</div><div class="risk-sum-lbl">대기</div></div>
-          <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--violet);">28</div><div class="risk-sum-lbl">투입 인원</div></div>
+          <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--cyan);" id="procActiveCount">4</div><div class="risk-sum-lbl">진행중 공정</div></div>
+          <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--green);">0</div><div class="risk-sum-lbl">완료</div></div>
+          <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--amber);">0</div><div class="risk-sum-lbl">대기</div></div>
+          <div class="risk-sum-card"><div class="risk-sum-val" style="color:var(--violet);">9</div><div class="risk-sum-lbl">투입 인원</div></div>
         </div>
         <table class="risk-table">
           <thead><tr><th>공정코드</th><th>공정명</th><th>담당</th><th>인원</th><th>상태</th><th></th></tr></thead>
@@ -978,7 +978,7 @@
         </table>
         <div class="evac-note" style="background:rgba(139,124,255,0.06);border-color:rgba(139,124,255,0.25);">
           <svg viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v5l3 2"/></svg>
-          <span style="color:var(--t-2);">행을 클릭하면 공정별 세부 작업·사용물질을 확인할 수 있습니다. 금일 진행률 <b style="color:var(--violet);">62%</b> · 작업허가서(PTW) 발급 5건 · 위험작업 2건은 안전관리자 입회 하에 진행 중입니다.</span>
+          <span style="color:var(--t-2);">행을 클릭하면 공정별 세부 작업·사용물질을 확인할 수 있습니다.</span>
         </div>
       </div>
       <!-- 상세 뷰 -->
@@ -1042,7 +1042,7 @@
 
         <div class="evac-note issue-foot" style="background:rgba(255,111,44,0.06);border-color:rgba(255,111,44,0.25); margin-top: 16px;">
           <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.86L1.82 18a2 2 0 0 0 1.7 3h16.96a2 2 0 0 0-3.4 0z"/></svg>
-          <span style="color:var(--t-2);">VLM 위험행동 · 작업자 심박 · 현장 온습도 이상을 <b style="color:var(--orange);">실시간 감지</b>하여 안전상황실에 자동 공유합니다. <span id="issueSummary"></span></span>
+          <span style="color:var(--t-2);">위험행동 · 작업자 심박 · 현장 온습도 이상을 <b style="color:var(--orange);">실시간 감지</b>하여 안전상황실에 자동 공유합니다. <span id="issueSummary"></span></span>
         </div>
       </div>
 
