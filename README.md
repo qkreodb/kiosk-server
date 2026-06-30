@@ -86,7 +86,7 @@ cd ..\kiosk-hardware
 
 ### `POST /vlm/infer` pipeline
 
-`{ "camera_id": "CAM-03", "process_code": "PRC-19" }` →
+`{ "camera_id": "CAM-1", "process_code": "PRC-19" }` →
 
 1. Call VLM Server `/infer` (offline → built-in mock).
 2. **Branch A**: `위험 경고 텍스트` → Edge TTS → speaker actuator (stubbed playback).

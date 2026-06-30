@@ -139,9 +139,9 @@ function setMonitoringCctv(val) {
 // 신호등 헤더 CCTV 선택 (1/2/3) → 해당 CCTV 영상 팝업 + 모니터링 표시 이동
 function bhSelectCctv(val, btn) {
   const map = {
-    '1': 'CAM-03 · 정밀가공 라인',
-    '2': 'CAM-04 · 절단기 작업존',
-    '3': 'CAM-05 · 관람객 통로'
+    '1': 'CAM-1 · 정밀가공 라인',
+    '2': 'CAM-2 · 절단기 작업존',
+    '3': 'CAM-3 · 관람객 통로'
   };
   // 클릭한 버튼으로 모니터링(활성) 표시 이동
   setMonitoringCctv(val);

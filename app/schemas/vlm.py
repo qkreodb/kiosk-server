@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 class VlmInferRequest(BaseModel):
     """Trigger payload from the kiosk for a connected camera."""
 
-    camera_id: str = Field(default="CAM-03", examples=["CAM-03"])
+    camera_id: str = Field(default="CAM-1", examples=["CAM-1"])
     process_code: str | None = Field(default=None, examples=["PRC-19"])
     frame_ref: str | None = Field(default=None)
     # Jetson 파일시스템의 프레임 폴더 절대 경로. 생략 시 설정값(KIOSK_VLM_FRAME_DIR).

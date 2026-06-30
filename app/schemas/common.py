@@ -17,7 +17,7 @@ class HealthResponse(BaseModel):
 class CameraInfo(BaseModel):
     """A CCTV camera registered to a process/zone."""
 
-    cam_id: str = Field(examples=["CAM-03"])
+    cam_id: str = Field(examples=["CAM-1"])
     label: str = Field(examples=["정밀가공 라인"])
     location: str = Field(examples=["정밀가공 공정 (PRC-19) · 도장작업실"])
     process_code: str = Field(examples=["PRC-19"])

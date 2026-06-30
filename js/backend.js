@@ -285,11 +285,11 @@
   /* ===================== CCTV (라이브 스트림 포함) ===================== */
   function cctvLiveSrc() { return (window.__API_BASE || 'http://localhost:8080') + '/cctv/live?ts=' + Date.now(); }
   function isRtspCctv(region) {
-    return String(region || '').includes('CAM-03');
+    return String(region || '').includes('CAM-1');
   }
 
-  /* ----- 이상현상 수신 시 CAM-03 CCTV 미니 팝업 알림 -----
-   * VLM이 실제 이상행동을 카운트(쿨다운 통과)하면 사업장 지도 CCTV 탭의 CAM-03
+  /* ----- 이상현상 수신 시 CAM-1 CCTV 미니 팝업 알림 -----
+   * VLM이 실제 이상행동을 카운트(쿨다운 통과)하면 사업장 지도 CCTV 탭의 CAM-1
    * CCTV 아이콘 주위를 빨갛게 점멸시키고, 옆에 작은 라이브 CCTV 영상을 띄운다.
    * 팝업은 CCTV 탭(siteCctvMarkers)이 보일 때만 노출되며 클릭 시 전체 모달로 연결.   */
   let cctvAlertTimer = null;
@@ -304,7 +304,7 @@
     if (markers && markers.style.display === 'none') return;
     ring.style.display = '';
     popup.style.display = '';
-    // CAM-03 미니 화면도 RTSP 라이브(MJPEG) 스트림을 사용한다.
+    // CAM-1 미니 화면도 RTSP 라이브(MJPEG) 스트림을 사용한다.
     if (img && !img.getAttribute('src')) img.src = cctvLiveSrc();
     if (cctvAlertTimer) clearTimeout(cctvAlertTimer);
     cctvAlertTimer = setTimeout(hideCctvAlert, CCTV_ALERT_MS);
@@ -358,7 +358,7 @@
     const vlm = document.getElementById('cctvVlmOverlay');
     if (vlm) vlm.classList.remove('show');
     if (isRtspCctv(region) && image) {
-      // CAM-03: IP 카메라 RTSP 실시간 영상을 서버 MJPEG 중계로 송출
+      // CAM-1: IP 카메라 RTSP 실시간 영상을 서버 MJPEG 중계로 송출
       if (frame) { frame.src = ''; frame.style.display = 'none'; }
       image.style.display = 'block';
       image.src = cctvLiveSrc();
@@ -485,7 +485,7 @@
   // 1회 분석 요청 + 렌더. token 이 어긋나거나 모달이 닫혔으면 결과 렌더를 건너뛴다.
   async function runVlmAnalysisOnce(token) {
     const camEl = document.querySelector('.cctv-cam-chip.active .cctv-cam-id');
-    const camId = camEl ? camEl.textContent.trim() : 'CAM-03';
+    const camId = camEl ? camEl.textContent.trim() : 'CAM-1';
     const processCode = (window.currentProcessCode && window.currentProcessCode()) || '';
 
     const resp = await fetch(API + '/vlm/infer', {
