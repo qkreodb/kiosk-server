@@ -202,12 +202,12 @@
 
             <!-- 온습도계 뷰 (각 구역 벽면에 분산 배치) -->
             <g id="siteEnvMarkers">
-              <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-01','부스 A · 정밀가공 시연존','shelly_1')">
+              <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-01','부스 A · 정밀가공 시연존','sonoff_1')">
                 <circle cx="175" cy="320" r="22" fill="#FF9000"><animate attributeName="opacity" values="0.5;0;0.5" dur="1.6s" repeatCount="indefinite"/></circle>
                 <circle cx="175" cy="320" r="18" fill="#FF9000" fill-opacity="0.18"/>
                 <image x="161" y="306" width="28" height="28" href="images/icon_Thermometer.svg"/>
               </g>
-              <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-02','부스 C · 절단·용접 시연존','sonoff_1')">
+              <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-02','부스 C · 절단·용접 시연존')">
                 <circle cx="775" cy="330" r="22" fill="#FF9000"><animate attributeName="opacity" values="0.5;0;0.5" dur="1.6s" repeatCount="indefinite"/></circle>
                 <circle cx="775" cy="330" r="18" fill="#FF9000" fill-opacity="0.18"/>
                 <image x="761" y="316" width="28" height="28" href="images/icon_Thermometer.svg"/>
@@ -235,16 +235,16 @@
                 <circle cx="525" cy="225" r="22" fill="#6628E1"><animate attributeName="opacity" values="0.5;0;0.5" dur="1.6s" repeatCount="indefinite"/></circle>
                 <circle cx="525" cy="225" r="18" fill="#6628E1" fill-opacity="0.18"/>
                 <!-- 이상현상 수신 시 빨간 점멸 링(기본 숨김) -->
-                <circle id="cctvAlertRing" cx="525" cy="225" r="26" fill="none" stroke="#FF2B33" stroke-width="3" style="display:none;">
+                <circle id="cctvAlertRing" cx="150" cy="185" r="26" fill="none" stroke="#FF2B33" stroke-width="3" style="display:none;">
                   <animate attributeName="opacity" values="1;0.2;1" dur="0.8s" repeatCount="indefinite"/>
                   <animate attributeName="r" values="24;32;24" dur="0.8s" repeatCount="indefinite"/>
                 </circle>
                 <image x="511" y="211" width="28" height="28" href="images/icon_cctv.svg"/>
               </g>
-              <!-- 이상현상 수신 시 중앙 CCTV 미니 팝업(기본 숨김). 클릭 시 전체 CCTV 모달. -->
-              <foreignObject id="cctvAlertPopup" x="556" y="108" width="244" height="192" style="display:none;overflow:visible;">
-                <div xmlns="http://www.w3.org/1999/xhtml" class="cctv-mini" onclick="hideCctvAlert();openCCTVFor('CAM-05 · 중앙 전시홀')">
-                  <div class="cctv-mini-head"><span class="cctv-mini-dot"></span>이상현상 감지 · CAM-05 중앙 전시홀</div>
+              <!-- 이상현상 수신 시 CAM-03 CCTV 미니 팝업(기본 숨김). 클릭 시 전체 CCTV 모달. -->
+              <foreignObject id="cctvAlertPopup" x="184" y="68" width="244" height="192" style="display:none;overflow:visible;">
+                <div xmlns="http://www.w3.org/1999/xhtml" class="cctv-mini" onclick="hideCctvAlert();openCCTVFor('CAM-03 · 부스 A 정밀가공')">
+                  <div class="cctv-mini-head"><span class="cctv-mini-dot"></span>이상현상 감지 · CAM-03 부스 A 정밀가공</div>
                   <div class="cctv-mini-screen">
                     <img id="cctvMiniImg" class="cctv-mini-img" alt="CCTV" />
                     <span class="cctv-mini-rec">● LIVE</span>
@@ -818,14 +818,14 @@
           </g>
 
           <!-- 온습도계 아이콘 2개 -->
-          <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-01','정밀가공 시연존','shelly_1')">
+          <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-01','정밀가공 시연존','sonoff_1')">
             <circle cx="160" cy="200" r="22" fill="#FF9000" opacity="0.15"/>
             <circle cx="160" cy="200" r="18" fill="#0a2540" stroke="#FF9000" stroke-width="2"/>
             <path d="M162 192a2 2 0 0 0-4 0v9a3.5 3.5 0 1 0 4 0z" fill="none" stroke="#FF9000" stroke-width="1.6"/>
             <circle cx="160" cy="203" r="2.5" fill="#FF9000"/>
             <text x="160" y="237" text-anchor="middle" fill="#FF9000" font-family="Pretendard, sans-serif" font-size="12" font-weight="700">온습도 ①</text>
           </g>
-          <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-02','절단·용접 시연존','sonoff_1')">
+          <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-02','절단·용접 시연존')">
             <circle cx="740" cy="200" r="22" fill="#FF9000" opacity="0.15"/>
             <circle cx="740" cy="200" r="18" fill="#0a2540" stroke="#FF9000" stroke-width="2"/>
             <path d="M742 192a2 2 0 0 0-4 0v9a3.5 3.5 0 1 0 4 0z" fill="none" stroke="#FF9000" stroke-width="1.6"/>
