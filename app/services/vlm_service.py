@@ -156,6 +156,7 @@ class VlmService:
         process_code: str | None = None,
         frame_ref: str | None = None,
         frame_dir: str | None = None,
+        labels: list[str] | None = None,
     ) -> VlmInferResponse:
         code = process_code or "PRC-19"
 
@@ -164,7 +165,8 @@ class VlmService:
         play_epoch = self._speaker.current_epoch()
 
         # 1) Call the VLM Server's /analyze (장애 시 무탐지 결과).
-        vlm = await self._vlm.analyze(frame_dir)
+        #    labels: 신호등에서 체크된 분석 대상 행동 키만 VLM 서버로 전달.
+        vlm = await self._vlm.analyze(frame_dir, labels=labels)
 
         # 2) 탐지된 불안전행동 매핑 (TTS 발동 여부 판단에도 사용).
         #    구조화된 action 키가 있으면 직접 매핑, 없으면 자유텍스트 키워드 폴백.

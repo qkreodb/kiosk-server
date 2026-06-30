@@ -472,6 +472,16 @@
     }[tts.status] || (tts.status || '—');
   }
 
+  // 불안전행동 감시 신호등에서 체크된 항목의 라벨 키 목록.
+  // 체크된 행동만 VLM 분석 대상에 포함시킨다(미체크는 제외).
+  function selectedFocusLabels() {
+    return Array.from(document.querySelectorAll('.bhm-focus-cb:checked'))
+      .map((cb) => cb.dataset.focusKey)
+      .filter(Boolean);
+  }
+  // 체크박스 토글 핸들러(인라인 onchange용). 선택은 다음 분석 요청 때 자동 반영된다.
+  window.onFocusToggle = function () { /* 선택값은 요청 시점에 읽으므로 별도 처리 불필요 */ };
+
   // 1회 분석 요청 + 렌더. token 이 어긋나거나 모달이 닫혔으면 결과 렌더를 건너뛴다.
   async function runVlmAnalysisOnce(token) {
     const camEl = document.querySelector('.cctv-cam-chip.active .cctv-cam-id');
@@ -481,7 +491,7 @@
     const resp = await fetch(API + '/vlm/infer', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ camera_id: camId, process_code: processCode }),
+      body: JSON.stringify({ camera_id: camId, process_code: processCode, labels: selectedFocusLabels() }),
     });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const d = await resp.json();

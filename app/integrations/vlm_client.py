@@ -73,13 +73,19 @@ class VlmClient:
     async def analyze(
         self,
         dir_path: str | None = None,
+        labels: list[str] | None = None,
     ) -> VlmResult:
         """Call the VLM Server's /analyze; on any failure, return an empty result.
 
         ``dir_path`` is a directory on the *Jetson* filesystem holding frames.
         When omitted, the configured ``vlm_frame_dir`` is used.
+        ``labels``: 분석 대상으로 선택된 행동 키 목록(불안전행동 감시 신호등 체크).
+        값이 있으면 ``labels`` 필드로 함께 보내 해당 행동만 탐지하게 한다. None/빈
+        목록이면 라벨 제약 없이(서버 기본 동작) 분석한다.
         """
         payload: dict = {"dir_path": dir_path or self._frame_dir}
+        if labels:
+            payload["labels"] = labels
         try:
             async with httpx.AsyncClient(timeout=self._timeout) as client:
                 resp = await client.post(self._url, json=payload)
