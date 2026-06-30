@@ -54,11 +54,6 @@
     ]);
     if (th.status === 'fulfilled') liveSensors.tempHumid = th.value;
     if (watch.status === 'fulfilled') liveSensors.watch = watch.value;
-    updateLiveSensorBadge();
-  }
-  function latestTempHumidReading() {
-    const readings = liveSensors.tempHumid && liveSensors.tempHumid.readings;
-    return Array.isArray(readings) && readings.length ? readings[0] : null;
   }
   // 특정 온습도 센서(shelly_1/sonoff_1)의 최신값만 직접 조회.
   async function fetchTempHumidByName(sensorName) {
@@ -128,21 +123,6 @@
           </div>
         </div>`;
     }).join('');
-  }
-
-  function updateLiveSensorBadge() {
-    const badge = ensureLiveSensorBadge();
-    if (!badge) return;
-    const th = latestTempHumidReading();
-    const workers = latestWatchWorkers();
-    const hr = workers.length ? Number(workers[0].hr || 0) : 0;
-    const tempText = th ? Number(th.temp).toFixed(1) : '--.-';
-    const humText = th ? Number(th.humidity).toFixed(1) : '--.-';
-    const hrText = hr ? String(hr) : '--';
-    badge.innerHTML =
-      '<span class="lsb-temp">TEMP ' + tempText + '°C</span>' +
-      '<span class="lsb-hum">HUM ' + humText + '%</span>' +
-      '<span class="lsb-hr">HR ' + hrText + ' BPM</span>';
   }
 
   /* ===================== 모달 라이브 폴링 ===================== */
@@ -713,10 +693,9 @@
     document.body.appendChild(badge);
     setConn(false, '연결 중…');
 
-    // 라이브 센서 배지(sonoff 온습도 + 심박) + 2초 폴링
-    ensureLiveSensorBadge();
-    refreshLiveSensors().catch(() => updateLiveSensorBadge());
-    setInterval(() => refreshLiveSensors().catch(() => updateLiveSensorBadge()), LIVE_POLL_MS);
+    // 라이브 센서 폴링(모달·공정 행렬이 읽는 liveSensors 갱신) — 2초 주기
+    refreshLiveSensors().catch(() => {});
+    setInterval(() => refreshLiveSensors().catch(() => {}), LIVE_POLL_MS);
 
     // 공정 드롭다운을 실제 DB 목록으로 채움(실패해도 하드코딩 옵션 유지)
     try { await populateProcesses(); }
