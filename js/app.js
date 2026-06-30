@@ -565,7 +565,6 @@ function showProcessDetail(idx) {
       <td>${sp.machines}</td>
       <td>${chemCells}</td>
       <td>${sp.prot}</td>
-      <td class="tc"><button class="btn-risk-eval" onclick="openRiskEval(${idx}, ${si})">위험성평가</button></td>
     </tr>`;
   }).join('');
 
@@ -579,13 +578,19 @@ function showProcessDetail(idx) {
   }).join('');
 
   document.getElementById('procDetailView').innerHTML = `
-    <div class="proc-info-grid">
-      <div class="proc-ig-lbl">공정 코드</div>
-      <div class="proc-ig-val" style="font-weight:700;color:var(--cyan);letter-spacing:.5px">${p.code}</div>
-      <div class="proc-ig-lbl">공정명</div>
-      <div class="proc-ig-val" style="font-weight:700">${p.name}</div>
-      <div class="proc-ig-lbl">설명</div>
-      <div class="proc-ig-val" style="line-height:1.6">${p.desc}</div>
+    <div class="proc-info-block">
+      <button class="btn-proc-risk" onclick="openRiskEval(${idx})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.86L1.82 18a2 2 0 0 0 1.7 3h16.96a2 2 0 0 0 1.7-3L13.7 3.86a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>
+        위험성평가
+      </button>
+      <div class="proc-info-grid">
+        <div class="proc-ig-lbl">공정 코드</div>
+        <div class="proc-ig-val" style="font-weight:700;color:var(--cyan);letter-spacing:.5px">${p.code}</div>
+        <div class="proc-ig-lbl">공정명</div>
+        <div class="proc-ig-val" style="font-weight:700">${p.name}</div>
+        <div class="proc-ig-lbl">설명</div>
+        <div class="proc-ig-val" style="line-height:1.6">${p.desc}</div>
+      </div>
     </div>
 
     <div class="proc-sec-lbl">
@@ -602,7 +607,6 @@ function showProcessDetail(idx) {
             <th style="width:165px">기계/기구/설비 등</th>
             <th style="width:120px">사용물질</th>
             <th style="width:140px">보호구</th>
-            <th style="width:92px">위험성평가</th>
           </tr>
         </thead>
         <tbody>${subRows}</tbody>
@@ -656,33 +660,36 @@ function updateProcHr() {
 }
 
 /* ===== 위험성평가 상세 (빈도 × 강도, 4×4 기법) ===== */
-// 세부 작업별 유해·위험요인. [공정 인덱스][작업 인덱스] = [{factor, freq(빈도1~4), sev(강도1~4), measure(감소대책)}]
+// 세부 작업별 유해·위험요인. [공정 인덱스][작업 인덱스] = [{ ...위험성평가 항목 }]
+// cat:유해·위험분류, sub:세부분류, factor:유해·위험 요인, cur:현재의 안전보건조치,
+// freq/sev:현재 빈도·강도, measure:감소대책, rFreq/rSev:개선후 빈도·강도,
+// plan:개선예정일, done:개선완료일('-'=미완료), owner:개선담당자
 const HAZARDS = {
   0: [ // PRC-19 정밀가공
-    [ { factor: '고속 회전체 협착·말림', freq: 3, sev: 4, measure: '방호덮개 설치, 비상정지장치 점검, 회전부 접근 금지' },
-      { factor: '절삭칩 비산 안구 손상', freq: 3, sev: 2, measure: '보안경 착용 의무화, 비산 방지 커버 설치' },
-      { factor: '절삭유 피부 접촉 피부질환', freq: 2, sev: 2, measure: '내유성 장갑 착용, 세척시설 비치' } ],
-    [ { factor: '공구 파손 파편 비산', freq: 2, sev: 3, measure: '적정 절삭조건 준수, 차광 보안면 착용' },
-      { factor: '고소작업 추락', freq: 2, sev: 4, measure: '안전대·작업발판 사용, 라이프라인 체결' } ],
+    [ { cat:'기계(설비)적 요인', sub:'회전체 말림·협착 위험', factor: '고속 회전체 협착·말림', cur:'방호덮개 부착, 비상정지 스위치 운영', freq: 3, sev: 4, measure: '방호덮개 보강, 비상정지장치 정기점검, 회전부 접근 금지구역 설정', rFreq:1, rSev:4, plan:'2026-05-10', done:'2026-05-08', owner:'이*학' },
+      { cat:'기계(설비)적 요인', sub:'절삭칩 비산 위험', factor: '절삭칩 비산 안구 손상', cur:'보안경 비치', freq: 3, sev: 2, measure: '보안경 착용 의무화, 비산 방지 커버 설치', rFreq:1, rSev:2, plan:'2026-05-12', done:'-', owner:'박*철' },
+      { cat:'화학물질적 요인', sub:'절삭유 피부 접촉', factor: '절삭유 피부 접촉 피부질환', cur:'면장갑 사용', freq: 2, sev: 2, measure: '내유성 장갑 착용, 세척시설 비치', rFreq:1, rSev:2, plan:'2026-05-15', done:'2026-05-14', owner:'이*준' } ],
+    [ { cat:'기계(설비)적 요인', sub:'공구 파손·파편 비산', factor: '공구 파손 파편 비산', cur:'표준 절삭조건 게시', freq: 2, sev: 3, measure: '적정 절삭조건 준수, 차광 보안면 착용', rFreq:1, rSev:3, plan:'2026-05-18', done:'-', owner:'이*학' },
+      { cat:'작업환경 요인', sub:'추락위험 부분(개구부 등)', factor: '고소작업 추락', cur:'작업발판 설치', freq: 2, sev: 4, measure: '안전대·작업발판 사용, 라이프라인 체결', rFreq:1, rSev:4, plan:'2026-05-20', done:'2026-05-19', owner:'박*철' } ],
   ],
   1: [ // PRC-07 금속산세척
-    [ { factor: '황·염산 취급 중 화학화상', freq: 3, sev: 4, measure: '내산 PPE 착용, 물에 산을 천천히 투입, 비상샤워기 비치' },
-      { factor: '산성 증기 흡입 호흡기 손상', freq: 3, sev: 3, measure: '국소배기장치 가동, 산성가스용 방독마스크 착용' } ],
-    [ { factor: '산 용액 비산 눈·피부 접촉', freq: 3, sev: 3, measure: '전면보호면·내산 앞치마 착용, 비산 방지 덮개' },
-      { factor: '침지물 인양 근골격계 부담', freq: 2, sev: 2, measure: '인양보조구 사용, 2인 1조 작업' } ],
-    [ { factor: '잔류 산 접촉', freq: 2, sev: 2, measure: '중화 확인 후 취급, 내산 장갑 착용' } ],
+    [ { cat:'화학물질적 요인', sub:'부식성 물질 취급', factor: '황·염산 취급 중 화학화상', cur:'내산 장갑·앞치마 착용', freq: 3, sev: 4, measure: '내산 PPE 착용, 물에 산을 천천히 투입, 비상샤워기 비치', rFreq:1, rSev:4, plan:'2026-05-01', done:'2026-04-28', owner:'전*조' },
+      { cat:'화학물질적 요인', sub:'산성 증기 노출', factor: '산성 증기 흡입 호흡기 손상', cur:'자연환기', freq: 3, sev: 3, measure: '국소배기장치 가동, 산성가스용 방독마스크 착용', rFreq:1, rSev:3, plan:'2026-05-01', done:'-', owner:'최*민' } ],
+    [ { cat:'화학물질적 요인', sub:'산 용액 비산', factor: '산 용액 비산 눈·피부 접촉', cur:'보안경 착용', freq: 3, sev: 3, measure: '전면보호면·내산 앞치마 착용, 비산 방지 덮개', rFreq:1, rSev:3, plan:'2026-05-05', done:'2026-05-03', owner:'정*호' },
+      { cat:'작업환경 요인', sub:'중량물 인양 부담', factor: '침지물 인양 근골격계 부담', cur:'수동 인양', freq: 2, sev: 2, measure: '인양보조구 사용, 2인 1조 작업', rFreq:1, rSev:2, plan:'2026-05-08', done:'-', owner:'최*민' } ],
+    [ { cat:'화학물질적 요인', sub:'잔류 산 접촉', factor: '잔류 산 접촉', cur:'수세 실시', freq: 2, sev: 2, measure: '중화 확인 후 취급, 내산 장갑 착용', rFreq:1, rSev:2, plan:'2026-05-10', done:'2026-05-09', owner:'정*호' } ],
   ],
   2: [ // PRC-23 도장·코팅
-    [ { factor: '유기용제 증기 흡입', freq: 3, sev: 3, measure: '유기증기용 방독마스크 착용, 환기 유지' },
-      { factor: '인화성 도료 화재·폭발', freq: 2, sev: 4, measure: '점화원 제거, 정전기 방지 접지, 소화기 비치' } ],
-    [ { factor: '스프레이 미스트 흡입', freq: 3, sev: 2, measure: '도장부스 배기 가동, 방독마스크 착용' } ],
-    [ { factor: '유기용제 중독', freq: 3, sev: 3, measure: '방독마스크·보호의 착용, 작업시간 관리' },
-      { factor: '분진·미스트 폭발 분위기', freq: 2, sev: 4, measure: '방폭 설비 사용, 환기·접지 확보' } ],
-    [ { factor: '건조기 고온 표면 화상', freq: 1, sev: 2, measure: '내열장갑 착용, 접촉 주의표지 부착' } ],
+    [ { cat:'화학물질적 요인', sub:'유기용제 증기 노출', factor: '유기용제 증기 흡입', cur:'방진마스크 착용', freq: 3, sev: 3, measure: '유기증기용 방독마스크 착용, 환기 유지', rFreq:1, rSev:3, plan:'2026-06-01', done:'2026-05-30', owner:'박*유' },
+      { cat:'화학물질적 요인', sub:'인화성 물질 취급(화재·폭발)', factor: '인화성 도료 화재·폭발', cur:'소화기 비치', freq: 2, sev: 4, measure: '점화원 제거, 정전기 방지 접지, 소화기 비치', rFreq:1, rSev:4, plan:'2026-06-01', done:'-', owner:'김*환' } ],
+    [ { cat:'화학물질적 요인', sub:'미스트 흡입', factor: '스프레이 미스트 흡입', cur:'마스크 착용', freq: 3, sev: 2, measure: '도장부스 배기 가동, 방독마스크 착용', rFreq:1, rSev:2, plan:'2026-06-03', done:'2026-06-02', owner:'김*원' } ],
+    [ { cat:'화학물질적 요인', sub:'유기용제 중독', factor: '유기용제 중독', cur:'방독마스크 착용', freq: 3, sev: 3, measure: '방독마스크·보호의 착용, 작업시간 관리', rFreq:1, rSev:3, plan:'2026-06-05', done:'-', owner:'박*유' },
+      { cat:'화학물질적 요인', sub:'폭발 분위기 형성', factor: '분진·미스트 폭발 분위기', cur:'환기 실시', freq: 2, sev: 4, measure: '방폭 설비 사용, 환기·접지 확보', rFreq:1, rSev:4, plan:'2026-06-05', done:'2026-06-04', owner:'김*환' } ],
+    [ { cat:'작업환경 요인', sub:'고온 표면 접촉', factor: '건조기 고온 표면 화상', cur:'주의표지 부착', freq: 1, sev: 2, measure: '내열장갑 착용, 접촉 주의표지 부착', rFreq:1, rSev:1, plan:'2026-06-08', done:'-', owner:'김*원' } ],
   ],
   3: [ // PRC-31 도장 및 표면처리
-    [ { factor: '분체도료 분진 흡입·분진폭발', freq: 2, sev: 3, measure: '집진설비 가동, 방진마스크 착용, 접지' },
-      { factor: '정전기에 의한 착화', freq: 2, sev: 2, measure: '정전기 제거장치, 도전성 작업화 착용' } ],
+    [ { cat:'화학물질적 요인', sub:'분진 흡입·분진폭발', factor: '분체도료 분진 흡입·분진폭발', cur:'방진마스크 착용', freq: 2, sev: 3, measure: '집진설비 가동, 방진마스크 착용, 접지', rFreq:1, rSev:3, plan:'2026-06-10', done:'2026-06-09', owner:'최*재' },
+      { cat:'전기적 요인', sub:'정전기 착화', factor: '정전기에 의한 착화', cur:'접지 설비', freq: 2, sev: 2, measure: '정전기 제거장치, 도전성 작업화 착용', rFreq:1, rSev:2, plan:'2026-06-12', done:'-', owner:'윤*식' } ],
   ],
 };
 // 위험성 수준 정의 — 빈도강도 기준표 그대로(점수 → 등급/허용범위/개선방안/관리기준).
@@ -697,31 +704,14 @@ const RISK_GRADES = [
 function gradeForScore(score) {
   return RISK_GRADES.find(g => g.scores.includes(score)) || RISK_GRADES[RISK_GRADES.length - 1];
 }
+// '2026-05-01' → '26.05.01' (좁은 날짜 칸 대응)
+function fmtRiskDate(d) {
+  if (!d || d === '-') return '-';
+  return escapeHtml(d.slice(2).replace(/-/g, '.'));
+}
 
-function openRiskEval(pIdx, sIdx) {
-  const p = PROCESS_DATA[pIdx];
-  const sp = p && p.subs[sIdx];
-  if (!sp) return;
-  const hazards = (HAZARDS[pIdx] && HAZARDS[pIdx][sIdx]) || [];
-  const maxScore = hazards.reduce((m, h) => Math.max(m, h.freq * h.sev), 0);
-  const topGrade = gradeForScore(maxScore || 1);
-
-  document.getElementById('riskEvalSub').textContent = p.code + ' · ' + sp.name;
-
-  // 본문: 작업의 유해·위험요인별 위험성평가 표
-  const hazardRows = hazards.length ? hazards.map((h, i) => {
-    const sc = h.freq * h.sev, gg = gradeForScore(sc);
-    return `<tr>
-      <td class="tc">${i + 1}</td>
-      <td class="rae-factor">${escapeHtml(h.factor)}</td>
-      <td class="tc">${h.freq}</td>
-      <td class="tc">${h.sev}</td>
-      <td class="tc"><span class="rlv-badge ${gg.cls}">${gg.label} (${sc})</span></td>
-      <td class="rae-measure">${escapeHtml(h.measure)}</td>
-    </tr>`;
-  }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--t-3);padding:18px;">등록된 유해·위험요인이 없습니다.</td></tr>';
-
-  // 참고: 빈도×강도 매트릭스 (채점 기준)
+// 빈도×강도 채점 기준 매트릭스 + 위험성 수준 평가 기준표 HTML(호버 툴팁용)
+function buildRiskCriteriaHtml() {
   let matrix = '<table class="risk-mx"><thead>'
     + '<tr><th class="rmx-corner" rowspan="2" colspan="2">빈도 × 강도</th><th colspan="4">중대성 (강도)</th></tr>'
     + '<tr>' + [4, 3, 2, 1].map(s => `<th>${s}</th>`).join('') + '</tr></thead><tbody>';
@@ -737,13 +727,11 @@ function openRiskEval(pIdx, sIdx) {
   });
   matrix += '</tbody></table>';
 
-  // 참고: 위험성 수준 평가 기준 표 (해당 작업의 최고 등급 강조)
   let levels = '<table class="risk-lv"><thead><tr>'
     + '<th>위험성 수준</th><th>허용가능 범위</th><th>개선 방안</th><th>관리기준</th>'
     + '</tr></thead><tbody>';
   RISK_GRADES.forEach(gr => {
-    const sel = gr.cls === topGrade.cls ? ' rlv-sel' : '';
-    levels += `<tr class="${sel}">
+    levels += `<tr>
       <td class="rlv-grade"><span class="rlv-range">${gr.range}</span><span class="rlv-badge ${gr.cls}">${gr.label}</span></td>
       <td>${gr.allow}</td>
       <td>${gr.plan}</td>
@@ -752,41 +740,115 @@ function openRiskEval(pIdx, sIdx) {
   });
   levels += '</tbody></table>';
 
+  return `<div class="risk-criteria"><div class="risk-mx-wrap">${matrix}</div>${levels}</div>`;
+}
+
+// 공정 단위 위험성평가 — 예시 양식(작업명·분류·현재/개선후 위험성·담당자) 표로 표시
+function openRiskEval(pIdx) {
+  const p = PROCESS_DATA[pIdx];
+  if (!p) return;
+  const groups = (p.subs || []).map((sp, si) => ({
+    task: sp.name,
+    rows: (HAZARDS[pIdx] && HAZARDS[pIdx][si]) || [],
+  })).filter(g => g.rows.length);
+
+  let total = 0, maxScore = 0;
+  groups.forEach(g => g.rows.forEach(h => { total++; maxScore = Math.max(maxScore, h.freq * h.sev); }));
+  const topGrade = gradeForScore(maxScore || 1);
+
+  document.getElementById('riskEvalSub').textContent = p.code + ' · ' + p.name;
+
+  // 본문: 공정의 모든 세부작업 유해·위험요인을 한 표에(작업명 셀 병합)
+  const bodyRows = groups.length ? groups.map(g => g.rows.map((h, i) => {
+    const cur = h.freq * h.sev, curG = gradeForScore(cur);
+    const imp = h.rFreq * h.rSev, impG = gradeForScore(imp);
+    const taskCell = i === 0
+      ? `<td class="rk-task" rowspan="${g.rows.length}">${escapeHtml(g.task)}</td>` : '';
+    return `<tr>
+      ${taskCell}
+      <td class="rk-cat">${escapeHtml(h.cat)}</td>
+      <td class="rk-sub">${escapeHtml(h.sub)}</td>
+      <td class="rk-factor">${escapeHtml(h.factor)}</td>
+      <td class="rk-cur">${escapeHtml(h.cur)}</td>
+      <td class="tc">${h.freq}</td>
+      <td class="tc">${h.sev}</td>
+      <td class="tc"><span class="rlv-badge ${curG.cls}">${cur}</span></td>
+      <td class="rk-measure">${escapeHtml(h.measure)}</td>
+      <td class="tc">${h.rFreq}</td>
+      <td class="tc">${h.rSev}</td>
+      <td class="tc"><span class="rlv-badge ${impG.cls}">${imp}</span></td>
+      <td class="tc rk-date">${fmtRiskDate(h.plan)}</td>
+      <td class="tc rk-date">${h.done && h.done !== '-' ? fmtRiskDate(h.done) : '<span class="rk-pending">진행중</span>'}</td>
+      <td class="tc rk-owner">${escapeHtml(h.owner)}</td>
+    </tr>`;
+  }).join('')).join('')
+    : '<tr><td colspan="15" style="text-align:center;color:var(--t-3);padding:18px;">등록된 유해·위험요인이 없습니다.</td></tr>';
+
   document.getElementById('riskEvalBody').innerHTML = `
     <div class="risk-eval-summary">
       <div class="res-task">
-        <div class="res-task-name">${escapeHtml(sp.name)}</div>
-        <div class="res-task-desc">${escapeHtml(sp.desc)}</div>
+        <div class="res-task-name">${escapeHtml(p.name)} <span class="res-task-code">${escapeHtml(p.code)}</span></div>
+        <div class="res-task-desc">${escapeHtml(p.desc)}</div>
       </div>
       <div class="res-top">
         <span class="res-top-lbl">최고 위험성</span>
         <span class="rlv-badge ${topGrade.cls} res-grade">${topGrade.label} (${maxScore})</span>
-        <span class="res-top-cnt">유해·위험요인 ${hazards.length}건</span>
+        <span class="res-top-cnt">유해·위험요인 ${total}건 · 평가일 2026-04-01 · 빈도·강도법</span>
       </div>
     </div>
 
-    <div class="proc-sec-lbl" style="margin-top:18px;">위험성평가 (빈도 × 강도 = 위험성)</div>
-    <div class="risk-ae-wrap">
-      <table class="risk-ae">
-        <thead><tr>
-          <th style="width:42px">No.</th>
-          <th class="tl">유해·위험요인</th>
-          <th style="width:50px">빈도</th>
-          <th style="width:50px">강도</th>
-          <th style="width:118px">위험성</th>
-          <th class="tl" style="width:300px">위험성 감소대책</th>
-        </tr></thead>
-        <tbody>${hazardRows}</tbody>
-      </table>
+    <div class="rk-sec-bar">
+      <div class="proc-sec-lbl" style="margin:0;">유해·위험요인별 위험성평가</div>
+      <button type="button" class="rk-criteria-trigger" onclick="toggleRiskCriteria(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        빈도·강도 평가 기준
+        <span class="rk-criteria-caret">▾</span>
+      </button>
     </div>
+    <div class="rk-criteria-panel" id="rkCriteriaPanel" hidden>${buildRiskCriteriaHtml()}</div>
 
-    <div class="proc-sec-lbl" style="margin-top:18px;">평가 기준 (참고)</div>
-    <div class="risk-criteria">
-      <div class="risk-mx-wrap">${matrix}</div>
-      ${levels}
+    <div class="rk-table-wrap">
+      <table class="rk-table">
+        <colgroup>
+          <col class="c-task"><col class="c-cat"><col class="c-sub"><col class="c-factor"><col class="c-cur">
+          <col class="c-num"><col class="c-num"><col class="c-risk">
+          <col class="c-measure">
+          <col class="c-num"><col class="c-num"><col class="c-risk">
+          <col class="c-date"><col class="c-date"><col class="c-owner">
+        </colgroup>
+        <thead>
+          <tr>
+            <th rowspan="2" class="rk-th-task">작업명</th>
+            <th rowspan="2">유해·위험분류</th>
+            <th rowspan="2">세부분류</th>
+            <th rowspan="2">유해·위험 요인</th>
+            <th rowspan="2">현재의 안전보건조치</th>
+            <th colspan="3" class="rk-th-grp">현재위험성</th>
+            <th rowspan="2">감소대책</th>
+            <th colspan="3" class="rk-th-grp rk-th-imp">개선후 위험성</th>
+            <th rowspan="2">개선<br>예정일</th>
+            <th rowspan="2">개선<br>완료일</th>
+            <th rowspan="2">개선<br>담당자</th>
+          </tr>
+          <tr>
+            <th class="rk-th-sm">빈도</th><th class="rk-th-sm">강도</th><th class="rk-th-sm">위험성</th>
+            <th class="rk-th-sm rk-th-imp">빈도</th><th class="rk-th-sm rk-th-imp">강도</th><th class="rk-th-sm rk-th-imp">위험성</th>
+          </tr>
+        </thead>
+        <tbody>${bodyRows}</tbody>
+      </table>
     </div>
   `;
   document.getElementById('riskEvalOverlay').classList.add('open');
+}
+
+// 빈도·강도 평가 기준 패널 토글(터치 키오스크 대응 — 탭하면 펼침/접힘)
+function toggleRiskCriteria(btn) {
+  const panel = document.getElementById('rkCriteriaPanel');
+  if (!panel) return;
+  const open = panel.hasAttribute('hidden');
+  if (open) panel.removeAttribute('hidden'); else panel.setAttribute('hidden', '');
+  btn.classList.toggle('open', open);
 }
 // ===== 현장 통합 관리 모달 (공정 특성 + 위험성평가 / 현장 특이사항) =====
 // 공정별 위험성평가 더미 데이터

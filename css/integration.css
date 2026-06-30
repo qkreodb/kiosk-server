@@ -184,6 +184,83 @@
 .risk-lv tr.rlv-sel td { font-weight: 700; background: rgba(0,0,0,0.035); }
 .risk-lv tr.rlv-sel td:first-child { box-shadow: inset 3px 0 0 var(--brand-navy, #1b2440); }
 
+/* ===== 공정 기본정보 블록 + 공정단위 위험성평가 버튼 =====
+   버튼을 첫 행(공정 코드 라인) 우측에 넣고 상·하·우 여백을 8px로 동일하게. */
+.proc-info-block { position: relative; }
+.btn-proc-risk {
+  position: absolute; top: 8px; right: 8px; z-index: 2; height: 30px;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 14px; border-radius: 7px; cursor: pointer;
+  font-size: 13px; font-weight: 700; white-space: nowrap;
+  background: var(--red); color: #fff; border: 1px solid var(--red);
+  box-shadow: 0 2px 6px rgba(255,59,71,0.30); transition: filter .15s, transform .15s;
+}
+.btn-proc-risk:hover { filter: brightness(1.07); }
+.btn-proc-risk:active { transform: scale(0.97); }
+.btn-proc-risk svg { width: 15px; height: 15px; }
+/* 코드 텍스트가 버튼과 겹치지 않도록 첫 행 값 셀(2번째 자식) 우측 여백 확보 */
+.proc-info-grid > div:nth-child(2) { padding-right: 150px; }
+
+/* ===== 공정단위 위험성평가 표(예시 양식) ===== */
+.res-task-code { font-size: 12px; font-weight: 700; color: var(--cyan); margin-left: 6px; letter-spacing: .5px; }
+.rk-sec-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 18px 0 10px; flex-wrap: wrap; }
+
+/* 빈도·강도 기준: 평상시 숨김 → 탭(클릭) 시 인라인 패널 펼침(터치 키오스크 대응) */
+.rk-criteria-trigger {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 999px; cursor: pointer; user-select: none;
+  font-size: 12px; font-weight: 700; color: var(--t-2);
+  background: var(--bg-card-hi); border: 1px solid var(--line); transition: border-color .15s, color .15s;
+}
+.rk-criteria-trigger:hover { color: var(--t-1); border-color: var(--line-strong); }
+.rk-criteria-trigger svg { width: 14px; height: 14px; color: var(--t-3); }
+.rk-criteria-caret { font-size: 10px; color: var(--t-3); transition: transform .18s; }
+.rk-criteria-trigger.open { color: var(--t-1); border-color: var(--line-strong); background: #fff; }
+.rk-criteria-trigger.open .rk-criteria-caret { transform: rotate(180deg); }
+.rk-criteria-panel {
+  margin: 0 0 14px; padding: 16px;
+  background: #fff; border: 1px solid var(--line-strong); border-radius: 12px;
+  box-shadow: 0 8px 22px rgba(20,28,48,0.10);
+}
+.rk-criteria-panel[hidden] { display: none; }
+
+/* 데이터 밀도 높은 표 → 세로 키오스크에서 화면을 더 넓게 사용 */
+#riskEvalOverlay { padding: 24px; }
+
+.rk-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+.rk-table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 920px; table-layout: fixed; }
+.rk-table thead th {
+  background: #eef1f6; color: var(--t-1); font-weight: 700; padding: 6px 4px;
+  text-align: center; border: 1px solid var(--line); line-height: 1.25;
+}
+.rk-table thead th.rk-th-grp { background: #e3e8f0; }
+.rk-table thead th.rk-th-imp { background: #e2f0ea; }
+.rk-table thead th.rk-th-sm { font-weight: 600; padding: 4px 2px; width: 34px; }
+.rk-table thead th.rk-th-task { width: 64px; }
+.rk-table tbody td { padding: 6px 5px; border: 1px solid var(--line); vertical-align: middle; color: var(--t-2); line-height: 1.4; word-break: keep-all; }
+.rk-table tbody td.tc { text-align: center; }
+.rk-table tbody td.rk-task { font-weight: 800; color: var(--t-1); background: var(--bg-card-hi); text-align: center; vertical-align: middle; }
+.rk-table tbody td.rk-cat { font-weight: 700; color: var(--t-1); }
+.rk-table tbody td.rk-factor { font-weight: 700; color: var(--t-1); }
+.rk-table tbody td.rk-date { white-space: nowrap; color: var(--t-2); font-size: 10.5px; }
+.rk-table tbody td.rk-owner { white-space: nowrap; font-weight: 700; color: var(--t-1); }
+.rk-table tbody td .rk-pending { color: var(--orange); font-weight: 700; }
+.rk-table tbody tr:hover td { background: rgba(0,120,200,0.04); }
+.rk-table tbody tr:hover td.rk-task { background: var(--bg-card-hi); }
+.rk-table .rlv-badge { min-width: 26px; padding: 2px 7px; font-size: 11px; }
+
+/* 컬럼 폭 배분(table-layout:fixed) — 15열, 합계 ≈ 920px(세로 키오스크 가로 스크롤 없이 수용) */
+.rk-table col.c-task { width: 64px; }
+.rk-table col.c-cat  { width: 74px; }
+.rk-table col.c-sub  { width: 76px; }
+.rk-table col.c-factor { width: 100px; }
+.rk-table col.c-cur  { width: 116px; }
+.rk-table col.c-num  { width: 30px; }
+.rk-table col.c-risk { width: 48px; }
+.rk-table col.c-measure { width: 124px; }
+.rk-table col.c-date { width: 56px; }
+.rk-table col.c-owner { width: 46px; }
+
 /* ===== 신호등 헤더: 감시 항목 힌트 ===== */
 .bhm-col-hint {
   display: inline-block;
