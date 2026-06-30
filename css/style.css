@@ -1054,12 +1054,11 @@
 .msds2-pictos { display: flex; gap: 16px; flex-wrap: wrap; }
 .msds2-picto { width: 96px; text-align: center; }
 .msds2-picto-box {
-  width: 72px; height: 72px; margin: 0 auto 6px;
-  border: 2px solid var(--red); transform: rotate(45deg);
+  width: 76px; height: 76px; margin: 0 auto 6px;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,0.03);
 }
-.msds2-picto-box svg { width: 36px; height: 36px; transform: rotate(-45deg); color: var(--red); }
+.msds2-picto-img { width: 76px; height: 76px; object-fit: contain; display: block; }
+.msds2-picto-box svg { width: 40px; height: 40px; color: var(--red); }
 .msds2-picto-lbl { font-size: 12px; font-weight: 700; color: var(--t-1); }
 .msds2-picto-en { font-size: 10px; color: var(--t-3); }
 

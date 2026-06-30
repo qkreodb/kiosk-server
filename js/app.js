@@ -1295,18 +1295,21 @@ const MSDS_FULL = {
     ],
   },
 };
-// GHS 그림문자 아이콘(코드별 인라인 SVG) — 외부 이미지 의존 없이 표시
+// GHS 그림문자 아이콘 — 표준 그림문자 이미지(빨간 마름모 포함) 사용
+const GHS_IMG = {
+  GHS02: 'images/ghs/ghs02.png', // 인화성
+  GHS04: 'images/ghs/ghs04.png', // 고압가스
+  GHS05: 'images/ghs/ghs05.png', // 부식성
+  GHS06: 'images/ghs/ghs06.png', // 급성독성
+  GHS07: 'images/ghs/ghs07.png', // 경고
+  GHS08: 'images/ghs/ghs08.png', // 건강유해성
+  GHS09: 'images/ghs/ghs09.png', // 수생환경유해성
+};
 function ghsIcon(code) {
-  const ico = {
-    GHS02: '<path d="M12 2c1 4-2 5-2 8a4 4 0 0 0 8 0c0-1-.5-2-1-2.5C16 10 15 12 14 12c1-3-2-6-2-10z" transform="translate(-2 1)"/>',
-    GHS04: '<rect x="6" y="9" width="12" height="11" rx="1.5"/><path d="M9 9V7a3 3 0 0 1 6 0v2"/>',
-    GHS05: '<path d="M5 5l5 4M4 9l4 0M13 4l-1 6 6-1M19 11l-4 6h-3"/><path d="M6 19h6M14 19h4"/>',
-    GHS06: '<circle cx="9" cy="9.5" r="1"/><circle cx="15" cy="9.5" r="1"/><path d="M12 3a6 6 0 0 0-6 6c0 2 1 3 1 4.5V15a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1.5c0-1.5 1-2.5 1-4.5a6 6 0 0 0-6-6z"/><path d="M9 19h6M10 16v3M14 16v3"/>',
-    GHS07: '<circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="13"/><circle cx="12" cy="16.5" r="0.6" fill="currentColor"/>',
-    GHS08: '<circle cx="9" cy="9" r="2.4"/><path d="M9 11.4V20M5.5 14h7M9 20l-3 0M9 20l3 0"/><circle cx="16" cy="7" r="1.6"/>',
-    GHS09: '<path d="M3 7c2 0 2 1.5 4 1.5S9 7 11 7M3 11c2 0 2 1.5 4 1.5S9 11 11 11"/><path d="M14 5l2 6h-4l2-6zM18 9l3 7-6 0 3-7zM14 18c0 1.5 1.5 2 3 2s3-.5 3-2"/>',
-  }[code] || '<circle cx="12" cy="12" r="8"/>';
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ico}</svg>`;
+  const src = GHS_IMG[code];
+  if (src) return `<img class="msds2-picto-img" src="${src}" alt="${escapeHtml(code)}" />`;
+  // 매핑 없는 코드(GHS01/03 등)는 빈 마름모로 폴백
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/></svg>`;
 }
 
 // NFPA 704 다이아몬드(4분할) — 값 문자열에서 앞 숫자만 추출해 표시
