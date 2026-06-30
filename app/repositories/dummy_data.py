@@ -5,8 +5,8 @@ heartbeat sensor, cctv_info, unstable_behavior). Everything the kiosk shows that
 is *not* one of those — MSDS chemical sheets, risk assessments, and the human
 roster behind the heart-rate watches — is hard-coded here, by design.
 
-``SqlRepository`` imports these. (``MockRepository`` keeps using its JSON
-fixtures; this module is only for the real-DB path.)
+``SqlRepository`` imports these to serve the parts of the kiosk UI that have no
+backing DB table.
 """
 
 from __future__ import annotations

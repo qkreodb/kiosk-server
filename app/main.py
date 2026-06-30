@@ -1,8 +1,8 @@
 """Kiosk Main Server — FastAPI app factory (PORT 8080).
 
 This is the "Kiosk Back section (PORT 8080)" from 001.png. It serves the kiosk
-frontend by querying the Shared DB (mocked), reading 30fps frames from the
-Shared Dir, and calling the external VLM Server's /infer endpoint with
+frontend by querying the Shared DB (MySQL), reading 30fps frames from the
+Shared Dir, and calling the external VLM Server's /analyze endpoint with
 post-processing (TTS + DB counting + warning-light control signal).
 
 Run with:  uvicorn app.main:app --port 8080
@@ -28,7 +28,7 @@ logger = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Eagerly initialize the data source so fixtures load (and fail fast) at boot.
+    # Eagerly initialize the data source so the DB connects (and fails fast) at boot.
     from app.repositories.factory import active_repository_name, get_repository
 
     get_repository()
@@ -49,7 +49,7 @@ def create_app() -> FastAPI:
         version=settings.app_version,
         description=(
             "산업 안전보건 키오스크 백엔드 (Kiosk Back section · PORT 8080). "
-            "Shared DB(mock) 조회 · Shared Dir 프레임 제공 · VLM /infer 호출 및 "
+            "Shared DB(MySQL) 조회 · Shared Dir 프레임 제공 · VLM /analyze 호출 및 "
             "후처리(TTS·DB 카운팅·경광등 제어)."
         ),
         lifespan=lifespan,

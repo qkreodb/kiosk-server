@@ -1,11 +1,10 @@
 """Data-access interface (the Shared DB seam).
 
 Services depend ONLY on this abstract interface, never on a concrete data
-source. Today the single implementation is the in-memory/JSON-fixture
-:class:`~app.repositories.mock_repository.MockRepository`. When the real Shared
-DB schema is designed, add a ``SqlRepository`` (or similar) implementing this
-same interface and switch it in via ``app/repositories/factory.py`` — a
-one-file change, with no service/router edits.
+source. The single implementation is
+:class:`~app.repositories.sql_repository.SqlRepository` (the real MySQL Shared
+DB on the Jetson), constructed in ``app/repositories/factory.py``. Swapping the
+data source is a one-file change there, with no service/router edits.
 """
 
 from __future__ import annotations

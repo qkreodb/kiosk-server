@@ -1,7 +1,7 @@
 """Orchestrates the full POST /vlm/infer pipeline (right side of 001.png).
 
 Flow:
-  1. Call the external VLM Server's /analyze (client + offline mock fallback).
+  1. Call the external VLM Server's /analyze (장애 시 무탐지 처리).
   2. ``action``/``labels`` 키 -> 불안전행동 카테고리로 매핑(탐지 여부 판단).
   3. BRANCH A — TTS: 탐지된 행동이 있을 때만 ``tts_message`` -> Edge TTS -> speaker.
      이상 없음(탐지 0건)이면 음성 안내를 울리지 않는다(시연 시 음성 겹침 방지).
@@ -157,7 +157,7 @@ class VlmService:
         # 호출되면 이 요청의 늦은 TTS 재생은 폐기된다.
         play_epoch = self._speaker.current_epoch()
 
-        # 1) Call the VLM Server's /analyze (or offline mock).
+        # 1) Call the VLM Server's /analyze (장애 시 무탐지 결과).
         vlm = await self._vlm.analyze(frame_dir)
 
         # 2) 탐지된 불안전행동 매핑 (TTS 발동 여부 판단에도 사용).

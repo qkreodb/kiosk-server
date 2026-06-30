@@ -45,7 +45,6 @@ class Settings(BaseSettings):
     vlm_frame_dir: str = "/home/ds/Desktop/frames"
     # VLM+LLM 2단계 추론은 수 초가 걸리고 NUM_WORKERS=1 이면 큐 대기까지 더해진다.
     vlm_timeout_seconds: float = 60.0
-    vlm_force_mock: bool = False
 
     # --- Shared Dir (30fps frames from the Hardware Server, PORT 8081) ---
     # 하드웨어 서버(kiosk-hardware)의 RTSP 프레임 수집기가 기록하는 폴더.
@@ -70,14 +69,7 @@ class Settings(BaseSettings):
     # MJPEG 중계 송출 상한 fps (브라우저로 내보내는 속도; 카메라 fps 와 무관).
     cctv_stream_fps: int = 20
 
-    # --- Shared DB ---
-    # Data source selector: "mock" (JSON fixtures / in-memory) or
-    # "mysql"/"sql" (real MySQL on the Jetson via SqlRepository). If "mysql" is
-    # selected but the DB is unreachable, the app falls back to "mock".
-    repository: str = "mysql"
-    db_url: str = "mock://in-memory"  # legacy placeholder; unused by SqlRepository.
-
-    # MySQL connection (used only when repository == "mysql"/"sql").
+    # --- Shared DB (real MySQL on the Jetson, via SqlRepository) ---
     # 실제 비밀번호는 저장소에 커밋하지 말고 .env 의 KIOSK_DB_PASSWORD 로만 둘 것.
     db_host: str = "127.0.0.1"
     db_port: int = 3306

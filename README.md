@@ -5,7 +5,7 @@ FastAPI backend for the industrial **safety & health monitoring kiosk** — the
 
 It serves the existing 1080×1920 kiosk frontend (`kiosk.html`) by:
 
-1. Querying the **Shared DB** (mocked here, behind a swappable repository interface).
+1. Querying the **Shared DB** (MySQL on the Jetson, behind a swappable repository interface).
 2. Reading the latest **30fps frame** from the **Shared Dir** (written by the Hardware Server).
 3. Calling the external **VLM Server** `/infer` endpoint and post-processing the result
    (**TTS → speaker** + **DB count → warning-light control signal**).
@@ -68,15 +68,6 @@ cd ..\kiosk-hardware
 ..\.venv\Scripts\python.exe rtsp_frame.py
 ```
 
-### Smoke test (no external servers needed)
-
-```bash
-.\.venv\Scripts\python.exe smoke_test.py
-```
-
-Runs every endpoint through FastAPI's `TestClient` using the **offline VLM mock**
-(`KIOSK_VLM_FORCE_MOCK=true`) and prints a `[PASS]` line per endpoint.
-
 ---
 
 ## Endpoints
@@ -121,23 +112,25 @@ app/
   core/logging.py
   domain/constants.py     # 4 불안전행동 categories, 경광등 states
   schemas/                # Pydantic DTOs per domain
-  repositories/           # base interface + mock impl + factory (DB seam)
-  integrations/           # vlm_client, tts, shared_dir, actuators (all stubbable)
+  repositories/           # base interface + SqlRepository (MySQL) + factory (DB seam)
+  integrations/           # vlm_client, tts, shared_dir, actuators
   services/               # business logic incl. VLM pipeline orchestration
   api/routers/            # space, sensor, modal, cctv, vlm, health
-mock_data/                # JSON fixtures simulating Shared DB rows
 docs/진행상황.md          # Korean progress document
 ```
 
-## What is mocked (and where the real piece plugs in)
+## External dependencies (operational build)
 
-| Concern        | Mock today                                   | Real swap-in point |
-|----------------|----------------------------------------------|--------------------|
-| Shared DB      | `repositories/mock_repository.py` (+fixtures) | Implement `KioskRepository`, select it in `repositories/factory.py` |
-| VLM Server     | `integrations/vlm_client.py` offline stub    | Set `KIOSK_VLM_BASE_URL`; client posts to real `/infer` |
-| TTS playback   | Edge TTS file synth; speaker = log stub       | `integrations/actuators.py::SpeakerActuator.play` |
-| Warning light  | `actuators.py::WarningLightActuator` log stub | GPIO/relay/serial write |
-| Shared Dir     | placeholder JPEG when empty                   | Point `KIOSK_SHARED_DIR` at the real frame dir |
+| Concern        | Implementation                                | Configuration |
+|----------------|-----------------------------------------------|---------------|
+| Shared DB      | `repositories/sql_repository.py` (MySQL on Jetson) | `KIOSK_DB_*` — boot fails if unreachable |
+| VLM Server     | `integrations/vlm_client.py` HTTP client      | `KIOSK_VLM_BASE_URL`; client posts to real `/analyze` |
+| TTS playback   | Edge TTS file synth → `actuators.py::SpeakerActuator.play` (playsound) | `KIOSK_TTS_*` |
+| Warning light  | `actuators.py::WarningLightActuator` signal + `led_service` (HID) | `KIOSK_LED_*` |
+| Shared Dir     | `integrations/shared_dir.py` (latest frame)   | `KIOSK_SHARED_DIR` → real frame dir |
+
+데이터 중 ERD에 컬럼이 없는 항목(MSDS·위험성평가·워치 명부)은 `repositories/dummy_data.py`
+에서 고정값으로 제공한다.
 
 All configuration lives in `app/core/config.py` (env prefix `KIOSK_`); see `.env.example`.
 

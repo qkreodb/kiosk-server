@@ -1,9 +1,9 @@
 """Client for the external VLM Server's ``/analyze`` endpoint (PORT 8000).
 
 IMPORTANT: this is only a *client*. The VLM itself (Qwen2.5-VL on the Jetson
-Thor) is NOT implemented here. When the real server is offline — or when
-``KIOSK_VLM_FORCE_MOCK`` is set — we fall back to a deterministic stub so the
-kiosk's /vlm/infer pipeline always works in local dev.
+Thor) is NOT implemented here. If the server is unreachable or errors, we return
+an empty result (no detection) so the kiosk pipeline keeps running without
+raising a false alarm.
 
 Request body::
 
@@ -30,7 +30,6 @@ Used fields: ``labels``/``action``/``raw`` (count +1), ``tts_message`` (TTS 알�
 from __future__ import annotations
 
 import json
-import random
 
 import httpx
 from pydantic import BaseModel, Field
@@ -58,58 +57,28 @@ class VlmResult(BaseModel):
     detection: str = Field(default="", description="감지 라벨을 합친 요약 텍스트")
     warning_text: str = Field(default="", description="TTS 경고 메시지(tts_message)")
     scene_description: str = Field(default="", description="VLM 장면 설명 원문")
-    source: str = Field(default="vlm", description="vlm / mock")
+    source: str = Field(default="vlm", description="결과 출처")
     raw: dict = Field(default_factory=dict)
 
 
-# 오프라인 개발용 스텁 시나리오 (action 키 기반).
-_MOCK_SCENES: list[dict] = [
-    {
-        KEY_ACTION: "helmet_off,ladder_alone",
-        KEY_TTS: "안전모를 착용하지 않은 상태로 단독 사다리 작업을 하고 있어 위험합니다. 안전모를 착용하고 사다리 작업을 중단하십시오",
-        KEY_DESCRIPTION: "작업자가 안전모 없이 사다리에 단독으로 올라가 있습니다.",
-    },
-    {
-        KEY_ACTION: "cone_touch,helmet_off",
-        KEY_TTS: "안전모 미착용 상태로 라바콘을 접촉하고 있어 위험합니다. 라바콘에서 떨어지고 안전모를 착용하십시오",
-        KEY_DESCRIPTION: "작업자가 통제용 라바콘에 손을 대고 있으며 안전모를 쓰지 않았습니다.",
-    },
-    {
-        KEY_ACTION: "fence_crossing,safety_vest",
-        KEY_TTS: "안전 고리 미착용 상태로 위험 펜스를 넘고 있어 위험합니다. 즉시 펜스를 넘지 말고 안전 고리를 체결하십시오",
-        KEY_DESCRIPTION: "작업자가 안전 고리를 걸지 않은 채 위험 구역의 펜스를 넘고 있습니다.",
-    },
-    {
-        KEY_ACTION: "",
-        KEY_TTS: "",
-        KEY_DESCRIPTION: "작업자가 보호구를 착용하고 정상적으로 작업하고 있습니다.",
-    },
-]
-
-
 class VlmClient:
-    """Async HTTP client + offline mock for the VLM Server's /analyze."""
+    """Async HTTP client for the VLM Server's /analyze."""
 
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
         self._url = settings.vlm_analyze_url
         self._frame_dir = settings.vlm_frame_dir
         self._timeout = settings.vlm_timeout_seconds
-        self._force_mock = settings.vlm_force_mock
 
     async def analyze(
         self,
         dir_path: str | None = None,
     ) -> VlmResult:
-        """Call the VLM Server's /analyze; on any failure, return a stub result.
+        """Call the VLM Server's /analyze; on any failure, return an empty result.
 
         ``dir_path`` is a directory on the *Jetson* filesystem holding frames.
         When omitted, the configured ``vlm_frame_dir`` is used.
         """
-        if self._force_mock:
-            logger.info("VLM forced mock mode; skipping network call.")
-            return self._mock_result()
-
         payload: dict = {"dir_path": dir_path or self._frame_dir}
         try:
             async with httpx.AsyncClient(timeout=self._timeout) as client:
@@ -117,13 +86,13 @@ class VlmClient:
                 resp.raise_for_status()
                 data = resp.json()
             return self._normalize(data, source="vlm")
-        except Exception as exc:  # noqa: BLE001 — any error -> graceful fallback
+        except Exception as exc:  # noqa: BLE001 — VLM 장애 시 무탐지로 처리(거짓경보 방지)
             logger.warning(
-                "VLM Server unreachable/failed at %s (%s); using offline mock.",
+                "VLM Server unreachable/failed at %s (%s); 이번 사이클은 무탐지 처리.",
                 self._url,
                 exc.__class__.__name__,
             )
-            return self._mock_result()
+            return VlmResult(source="vlm")
 
     @staticmethod
     def _dedupe_known(parts: list[str]) -> list[str]:
@@ -184,7 +153,3 @@ class VlmClient:
             source=source,
             raw=data,
         )
-
-    def _mock_result(self) -> VlmResult:
-        scene = random.choice(_MOCK_SCENES)
-        return self._normalize(scene, source="mock")

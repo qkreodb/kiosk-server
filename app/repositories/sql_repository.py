@@ -15,8 +15,7 @@ Design notes:
     ``str(process_id)`` and ``name``/``label`` come from ``process_name``.
   * Data not in the ERD (MSDS, risk assessments, the human watch roster) is served
     from :mod:`app.repositories.dummy_data` — never the DB.
-  * Returned dicts use exactly the keys the service layer / DTOs expect, so no
-    service or router code needs to change versus the mock repository.
+  * Returned dicts use exactly the keys the service layer / DTOs expect.
 """
 
 from __future__ import annotations
