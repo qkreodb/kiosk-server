@@ -22,6 +22,7 @@ from app.services.led_service import LedService
 from app.services.modal_service import ModalService
 from app.services.sensor_service import SensorService
 from app.services.space_service import SpaceService
+from app.services.threshold_store import LightThresholdStore
 from app.services.vlm_service import VlmService
 
 
@@ -88,6 +89,12 @@ def _led_service() -> LedService:
 
 
 @lru_cache
+def _threshold_store() -> LightThresholdStore:
+    """경광등·신호등 공용 기준치 store(프로세스 전역 1개, JSON 파일 영속화)."""
+    return LightThresholdStore(get_settings())
+
+
+@lru_cache
 def _behavior_cooldown() -> dict[tuple[str, str], float]:
     """행동별 쿨다운 상태를 요청 간 공유하기 위한 캐시 dict(프로세스 전역 1개).
 
@@ -107,11 +114,16 @@ def get_vlm_service() -> VlmService:
         settings=get_settings(),
         led=_led_service(),
         cooldown_state=_behavior_cooldown(),
+        thresholds=_threshold_store(),
     )
 
 
 def get_led_service() -> LedService:
     return _led_service()
+
+
+def get_threshold_store() -> LightThresholdStore:
+    return _threshold_store()
 
 
 def get_app_settings() -> Settings:

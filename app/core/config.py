@@ -99,10 +99,17 @@ class Settings(BaseSettings):
     #   20<=count<40: 주의(노랑)
     #   40<=count<50: 경고(빨강)
     #   count>=50   : 위험(점멸 — 색상 교번 반복)
+    # 아래 값은 런타임 기준치의 *초기 시드값*일 뿐이다. 서버는 부팅 후
+    # ``light_threshold_file`` (JSON)에서 실제 기준치를 읽고, 키오스크의 [기준치]
+    # 패널이 PUT /led/thresholds 로 이 파일을 갱신한다(신호등 UI와 실물 경광등이
+    # 같은 값을 공유). 즉 .env 값은 파일이 아직 없을 때(최초 1회)만 사용된다.
     light_interest_threshold: int = Field(default=10, ge=1)   # 관심 (초록 점등)
     light_caution_threshold: int = Field(default=20, ge=1)    # 주의 (노란색)
     light_warning_threshold: int = Field(default=40, ge=1)    # 경고 (빨간색)
     light_danger_threshold: int = Field(default=50, ge=1)     # 위험 (순차 점멸)
+    # 런타임에 조정되는 기준치를 영속화할 JSON 파일. .env 가 아니라 이 파일이
+    # 실제 단일 소스(single source of truth)다.
+    light_threshold_file: Path = Path("./light_thresholds.json")
 
     # --- 불안전행동 디바운스(쿨다운) ---
     # VLM 분석이 루프로 반복되며 같은 행동이 연속 감지될 때 TTS 중첩·DB 카운트

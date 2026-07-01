@@ -33,6 +33,7 @@ from app.integrations.tts import TtsService
 from app.integrations.vlm_client import VlmClient
 from app.repositories.base import KioskRepository
 from app.services.led_service import LedService
+from app.services.threshold_store import LightThresholdStore
 from app.schemas.vlm import (
     BehaviorDelta,
     TtsDispatch,
@@ -104,6 +105,7 @@ class VlmService:
         settings: Settings,
         led: LedService | None = None,
         cooldown_state: dict[tuple[str, str], float] | None = None,
+        thresholds: LightThresholdStore | None = None,
     ) -> None:
         self._repo = repo
         self._vlm = vlm_client
@@ -112,6 +114,8 @@ class VlmService:
         self._light = warning_light
         self._settings = settings
         self._led = led
+        # 경광등·신호등 공용 런타임 기준치. 없으면 Settings(부팅값)로 폴백.
+        self._thresholds = thresholds
         # 행동별 독립 쿨다운 타이머. (process_code, category_id) -> 만료 monotonic 시각.
         # 5가지 불안전행동 각각이 상호 간섭 없이 독립적으로 디바운싱된다(동시에 여러
         # 행동이 감지돼도 각자의 만료 시각만 본다). 타임스탬프 기반이라 해제할 타이머
@@ -124,17 +128,23 @@ class VlmService:
             cooldown_state if cooldown_state is not None else {}
         )
 
+    def _threshold(self, key: str) -> int:
+        """런타임 기준치(store). store 미주입 시 Settings(부팅값)로 폴백."""
+        if self._thresholds is not None:
+            return self._thresholds.get()[key]
+        return getattr(self._settings, f"light_{key}_threshold")
+
     def _warning_light_state(self, count: int) -> WarningLightState:
-        """누적 카운트 → 경광등 단계 (임계값 3/6/9/12)."""
-        if count >= self._settings.light_danger_threshold:    # 12+ 위험
+        """누적 카운트 → 경광등 단계 (관심<주의<경고<위험 기준치)."""
+        if count >= self._threshold("danger"):    # 위험(순차 점멸)
             return WarningLightState.SEQUENCE
-        if count >= self._settings.light_warning_threshold:   # 9~11 경고
+        if count >= self._threshold("warning"):   # 경고(빨강)
             return WarningLightState.RED_BLINK
-        if count >= self._settings.light_caution_threshold:   # 6~8 주의
+        if count >= self._threshold("caution"):   # 주의(노랑)
             return WarningLightState.YELLOW_BLINK
-        if count >= self._settings.light_interest_threshold:  # 3~5 관심
+        if count >= self._threshold("interest"):  # 관심(초록)
             return WarningLightState.GREEN
-        return WarningLightState.OFF                          # 0~2 소등
+        return WarningLightState.OFF              # 소등
 
     def _trigger_led(self, state: WarningLightState) -> dict | None:
         """경광등 상태에 맞춰 실물 LED(led_service)를 점등. 실패해도 분석은 계속.
@@ -256,10 +266,10 @@ class VlmService:
             state=state.value,
             label=label,
             trigger_count=trigger_count,
-            interest_threshold=self._settings.light_interest_threshold,
-            caution_threshold=self._settings.light_caution_threshold,
-            warning_threshold=self._settings.light_warning_threshold,
-            danger_threshold=self._settings.light_danger_threshold,
+            interest_threshold=self._threshold("interest"),
+            caution_threshold=self._threshold("caution"),
+            warning_threshold=self._threshold("warning"),
+            danger_threshold=self._threshold("danger"),
             dispatched=dispatched,
             led=led_dispatch,
         )

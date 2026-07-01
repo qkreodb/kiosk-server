@@ -653,20 +653,51 @@
     thrDraft[key] = Math.max(1, (Number(thrDraft[key]) || 0) + delta);
     renderThrValues();
   };
-  // [설정]: 오름차순(관심<주의<경고<위험) 검증 후 반영 + 저장 + 재렌더.
-  window.applyThr = function () {
+  // [설정]: 오름차순 검증 후 서버(PUT /led/thresholds)에 저장 → 신호등 UI + 실물
+  // 경광등이 같은 값을 공유. 서버 미연결이면 신호등에만 로컬 반영(경광등 미반영).
+  window.applyThr = async function () {
     const t = thrDraft;
     if (!(t.interest < t.caution && t.caution < t.warning && t.warning < t.danger)) {
       if (window.showToast) showToast('기준치는 관심 < 주의 < 경고 < 위험 순으로 커야 합니다', 'warn');
       return;
     }
-    THR_KEYS.forEach((k) => { LIGHT_THRESHOLDS[k] = t[k]; });
+    let msg = '신호등·경광등 기준치를 적용했습니다', kind = 'ok';
+    try {
+      const resp = await fetch(API + '/led/thresholds', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(t),
+      });
+      if (!resp.ok) {
+        let detail = '기준치 저장 실패';
+        try { const e = await resp.json(); if (e && e.detail) detail = e.detail; } catch (_) {}
+        if (window.showToast) showToast(detail, 'warn');
+        return; // 서버 검증 실패 시 반영하지 않음
+      }
+      const saved = await resp.json();
+      THR_KEYS.forEach((k) => { if (Number.isFinite(saved[k])) LIGHT_THRESHOLDS[k] = saved[k]; });
+    } catch (_) {
+      THR_KEYS.forEach((k) => { LIGHT_THRESHOLDS[k] = t[k]; });
+      msg = '서버 미연결 — 신호등에만 적용됨(경광등 미반영)'; kind = 'warn';
+    }
     try { localStorage.setItem(THR_STORAGE_KEY, JSON.stringify(LIGHT_THRESHOLDS)); } catch (_) {}
     hydrateMatrix(currentProcessCode()).catch(() => {}); // 즉시 재렌더(실패해도 다음 폴링이 갱신)
     window.closeThrPanel();
-    if (window.showToast) showToast('신호등 기준치를 적용했습니다', 'ok');
+    if (window.showToast) showToast(msg, kind);
   };
-  loadSavedThresholds(); // 스크립트 로드 시 저장된 기준치 반영
+
+  // 서버의 공용 기준치를 받아 신호등에 반영(단일 소스 동기화). 실패 시 localStorage 유지.
+  async function fetchThresholds() {
+    try {
+      const resp = await fetch(API + '/led/thresholds', { cache: 'no-store' });
+      if (!resp.ok) return;
+      const t = await resp.json();
+      THR_KEYS.forEach((k) => { if (Number.isFinite(t[k])) LIGHT_THRESHOLDS[k] = t[k]; });
+      try { localStorage.setItem(THR_STORAGE_KEY, JSON.stringify(LIGHT_THRESHOLDS)); } catch (_) {}
+    } catch (_) { /* 오프라인이면 localStorage 값 유지 */ }
+  }
+
+  loadSavedThresholds(); // 스크립트 로드 시 localStorage 값으로 우선 표시(서버 응답 전까지)
 
   async function hydrateMatrix(processCode) {
     const path = '/space-name' + (processCode ? '?process_code=' + encodeURIComponent(processCode) : '');
@@ -965,6 +996,9 @@
     // 공정 드롭다운을 실제 DB 목록으로 채움(실패해도 하드코딩 옵션 유지)
     try { await populateProcesses(); }
     catch (e) { console.warn('[공정 목록] 동적 로드 실패, 기본 옵션 사용:', e.message); }
+
+    // 서버의 공용 기준치를 신호등에 동기화(경광등과 같은 값 사용)
+    await fetchThresholds();
 
     // 신호등 행렬 초기 동기화 + 2초마다 자동 갱신(F5 불필요)
     try { await hydrateMatrix(currentProcessCode()); setConn(true, '신호등 동기화 완료'); }

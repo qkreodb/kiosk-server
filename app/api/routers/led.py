@@ -8,11 +8,12 @@ from __future__ import annotations
 
 from typing import Literal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from app.api.deps import get_led_service
+from app.api.deps import get_led_service, get_threshold_store
 from app.services.led_service import LedService
+from app.services.threshold_store import LightThresholdStore, ThresholdError
 
 router = APIRouter(prefix="/led", tags=["led"])
 
@@ -49,6 +50,38 @@ async def off(
     service: LedService = Depends(get_led_service),
 ) -> dict:
     return service.off((body or LedOffRequest()).dry_run)
+
+
+class LightThresholds(BaseModel):
+    """카운트→단계 기준치. 신호등 UI와 실물 경광등이 공유하는 단일 소스."""
+
+    interest: int = Field(ge=1, description="관심(초록) 기준치", examples=[10])
+    caution: int = Field(ge=1, description="주의(노랑) 기준치", examples=[20])
+    warning: int = Field(ge=1, description="경고(빨강) 기준치", examples=[40])
+    danger: int = Field(ge=1, description="위험(순차) 기준치", examples=[50])
+
+
+@router.get("/thresholds", summary="경광등·신호등 공용 기준치 조회")
+async def get_thresholds(
+    store: LightThresholdStore = Depends(get_threshold_store),
+) -> LightThresholds:
+    return LightThresholds(**store.get())
+
+
+@router.put("/thresholds", summary="경광등·신호등 공용 기준치 설정")
+async def put_thresholds(
+    body: LightThresholds,
+    store: LightThresholdStore = Depends(get_threshold_store),
+) -> LightThresholds:
+    """기준치를 저장(JSON 파일)하고 즉시 반영한다.
+
+    관심 < 주의 < 경고 < 위험 순서를 위반하면 400 을 반환한다. 저장 즉시 이후의
+    VLM 분석 사이클부터 실물 경광등이 새 기준치로 동작한다.
+    """
+    try:
+        return LightThresholds(**store.set(body.model_dump()))
+    except ThresholdError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/devices", summary="HID 장치 진단 (경광등 인식 여부)")
