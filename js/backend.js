@@ -724,6 +724,8 @@
       dd.appendChild(li);
       if (active && label) label.textContent = li.textContent;
     });
+    // 새로 채운 드롭다운의 active 공정에 맞춰 CCTV 강조 동기화
+    if (typeof window.syncMonitoringToProc === 'function') window.syncMonitoringToProc();
   }
 
   // 초기화 버튼: UI 즉시 소등 + 백엔드 count 0 리셋

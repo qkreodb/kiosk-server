@@ -2560,43 +2560,16 @@
   outline: none;
   transition: all 0.15s;
 }
-.cctv-btn-item.active {
+.cctv-btn-item:hover { background: rgba(255,255,255,0.25); }
+.cctv-btn-item:focus, .cctv-btn-item:focus-visible { outline: none; text-decoration: none; box-shadow: none; }
+/* 현재 선택된 공정을 대변하는 CCTV — 강조 표시(그 외 버튼은 평상시 형태 유지) */
+.cctv-btn-item.monitoring {
   background: rgba(255,255,255,0.9);
   border-color: rgba(255,255,255,0.9);
   color: var(--brand-blue);
   font-weight: 700;
 }
-.cctv-btn-item:hover { background: rgba(255,255,255,0.25); }
-.cctv-btn-item:focus, .cctv-btn-item:focus-visible { outline: none; text-decoration: none; box-shadow: none; }
-/* CCTV LIVE 모니터링 인디케이터 (현재 신호등을 대변하는 CCTV) */
-.cctv-live-ind {
-  width: 0; height: 0; border-radius: 50%;
-  background: var(--red);
-  opacity: 0;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-.cctv-btn-item.monitoring {
-  border-color: rgba(255,255,255,0.6);
-  color: rgba(255,255,255,0.9);
-  background: rgba(255,255,255,0.2);
-}
-.cctv-btn-item.monitoring .cctv-live-ind {
-  width: 8px; height: 8px;
-  opacity: 1;
-  box-shadow: 0 0 8px var(--red);
-  animation: pulse 1.4s ease-in-out infinite;
-}
-.cctv-btn-item.monitoring:hover {
-  background: rgba(255,59,71,0.15);
-  color: var(--t-1);
-  border-color: var(--red);
-}
-/* 활성(영상 열림) + 모니터링 동시 상태: 활성 우선 */
-.cctv-btn-item.active.monitoring {
-  background: var(--cyan); color: var(--bg-void); border-color: var(--cyan);
-}
-.cctv-btn-item.active.monitoring .cctv-live-ind { background: var(--bg-void); box-shadow: none; }
+.cctv-btn-item.monitoring:hover { background: #fff; }
 
 /* 텍스트형 CCTV 선택 버튼 — monitoring 상태 override */
 .bh-cctv-txt.monitoring { background: transparent; border: none; color: var(--t-4); }

@@ -129,22 +129,27 @@ document.addEventListener('click', () => {
   if (wrap) wrap.classList.remove('open');
 });
 
-// 현재 신호등을 대변하는 CCTV를 모니터링(LIVE) 상태로 표시
+// 현재 선택된 공정을 대변하는 CCTV 버튼만 강조(monitoring) 표시
 function setMonitoringCctv(val) {
   document.querySelectorAll('.cctv-btn-item').forEach(b => {
     b.classList.toggle('monitoring', b.dataset.cctv === val);
   });
 }
 
-// 신호등 헤더 CCTV 선택 (1/2/3) → 해당 CCTV 영상 팝업 + 모니터링 표시 이동
+// 드롭다운에서 현재 active 인 공정의 CCTV로 강조를 맞춘다(로드/공정목록 갱신 시)
+function syncMonitoringToProc() {
+  const active = document.querySelector('#bhProcDropdown .bps-option.active');
+  setMonitoringCctv((active && active.dataset.cctv) || '1');
+}
+document.addEventListener('DOMContentLoaded', syncMonitoringToProc);
+
+// 신호등 헤더 CCTV 선택 (1/2/3) → 해당 CCTV 영상 팝업(강조는 공정 선택을 따름)
 function bhSelectCctv(val, btn) {
   const map = {
     '1': 'CAM-1 · 정밀가공 라인',
     '2': 'CAM-2 · 절단기 작업존',
     '3': 'CAM-3 · 관람객 통로'
   };
-  // 클릭한 버튼으로 모니터링(활성) 표시 이동
-  setMonitoringCctv(val);
   openCCTVFor(map[val] || map['1']);
 }
 
