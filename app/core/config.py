@@ -42,13 +42,17 @@ class Settings(BaseSettings):
     # ``/analyze`` 가 Jetson 파일시스템에서 읽을 프레임 폴더(절대 경로). 하드웨어
     # 서버가 30fps 프레임을 기록하는 공유 디렉터리를 가리켜야 한다. 기본값은
     # VLM 서버 README의 테스트 폴더.
-    vlm_frame_dir: str = "/home/ds/Desktop/frames"
+    vlm_frame_dir: str = "/home/ds/Desktop/kiosk-hardware/frame1"
+    vlm_frame_dir_cam1: str = "/home/ds/Desktop/kiosk-hardware/frame1"
+    vlm_frame_dir_cam2: str = "/home/ds/Desktop/kiosk-hardware/frame2"
     # VLM+LLM 2단계 추론은 수 초가 걸리고 NUM_WORKERS=1 이면 큐 대기까지 더해진다.
     vlm_timeout_seconds: float = 60.0
 
     # --- Shared Dir (30fps frames from the Hardware Server, PORT 8081) ---
     # 하드웨어 서버(kiosk-hardware)의 RTSP 프레임 수집기가 기록하는 폴더.
-    shared_dir: Path = Path("../kiosk-hardware/frames")
+    shared_dir: Path = Path("../kiosk-hardware/frame1")
+    shared_dir_cam1: Path = Path("../kiosk-hardware/frame1")
+    shared_dir_cam2: Path = Path("../kiosk-hardware/frame2")
     frame_glob: str = "frame_*.jpg"
 
     # --- Live CCTV (IP 카메라 직결 RTSP) ---

@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import asyncio
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response, StreamingResponse
 
 from app.api.deps import get_app_settings, get_cctv_service
@@ -34,8 +34,11 @@ _MJPEG_BOUNDARY = "frame"
     summary="최신 CCTV 프레임 (JPEG)",
     responses={200: {"content": {"image/jpeg": {}}}},
 )
-async def frame(service: CctvService = Depends(get_cctv_service)) -> Response:
-    result = service.latest_frame()
+async def frame(
+    camera_id: str | None = Query(default=None, examples=["CAM-1"]),
+    service: CctvService = Depends(get_cctv_service),
+) -> Response:
+    result = service.latest_frame(camera_id)
     return Response(
         content=result.data,
         media_type=result.content_type,
@@ -52,11 +55,14 @@ async def frame(service: CctvService = Depends(get_cctv_service)) -> Response:
     summary="연속 CCTV 스트림 (MJPEG over HTTP)",
     responses={200: {"content": {"multipart/x-mixed-replace": {}}}},
 )
-async def stream(service: CctvService = Depends(get_cctv_service)) -> StreamingResponse:
+async def stream(
+    camera_id: str | None = Query(default=None, examples=["CAM-1"]),
+    service: CctvService = Depends(get_cctv_service),
+) -> StreamingResponse:
     async def gen():
         # Poll close to the frame collector's 30 fps save limit.
         while True:
-            result = service.latest_frame()
+            result = service.latest_frame(camera_id)
             yield (
                 b"--" + _MJPEG_BOUNDARY.encode() + b"\r\n"
                 b"Content-Type: image/jpeg\r\n"
@@ -80,8 +86,11 @@ async def stream(service: CctvService = Depends(get_cctv_service)) -> StreamingR
     summary="최신 라이브 CCTV 프레임 (RTSP→JPEG)",
     responses={200: {"content": {"image/jpeg": {}}}},
 )
-async def live_frame(service: CctvService = Depends(get_cctv_service)) -> Response:
-    result = service.live_frame()
+async def live_frame(
+    camera_id: str | None = Query(default=None, examples=["CAM-1"]),
+    service: CctvService = Depends(get_cctv_service),
+) -> Response:
+    result = service.live_frame(camera_id)
     return Response(
         content=result.data,
         media_type=result.content_type,
@@ -98,6 +107,7 @@ async def live_frame(service: CctvService = Depends(get_cctv_service)) -> Respon
     responses={200: {"content": {"multipart/x-mixed-replace": {}}}},
 )
 async def live(
+    camera_id: str | None = Query(default=None, examples=["CAM-1"]),
     service: CctvService = Depends(get_cctv_service),
     settings: Settings = Depends(get_app_settings),
 ) -> StreamingResponse:
@@ -107,7 +117,7 @@ async def live(
     async def gen():
         last_id = -1
         while True:
-            data, frame_id, _source = service.live_latest()
+            data, frame_id, _source = service.live_latest(camera_id)
             # 새 프레임일 때만 전송(대역폭 절약). 단, 연결 대기 중(placeholder,
             # frame_id=0)에도 화면이 비지 않도록 그대로 내보낸다.
             if frame_id != last_id or frame_id == 0:

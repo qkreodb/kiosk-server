@@ -283,10 +283,19 @@
   }
 
   /* ===================== CCTV (라이브 스트림 포함) ===================== */
-  function cctvLiveSrc() { return (window.__API_BASE || 'http://localhost:8080') + '/cctv/live?ts=' + Date.now(); }
-  function isRtspCctv(region) {
-    return String(region || '').includes('CAM-1');
+  function cameraIdFromRegion(region) {
+    const match = String(region || '').match(/CAM-\d+/);
+    return match ? match[0] : 'CAM-1';
   }
+  function cctvLiveSrc(cameraId) {
+    return (window.__API_BASE || 'http://localhost:8080')
+      + '/cctv/live?camera_id=' + encodeURIComponent(cameraId || 'CAM-1')
+      + '&ts=' + Date.now();
+  }
+  function isRtspCctv(region) {
+    return /CAM-[12]/.test(String(region || ''));
+  }
+  let currentCctvCameraId = 'CAM-1';
 
   /* ----- 이상현상 수신 시 CAM-1 CCTV 미니 팝업 알림 -----
    * VLM이 실제 이상행동을 카운트(쿨다운 통과)하면 사업장 지도 CCTV 탭의 CAM-1
@@ -305,7 +314,7 @@
     ring.style.display = '';
     popup.style.display = '';
     // CAM-1 미니 화면도 RTSP 라이브(MJPEG) 스트림을 사용한다.
-    if (img && !img.getAttribute('src')) img.src = cctvLiveSrc();
+    if (img && !img.getAttribute('src')) img.src = cctvLiveSrc('CAM-1');
     if (cctvAlertTimer) clearTimeout(cctvAlertTimer);
     cctvAlertTimer = setTimeout(hideCctvAlert, CCTV_ALERT_MS);
   }
@@ -324,8 +333,8 @@
   window.openCCTV = function () {
     const frame = document.getElementById('cctvFrame');
     const image = document.getElementById('cctvImage');
-    if (image) { image.src = ''; image.style.display = 'none'; }
-    if (frame) { frame.style.display = 'block'; frame.src = cctvSrc(true); }
+    if (frame) { frame.src = ''; frame.style.display = 'none'; }
+    if (image) { image.style.display = 'block'; image.src = cctvLiveSrc(currentCctvCameraId); }
     document.getElementById('cctvOverlay').classList.add('open');
     syncCctvAnalysisUi(); // 분석은 메인화면 토글이 제어 — 현재 상태만 반영
   };
@@ -346,8 +355,9 @@
     // 좌측 하단 위치 라벨은 제거됨(현장 특이사항 로그로 대체). locName/locProc 미사용.
     const frame = document.getElementById('cctvFrame');
     const image = document.getElementById('cctvImage');
-    if (image) { image.src = ''; image.style.display = 'none'; }
-    if (frame) { frame.style.display = 'block'; frame.src = cctvSrc(true); }
+    currentCctvCameraId = cameraIdFromRegion(el.textContent || locName || currentCctvCameraId);
+    if (frame) { frame.src = ''; frame.style.display = 'none'; }
+    if (image) { image.style.display = 'block'; image.src = cctvLiveSrc(currentCctvCameraId); }
     // 가동 중이면 다음 요청부터 새 카메라로 자동 반영(루프가 매 요청마다 활성 카메라를 읽음).
   };
   window.openCCTVFor = function (region) {
@@ -356,12 +366,13 @@
     const frame = document.getElementById('cctvFrame');
     const image = document.getElementById('cctvImage');
     const vlm = document.getElementById('cctvVlmOverlay');
+    currentCctvCameraId = cameraIdFromRegion(region);
     if (vlm) vlm.classList.remove('show');
     if (isRtspCctv(region) && image) {
       // CAM-1: IP 카메라 RTSP 실시간 영상을 서버 MJPEG 중계로 송출
       if (frame) { frame.src = ''; frame.style.display = 'none'; }
       image.style.display = 'block';
-      image.src = cctvLiveSrc();
+      image.src = cctvLiveSrc(currentCctvCameraId);
     } else {
       if (image) { image.src = ''; image.style.display = 'none'; }
       if (frame) { frame.style.display = 'block'; frame.src = cctvSrc(true); }
@@ -485,7 +496,8 @@
   // 1회 분석 요청 + 렌더. token 이 어긋나거나 모달이 닫혔으면 결과 렌더를 건너뛴다.
   async function runVlmAnalysisOnce(token) {
     const camEl = document.querySelector('.cctv-cam-chip.active .cctv-cam-id');
-    const camId = camEl ? camEl.textContent.trim() : 'CAM-1';
+    const headSub = document.getElementById('cctvHeadSub');
+    const camId = camEl ? camEl.textContent.trim() : cameraIdFromRegion(headSub && headSub.textContent || currentCctvCameraId);
     const processCode = (window.currentProcessCode && window.currentProcessCode()) || '';
 
     const resp = await fetch(API + '/vlm/infer', {

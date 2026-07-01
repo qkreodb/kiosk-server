@@ -47,7 +47,16 @@ class FrameResult:
 class SharedDirReader:
     def __init__(self, settings: Settings) -> None:
         self._dir = settings.shared_dir
+        self._camera_dirs = {
+            "CAM-1": settings.shared_dir_cam1,
+            "CAM-2": settings.shared_dir_cam2,
+        }
         self._glob = settings.frame_glob
+
+    def _dir_for(self, camera_id: str | None) -> Path:
+        if not camera_id:
+            return self._dir
+        return self._camera_dirs.get(camera_id.strip().upper(), self._dir)
 
     def _is_valid(self, path: Path) -> bool:
         try:
@@ -55,10 +64,11 @@ class SharedDirReader:
         except OSError:
             return False
 
-    def latest_frame(self) -> FrameResult:
+    def latest_frame(self, camera_id: str | None = None) -> FrameResult:
         """Return the newest valid frame, or a placeholder if none exists."""
+        frame_dir = self._dir_for(camera_id)
         try:
-            candidates = [p for p in self._dir.glob(self._glob) if self._is_valid(p)]
+            candidates = [p for p in frame_dir.glob(self._glob) if self._is_valid(p)]
         except OSError as exc:
             logger.warning("Shared Dir not readable (%s); serving placeholder.", exc)
             candidates = []
