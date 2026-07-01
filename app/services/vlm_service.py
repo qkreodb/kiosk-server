@@ -183,6 +183,11 @@ class VlmService:
 
         # 1) Call the VLM Server's /analyze (장애 시 무탐지 결과).
         #    labels: 신호등에서 체크된 분석 대상 행동 키만 VLM 서버로 전달.
+        if frame_dir is None:
+            frame_dir = {
+                "CAM-1": self._settings.vlm_frame_dir_cam1,
+                "CAM-3": self._settings.vlm_frame_dir_cam3,
+            }.get(camera_id.strip().upper(), self._settings.vlm_frame_dir)
         vlm = await self._vlm.analyze(frame_dir, labels=labels)
 
         # 2) 탐지된 불안전행동 매핑 (TTS 발동 여부 판단에도 사용).

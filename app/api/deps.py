@@ -53,6 +53,20 @@ def _rtsp_camera() -> RtspCamera:
 
 
 @lru_cache
+def _rtsp_cameras() -> dict[str, RtspCamera]:
+    settings = get_settings()
+    return {
+        camera_id: RtspCamera(
+            url,
+            jpeg_quality=settings.cctv_jpeg_quality,
+            reconnect_delay=settings.cctv_reconnect_delay,
+        )
+        for camera_id, url in settings.cctv_rtsp_targets.items()
+        if url
+    }
+
+
+@lru_cache
 def _speaker() -> SpeakerActuator:
     return SpeakerActuator()
 
@@ -80,7 +94,7 @@ def get_modal_service() -> ModalService:
 
 
 def get_cctv_service() -> CctvService:
-    return CctvService(_shared_dir_reader(), _rtsp_camera())
+    return CctvService(_shared_dir_reader(), _rtsp_camera(), _rtsp_cameras())
 
 
 @lru_cache

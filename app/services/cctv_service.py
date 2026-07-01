@@ -1,10 +1,4 @@
-"""Business logic for the /cctv endpoints.
-
-* ``latest_frame`` — Shared Dir 30fps 프레임(하드웨어 서버가 기록) 1장.
-* ``live_frame``  — IP 카메라 RTSP 직결 스트림의 최신 프레임 1장. 카메라가 아직
-  연결 전이면 placeholder 를 돌려준다. 라이브 카메라가 구성되지 않은 경우엔
-  Shared Dir 프레임으로 폴백한다.
-"""
+"""Business logic for the /cctv endpoints."""
 
 from __future__ import annotations
 
@@ -17,29 +11,36 @@ class CctvService:
         self,
         reader: SharedDirReader,
         camera: RtspCamera | None = None,
+        cameras: dict[str, RtspCamera] | None = None,
     ) -> None:
         self._reader = reader
         self._camera = camera
+        self._cameras = cameras or {}
 
-    def latest_frame(self) -> FrameResult:
-        return self._reader.latest_frame()
+    def _camera_for(self, camera_id: str | None) -> RtspCamera | None:
+        if not camera_id:
+            return self._camera
+        return self._cameras.get(camera_id.strip().upper())
 
-    def live_frame(self) -> FrameResult:
-        """RTSP 카메라의 최신 프레임. 미구성 시 Shared Dir 로 폴백."""
-        if self._camera is None:
-            return self._reader.latest_frame()
-        self._camera.start()  # 첫 호출에서 지연 시작
-        data, _frame_id = self._camera.latest()
+    def latest_frame(self, camera_id: str | None = None) -> FrameResult:
+        return self._reader.latest_frame(camera_id)
+
+    def live_frame(self, camera_id: str | None = None) -> FrameResult:
+        camera = self._camera_for(camera_id)
+        if camera is None:
+            return self._reader.latest_frame(camera_id)
+
+        camera.start()
+        data, _frame_id = camera.latest()
         if data:
             return FrameResult(data, "image/jpeg", "rtsp", "live")
-        # 아직 연결 전(프레임 없음) → placeholder 로 화면이 깨지지 않게.
         return FrameResult(_PLACEHOLDER_JPEG, "image/jpeg", "placeholder", None)
 
-    def live_latest(self) -> tuple[bytes, int, str]:
-        """MJPEG 스트리밍용: (jpeg, frame_id, source). placeholder 폴백 포함."""
-        if self._camera is not None:
-            self._camera.start()
-            data, frame_id = self._camera.latest()
+    def live_latest(self, camera_id: str | None = None) -> tuple[bytes, int, str]:
+        camera = self._camera_for(camera_id)
+        if camera is not None:
+            camera.start()
+            data, frame_id = camera.latest()
             if data:
                 return data, frame_id, "rtsp"
         return _PLACEHOLDER_JPEG, 0, "placeholder"

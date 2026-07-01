@@ -42,13 +42,17 @@ class Settings(BaseSettings):
     # ``/analyze`` 가 Jetson 파일시스템에서 읽을 프레임 폴더(절대 경로). 하드웨어
     # 서버가 30fps 프레임을 기록하는 공유 디렉터리를 가리켜야 한다. 기본값은
     # VLM 서버 README의 테스트 폴더.
-    vlm_frame_dir: str = "/home/ds/Desktop/frames"
+    vlm_frame_dir: str = "/home/ds/Desktop/kiosk-hardware/frame1"
+    vlm_frame_dir_cam1: str = "/home/ds/Desktop/kiosk-hardware/frame1"
+    vlm_frame_dir_cam3: str = "/home/ds/Desktop/kiosk-hardware/frame2"
     # VLM+LLM 2단계 추론은 수 초가 걸리고 NUM_WORKERS=1 이면 큐 대기까지 더해진다.
     vlm_timeout_seconds: float = 60.0
 
     # --- Shared Dir (30fps frames from the Hardware Server, PORT 8081) ---
     # 하드웨어 서버(kiosk-hardware)의 RTSP 프레임 수집기가 기록하는 폴더.
-    shared_dir: Path = Path("../kiosk-hardware/frames")
+    shared_dir: Path = Path("../kiosk-hardware/frame1")
+    shared_dir_cam1: Path = Path("../kiosk-hardware/frame1")
+    shared_dir_cam3: Path = Path("../kiosk-hardware/frame2")
     frame_glob: str = "frame_*.jpg"
 
     # --- Live CCTV (IP 카메라 직결 RTSP) ---
@@ -58,6 +62,8 @@ class Settings(BaseSettings):
     # 구성요소(user/password/host/port/path)로 URL 을 조립한다.
     # ⚠ 운영 시 비밀번호는 코드/저장소가 아니라 .env 의 KIOSK_CCTV_PASSWORD 로 둘 것.
     cctv_rtsp_url: str = ""
+    cctv_rtsp_url_cam1: str = "rtsp://admin:ekthf123@172.16.0.243:554/stream1"
+    cctv_rtsp_url_cam3: str = "rtsp://admin:ekthf123@172.16.0.20:554/stream1"
     cctv_host: str = "172.16.0.243"
     cctv_port: int = 554
     cctv_user: str = "admin"
@@ -153,6 +159,13 @@ class Settings(BaseSettings):
             f"rtsp://{self.cctv_user}:{self.cctv_password}"
             f"@{self.cctv_host}:{self.cctv_port}/{self.cctv_stream_path.lstrip('/')}"
         )
+
+    @property
+    def cctv_rtsp_targets(self) -> dict[str, str]:
+        return {
+            "CAM-1": self.cctv_rtsp_url_cam1 or self.cctv_rtsp_target,
+            "CAM-3": self.cctv_rtsp_url_cam3,
+        }
 
     @property
     def vlm_analyze_url(self) -> str:
