@@ -488,6 +488,24 @@
 }
 .thr-step:hover { background: rgba(255, 255, 255, 0.22); }
 .thr-step:active { transform: scale(0.92); }
+/* 빠른 증가 버튼(+3/+5) — 1씩 조정 반복을 줄이기 위한 단축 버튼 */
+.thr-quick {
+  height: 28px; padding: 0 9px;
+  background: rgba(0, 217, 255, 0.14);
+  border: 1px solid rgba(0, 217, 255, 0.4);
+  border-radius: 7px;
+  color: var(--cyan); font-size: 12px; font-weight: 800; line-height: 1;
+  cursor: pointer; font-variant-numeric: tabular-nums;
+}
+.thr-quick:hover { background: rgba(0, 217, 255, 0.24); }
+.thr-quick:active { transform: scale(0.92); }
+/* 빠른 감소 버튼(-3/-5) — 증가(시안)와 구분 */
+.thr-quick.thr-quick-dn {
+  background: rgba(255, 111, 44, 0.14);
+  border-color: rgba(255, 111, 44, 0.4);
+  color: var(--orange);
+}
+.thr-quick.thr-quick-dn:hover { background: rgba(255, 111, 44, 0.24); }
 .thr-val {
   min-width: 34px; text-align: center;
   font-size: 16px; font-weight: 800; color: #fff;

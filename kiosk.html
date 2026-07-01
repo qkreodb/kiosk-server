@@ -47,6 +47,8 @@
     <div class="thr-row">
       <span class="thr-dot" style="background:var(--green);"></span><span class="thr-name">관심</span>
       <div class="thr-stepper">
+        <button type="button" class="thr-quick thr-quick-dn" onclick="stepThr('interest',-5)">-5</button>
+        <button type="button" class="thr-quick" onclick="stepThr('interest',5)">+5</button>
         <button type="button" class="thr-step" onclick="stepThr('interest',-1)">▼</button>
         <span class="thr-val" id="thrVal-interest">10</span>
         <button type="button" class="thr-step" onclick="stepThr('interest',1)">▲</button>
@@ -55,6 +57,8 @@
     <div class="thr-row">
       <span class="thr-dot" style="background:var(--amber);"></span><span class="thr-name">주의</span>
       <div class="thr-stepper">
+        <button type="button" class="thr-quick thr-quick-dn" onclick="stepThr('caution',-5)">-5</button>
+        <button type="button" class="thr-quick" onclick="stepThr('caution',5)">+5</button>
         <button type="button" class="thr-step" onclick="stepThr('caution',-1)">▼</button>
         <span class="thr-val" id="thrVal-caution">20</span>
         <button type="button" class="thr-step" onclick="stepThr('caution',1)">▲</button>
@@ -63,6 +67,8 @@
     <div class="thr-row">
       <span class="thr-dot" style="background:var(--orange);"></span><span class="thr-name">경고</span>
       <div class="thr-stepper">
+        <button type="button" class="thr-quick thr-quick-dn" onclick="stepThr('warning',-5)">-5</button>
+        <button type="button" class="thr-quick" onclick="stepThr('warning',5)">+5</button>
         <button type="button" class="thr-step" onclick="stepThr('warning',-1)">▼</button>
         <span class="thr-val" id="thrVal-warning">40</span>
         <button type="button" class="thr-step" onclick="stepThr('warning',1)">▲</button>
@@ -71,6 +77,8 @@
     <div class="thr-row">
       <span class="thr-dot" style="background:var(--red);"></span><span class="thr-name">위험</span>
       <div class="thr-stepper">
+        <button type="button" class="thr-quick thr-quick-dn" onclick="stepThr('danger',-5)">-5</button>
+        <button type="button" class="thr-quick" onclick="stepThr('danger',5)">+5</button>
         <button type="button" class="thr-step" onclick="stepThr('danger',-1)">▼</button>
         <span class="thr-val" id="thrVal-danger">50</span>
         <button type="button" class="thr-step" onclick="stepThr('danger',1)">▲</button>
