@@ -165,7 +165,7 @@ function switchSiteView(view, btn) {
 
 // ===== Generic modal control =====
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-['hrOverlay','msdsOverlay','photoOverlay','evacOverlay','facilityOverlay','contactOverlay','aiSiteOverlay','envDetailOverlay','processOverlay','issueOverlay','policyOverlay','lawDetailOverlay'].forEach(id => {
+['hrOverlay','msdsOverlay','photoOverlay','evacOverlay','facilityOverlay','contactOverlay','aiSiteOverlay','envDetailOverlay','processOverlay','issueOverlay','policyOverlay','lawDetailOverlay','riskCriteriaOverlay'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('click', e => {
     if (e.target.id === id) closeModal(id);
@@ -476,7 +476,7 @@ function openAISite() { document.getElementById('aiSiteOverlay').classList.add('
 // ===== 공정(작업)관리 드릴다운 =====
 // 목록 표(processOverlay)는 renderProcessList()가 이 배열에서 자동 생성하므로 순서만 맞추면 됨
 const PROCESS_DATA = [
-  { code:'PRC-19', name:'정밀가공 라인', manager:'이*학',
+  { code:'PRC-19', name:'정밀가공 라인', manager:'이*학', riskThreshold:8,
     locations:['도장부스','도장작업실','밀폐내부 작업존(밀폐)','밀폐작업구역(밀폐)','원자재 이송구역','절단기 작업존','정비투입구역'],
     desc:'금속 또는 부품을 규격과 도면에 맞게 고정밀로 가공하는 작업',
     workers:[{name:'김*모',hr:72},{name:'박*철',hr:88},{name:'이*준',hr:65}],
@@ -484,7 +484,7 @@ const PROCESS_DATA = [
       {ord:1,name:'선반 외경 가공',desc:'지름 60mm의 원봉을 선반에 고정한 후, 바깥 지름을 50mm로 깎아내는 작업. 자동차 샤프트의 외경을 일정한 크기로 정밀 가공',machines:'전동식 자주식 고소작업대, 이동식 흄 집진기, 이동차 외벽청소용 곤돌라',chems:['염산','에틸 알코올','황산'],prot:'알루미늄 방열복, 용접용 차광 보안면'},
       {ord:2,name:'홈 가공',desc:'축 중간에 키(key)가 들어갈 수 있도록 깊이 3mm, 폭 5mm의 홈을 파는 작업',machines:'이동식 흄 집진기',chems:['황산'],prot:'용접용 차광 보안면, 안전고리 추락 방지용 라이프라인'},
     ]},
-  { code:'PRC-07', name:'금속산세척', manager:'전*조',
+  { code:'PRC-07', name:'금속산세척', manager:'전*조', riskThreshold:8,
     locations:['표면처리실', '산세척 전용 구역'],
     desc:' 금속 부품 표면의 산화막·스케일·이물질을 산 용액에 침지하여 제거하는 작업. 이후 중화·수세 과정 포함',
     workers:[{name:'최*민',hr:80},{name:'정*호',hr:91}],
@@ -493,7 +493,7 @@ const PROCESS_DATA = [
       {ord:2,name:'첨지 세척',desc:'금속 부품을 산 용액에 일정 시간 침지하여 산화막·녹을 용해·제거하는 작업',machines:'산세척조, 부품 고정 집게, 환기장치',chems:['황산', '염산'],prot:'내산성 장갑, 전면보호면, 내산성 앞치마, 방독마스크'},
       {ord:2,name:'첨지 세척',desc:'산세척 완료 후 중화조에서 잔류 산을 중화하고 수세조에서 깨끗한 물로 최종 세척하는 작업',machines:'중화조, 수세조, 에어건',chems:[],prot:'내산성 장갑, 보안경'},
     ]},
-  { code: 'PRC-23', name: '도장·코팅',manager:'박*유', locations: ['도장부스', '도장작업실'],
+  { code: 'PRC-23', name: '도장·코팅',manager:'박*유', riskThreshold:8, locations: ['도장부스', '도장작업실'],
     desc: '금속·구조물 표면에 방청 및 마감 목적의 도료를 스프레이 또는 롤러로 도포하는 작업. 하도→중도→상도 순서 진행',
     workers:[{name: '김*환',hr:76},{name:'김*원', hr:79}],
     subs: [
@@ -502,7 +502,7 @@ const PROCESS_DATA = [
       {ord: 3,name: '상도 도장',desc: '건조된 하도 위에 색상·광택·내구성을 위한 상도 도료를 도포하는 작업',machines: '스프레이 건, 에어컴프레서, 도장부스, 건조기',chems: ['워타톱(EG)', '락카페인트스프레이(흑색)', 'BLACSEN BS-1'],prot: '유기증기용 방독마스크, 보호의, 내화학성 장갑, 보안경'},
       {ord: 4,name: '건조 및 검사',desc: '도장 완료 후 건조기 또는 자연 건조로 도막을 경화하고 두께·외관을 검사하는 작업',machines: '건조기, 도막두께측정기',chems: [],prot: '안전장갑, 보안경'},
     ]},
-  { code:'PRC-31', name:'도장 및 표면처리 공정', manager:'최*재',
+  { code:'PRC-31', name:'도장 및 표면처리 공정', manager:'최*재', riskThreshold:8,
     locations:['도장부스'],
     desc:'제품의 부식 방지와 외관 향상을 위해 도장 및 표면처리를 수행하는 작업',
     workers:[{name:'윤*식',hr:85},{name:'서*찬',hr:73}],
@@ -756,12 +756,16 @@ function openRiskEval(pIdx) {
   let total = 0, maxScore = 0;
   groups.forEach(g => g.rows.forEach(h => { total++; maxScore = Math.max(maxScore, h.freq * h.sev); }));
   const topGrade = gradeForScore(maxScore || 1);
+  const threshold = p.riskThreshold || 8;  // 공정별 대책 관리 기준점수(이 점수 이상이면 감소대책 관리)
 
   document.getElementById('riskEvalSub').textContent = p.code + ' · ' + p.name;
 
   // 본문: 공정의 모든 세부작업 유해·위험요인을 한 표에(작업명 셀 병합)
+  const dash = '<span class="rk-none">―</span>';
   const bodyRows = groups.length ? groups.map(g => g.rows.map((h, i) => {
     const cur = h.freq * h.sev, curG = gradeForScore(cur);
+    // 기준점수 이상만 감소대책 관리 대상. 미만은 허용가능 → 대책 없이 현행 유지.
+    const needsMeasure = cur >= threshold;
     const imp = h.rFreq * h.rSev, impG = gradeForScore(imp);
     const taskCell = i === 0
       ? `<td class="rk-task" rowspan="${g.rows.length}">${escapeHtml(g.task)}</td>` : '';
@@ -774,13 +778,13 @@ function openRiskEval(pIdx) {
       <td class="tc">${h.freq}</td>
       <td class="tc">${h.sev}</td>
       <td class="tc"><span class="rlv-badge ${curG.cls}">${cur}</span></td>
-      <td class="rk-measure">${escapeHtml(h.measure)}</td>
-      <td class="tc">${h.rFreq}</td>
-      <td class="tc">${h.rSev}</td>
-      <td class="tc"><span class="rlv-badge ${impG.cls}">${imp}</span></td>
-      <td class="tc rk-date">${fmtRiskDate(h.plan)}</td>
-      <td class="tc rk-date">${h.done && h.done !== '-' ? fmtRiskDate(h.done) : '<span class="rk-pending">진행중</span>'}</td>
-      <td class="tc rk-owner">${escapeHtml(h.owner)}</td>
+      <td class="rk-measure">${needsMeasure ? escapeHtml(h.measure) : '<span class="rk-none">현행 유지 (허용가능)</span>'}</td>
+      <td class="tc">${needsMeasure ? h.rFreq : dash}</td>
+      <td class="tc">${needsMeasure ? h.rSev : dash}</td>
+      <td class="tc">${needsMeasure ? `<span class="rlv-badge ${impG.cls}">${imp}</span>` : dash}</td>
+      <td class="tc rk-date">${needsMeasure ? fmtRiskDate(h.plan) : dash}</td>
+      <td class="tc rk-date">${needsMeasure ? (h.done && h.done !== '-' ? fmtRiskDate(h.done) : '<span class="rk-pending">진행중</span>') : dash}</td>
+      <td class="tc rk-owner">${needsMeasure ? escapeHtml(h.owner) : dash}</td>
     </tr>`;
   }).join('')).join('')
     : '<tr><td colspan="15" style="text-align:center;color:var(--t-3);padding:18px;">등록된 유해·위험요인이 없습니다.</td></tr>';
@@ -792,21 +796,18 @@ function openRiskEval(pIdx) {
         <div class="res-task-desc">${escapeHtml(p.desc)}</div>
       </div>
       <div class="res-top">
-        <span class="res-top-lbl">최고 위험성</span>
-        <span class="rlv-badge ${topGrade.cls} res-grade">${topGrade.label} (${maxScore})</span>
+        <span class="res-threshold">허용 가능한 위험성 수준 <b>${threshold}</b></span>
         <span class="res-top-cnt">유해·위험요인 ${total}건 · 평가일 2026-04-01 · 빈도·강도법</span>
       </div>
     </div>
 
     <div class="rk-sec-bar">
       <div class="proc-sec-lbl" style="margin:0;">유해·위험요인별 위험성평가</div>
-      <button type="button" class="rk-criteria-trigger" onclick="toggleRiskCriteria(this)">
+      <button type="button" class="rk-criteria-trigger" onclick="openRiskCriteria()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
         빈도·강도 평가 기준
-        <span class="rk-criteria-caret">▾</span>
       </button>
     </div>
-    <div class="rk-criteria-panel" id="rkCriteriaPanel" hidden>${buildRiskCriteriaHtml()}</div>
 
     <div class="rk-table-wrap">
       <table class="rk-table">
@@ -843,13 +844,11 @@ function openRiskEval(pIdx) {
   document.getElementById('riskEvalOverlay').classList.add('open');
 }
 
-// 빈도·강도 평가 기준 패널 토글(터치 키오스크 대응 — 탭하면 펼침/접힘)
-function toggleRiskCriteria(btn) {
-  const panel = document.getElementById('rkCriteriaPanel');
-  if (!panel) return;
-  const open = panel.hasAttribute('hidden');
-  if (open) panel.removeAttribute('hidden'); else panel.setAttribute('hidden', '');
-  btn.classList.toggle('open', open);
+// 빈도·강도 평가 기준을 중앙 팝업으로 표시(터치 키오스크 대응 — 표 레이아웃 안 밀림)
+function openRiskCriteria() {
+  const body = document.getElementById('riskCriteriaBody');
+  if (body) body.innerHTML = buildRiskCriteriaHtml();
+  document.getElementById('riskCriteriaOverlay').classList.add('open');
 }
 // ===== 현장 통합 관리 모달 (공정 특성 + 위험성평가 / 현장 특이사항) =====
 // 공정별 위험성평가 더미 데이터

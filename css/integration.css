@@ -144,9 +144,16 @@
 .rlv-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-weight: 800; font-size: 12px; }
 
 /* 최고 위험성 요약 */
-.res-top { display: flex; align-items: center; gap: 12px; }
+.res-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .res-top-lbl { font-size: 12px; color: var(--t-3); font-weight: 700; }
 .res-top-cnt { font-size: 12px; color: var(--t-2); }
+/* 공정별 대책 관리 기준점수(참고 표기) */
+.res-threshold {
+  font-size: 12px; color: var(--t-2); font-weight: 700;
+  padding: 5px 12px; border-radius: 999px;
+  background: var(--bg-card-hi); border: 1px solid var(--line);
+}
+.res-threshold b { color: var(--red); font-weight: 800; }
 
 /* 유해·위험요인 위험성평가 표(본문) */
 .risk-ae-wrap { overflow-x: auto; }
@@ -205,7 +212,7 @@
 .res-task-code { font-size: 12px; font-weight: 700; color: var(--cyan); margin-left: 6px; letter-spacing: .5px; }
 .rk-sec-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 18px 0 10px; flex-wrap: wrap; }
 
-/* 빈도·강도 기준: 평상시 숨김 → 탭(클릭) 시 인라인 패널 펼침(터치 키오스크 대응) */
+/* 빈도·강도 기준: 탭(클릭) 시 중앙 팝업으로 표시(터치 키오스크 대응 — 표 안 밀림) */
 .rk-criteria-trigger {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 7px 14px; border-radius: 999px; cursor: pointer; user-select: none;
@@ -214,15 +221,8 @@
 }
 .rk-criteria-trigger:hover { color: var(--t-1); border-color: var(--line-strong); }
 .rk-criteria-trigger svg { width: 14px; height: 14px; color: var(--t-3); }
-.rk-criteria-caret { font-size: 10px; color: var(--t-3); transition: transform .18s; }
-.rk-criteria-trigger.open { color: var(--t-1); border-color: var(--line-strong); background: #fff; }
-.rk-criteria-trigger.open .rk-criteria-caret { transform: rotate(180deg); }
-.rk-criteria-panel {
-  margin: 0 0 14px; padding: 16px;
-  background: #fff; border: 1px solid var(--line-strong); border-radius: 12px;
-  box-shadow: 0 8px 22px rgba(20,28,48,0.10);
-}
-.rk-criteria-panel[hidden] { display: none; }
+/* 위험성평가 모달(z-index 1000) 위에 겹쳐 뜨도록 */
+.risk-criteria-overlay { z-index: 1010; }
 
 /* 데이터 밀도 높은 표 → 세로 키오스크에서 화면을 더 넓게 사용 */
 #riskEvalOverlay { padding: 24px; }
@@ -240,6 +240,7 @@
 .rk-table tbody td { padding: 6px 5px; border: 1px solid var(--line); vertical-align: middle; color: var(--t-2); line-height: 1.4; word-break: keep-all; }
 .rk-table tbody td.tc { text-align: center; }
 .rk-table tbody td.rk-task { font-weight: 800; color: var(--t-1); background: var(--bg-card-hi); text-align: center; vertical-align: middle; }
+.rk-table .rk-none { color: var(--t-3); font-weight: 600; }
 .rk-table tbody td.rk-cat { font-weight: 700; color: var(--t-1); }
 .rk-table tbody td.rk-factor { font-weight: 700; color: var(--t-1); }
 .rk-table tbody td.rk-date { white-space: nowrap; color: var(--t-2); font-size: 10.5px; }

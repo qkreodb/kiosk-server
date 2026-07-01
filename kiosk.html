@@ -1032,6 +1032,27 @@
   </div>
 </div>
 
+<!-- ====== 빈도·강도 평가 기준 팝업 (위험성평가 모달 위에 중앙 표시) ====== -->
+<div class="modal-overlay risk-criteria-overlay" id="riskCriteriaOverlay">
+  <div class="modal-box" style="max-width: 920px;">
+    <div class="modal-head">
+      <div class="modal-head-left">
+        <div class="modal-head-icon" style="background:rgba(0,217,255,0.12);border:1px solid rgba(0,217,255,0.3);color:var(--cyan);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        </div>
+        <div>
+          <div class="modal-head-title">빈도·강도 평가 기준</div>
+          <div class="modal-head-sub">위험성 = 빈도(가능성) × 강도(중대성)</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal('riskCriteriaOverlay')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="riskCriteriaBody"></div>
+  </div>
+</div>
+
 <!-- ============== 현장 특이사항 관리 MODAL ============== -->
 <div class="modal-overlay" id="issueOverlay">
   <div class="modal-box" style="max-width: 1040px;">
