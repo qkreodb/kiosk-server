@@ -7,6 +7,9 @@ pydantic==2.10.4
 pydantic-settings==2.7.1
 httpx==0.28.1
 edge-tts==7.2.8
+# Piper: 오프라인(폐쇄망) TTS. `piper` 실행파일 제공 + ko_KR .onnx 음성 모델 필요.
+# 1.4.x는 espeak-ng-data를 번들하고 onnxruntime만 의존 → 별도 시스템 설치 불필요.
+piper-tts==1.4.2
 playsound==1.2.2
 python-dotenv==1.0.1
 PyMySQL==1.1.1

@@ -85,10 +85,27 @@ class Settings(BaseSettings):
     site_location: str = "경기도 고양시"
     watch_region: str = "고양시사업장"
 
-    # --- TTS (Edge TTS) ---
-    tts_voice: str = "ko-KR-SunHiNeural"
+    # --- TTS ---
+    # 합성 엔진 선택: "piper"(오프라인/폐쇄망) | "edge"(온라인, MS Azure 필요).
+    # 폐쇄망 시연 기본값은 piper. VLM 이 주는 동적 경고문을 로컬에서 합성한다.
+    tts_engine: str = "piper"
     tts_output_dir: Path = Path("./tts_out")
     tts_enabled: bool = True
+
+    # Edge TTS 전용(엔진이 edge 일 때) 보이스 이름.
+    tts_voice: str = "ko-KR-SunHiNeural"
+
+    # Piper TTS(오프라인). `pip install piper-tts` 시 생성되는 `piper` 실행파일을
+    # 사용한다. 음성 모델(.onnx)과 설정(.json)은 저장소에 넣지 말고 장비에 둔다.
+    #   - piper_binary    : PATH 의 piper 실행파일(또는 절대경로)
+    #   - piper_model_path: ko_KR 음성 모델(.onnx) 경로
+    #   - piper_config_path: 생략 시 모델 옆의 같은 이름 .json 을 자동 사용
+    #   ※ Piper 공식 카탈로그엔 한국어 음성이 없다. 커뮤니티 KSS 모델을 사용:
+    #     https://huggingface.co/neurlang/piper-onnx-kss-korean
+    #     (KSS 데이터셋 기반 · 단일 화자 · 데이터셋 라이선스 CC BY-NC-SA 4.0 — 비상업)
+    piper_binary: str = "piper"
+    piper_model_path: Path = Path("./voices/piper-kss-korean.onnx")
+    piper_config_path: Path | None = None
 
     # --- Warning light (경광등) thresholds ---
     # 탐지된 불안전행동 카운트가 각 임계값 이상이면 해당 단계로 점등한다.

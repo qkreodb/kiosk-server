@@ -25,8 +25,8 @@ def _delete_audio_file(audio_path: str | None) -> None:
     if not audio_path:
         return
     path = Path(audio_path)
-    if path.suffix.lower() != ".mp3":
-        logger.warning("[SPEAKER] skip deleting non-mp3 audio file: %s", audio_path)
+    if path.suffix.lower() not in (".mp3", ".wav"):
+        logger.warning("[SPEAKER] skip deleting non-audio file: %s", audio_path)
         return
     try:
         path.unlink(missing_ok=True)

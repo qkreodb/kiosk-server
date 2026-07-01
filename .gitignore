@@ -13,4 +13,7 @@ tts_out/
 shared_dir/
 light_thresholds.json
 *.log
+
+# Piper 오프라인 TTS 음성 모델(대용량 바이너리 — 장비에 직접 배치)
+voices/
 cloudflared-linux-arm64.deb
