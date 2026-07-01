@@ -104,10 +104,12 @@ class TtsService:
                              detail=f"{exc.__class__.__name__}: {exc}")
 
         if proc.returncode != 0 or not out_path.exists():
-            detail = (stderr or b"").decode("utf-8", "ignore").strip()[:200]
-            logger.warning("Piper 합성 실패(rc=%s): %s", proc.returncode, detail)
+            err = (stderr or b"").decode("utf-8", "ignore").strip()
+            # onnxruntime GPU 탐지 경고가 앞쪽을 채우므로, 진짜 에러가 있는 뒤쪽까지
+            # 전체를 로그로 남긴다. detail 에는 끝부분(실제 원인)을 담는다.
+            logger.warning("Piper 합성 실패(rc=%s):\n%s", proc.returncode, err)
             return TtsResult(status="failed", text=text, voice=voice,
-                             detail=detail or f"piper rc={proc.returncode}")
+                             detail=err[-500:] or f"piper rc={proc.returncode}")
 
         logger.info("TTS(piper) synthesized -> %s", out_path)
         return TtsResult(status="synthesized", text=text, voice=voice,
