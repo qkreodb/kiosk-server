@@ -35,7 +35,7 @@ class UnsafeBehavior(str, Enum):
     CONE_TOUCH = "cone_touch"          # 라바콘 접촉
     FENCE_CROSSING = "fence_crossing"  # 위험 펜스 넘음
     LADDER_ALONE = "ladder_alone"      # 사다리 단독 이용
-    SAFETY_VEST = "safety_vest"        # 안전 고리 미착용
+    SAFETY_VEST = "safety_vest"        # 안전 조끼 미착용
 
 
 @dataclass(frozen=True)
@@ -81,9 +81,9 @@ BEHAVIOR_CATEGORIES: tuple[BehaviorCategory, ...] = (
     ),
     BehaviorCategory(
         id=UnsafeBehavior.SAFETY_VEST,
-        name="안전 고리 미착용",
+        name="안전 조끼 미착용",
         base_grade=BehaviorGrade.DANGER,
-        keywords=("안전 고리", "고리", "안전대", "안전벨트", "vest", "harness"),
+        keywords=("안전 조끼", "조끼", "안전대", "안전벨트", "vest", "harness"),
     ),
 )
 
@@ -100,7 +100,7 @@ CATEGORY_BY_ID: dict[UnsafeBehavior, BehaviorCategory] = {
 #   cone_touch      라바콘 접촉
 #   fence_crossing  위험 펜스 넘음
 #   ladder_alone    사다리 단독 이용
-#   safety_vest     안전 고리 미착용
+#   safety_vest     안전 조끼 미착용
 VLM_ACTION_KEY_MAP: dict[str, UnsafeBehavior] = {
     "helmet_off": UnsafeBehavior.HELMET_OFF,
     "cone_touch": UnsafeBehavior.CONE_TOUCH,
