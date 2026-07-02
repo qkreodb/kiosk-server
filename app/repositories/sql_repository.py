@@ -48,12 +48,12 @@ BEHAVIOR_COLUMN: dict[str, str] = {
 
 
 # 레거시 공정코드(PRC-XX) → 실제 DB process_id 매핑.
-# DB의 process 테이블에는 1=정밀가공, 2=용접, 3=도장 3개 공정만 존재한다.
+# CCTV 2대 체제로 축소하면서 도장 공정을 제거해, DB의 process 테이블에는
+# 1=정밀가공, 2=용접 2개 공정만 존재한다.
 # PRC 코드의 숫자는 process_id와 무관하므로(예: PRC-19 ≠ 19) 명시적으로 매핑한다.
 _LEGACY_PROCESS_ALIAS = {
     "PRC-19": 1,  # 정밀가공
     "PRC-07": 2,  # 용접
-    "PRC-12": 3,  # 도장
 }
 
 
