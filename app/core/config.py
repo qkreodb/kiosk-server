@@ -89,9 +89,9 @@ class Settings(BaseSettings):
     watch_region: str = "고양시사업장"
 
     # --- TTS ---
-    # 합성 엔진 선택: "piper"(오프라인/폐쇄망) | "edge"(온라인, MS Azure 필요).
-    # 폐쇄망 시연 기본값은 piper. VLM 이 주는 동적 경고문을 로컬에서 합성한다.
-    tts_engine: str = "piper"
+    # 합성 엔진 선택: "edge"(온라인, MS Azure) | "piper"(오프라인/폐쇄망).
+    # 현장 인터넷이 보장되어 기본값은 edge(한국어 품질 우수). 폐쇄망이면 piper 로.
+    tts_engine: str = "edge"
     tts_output_dir: Path = Path("./tts_out")
     tts_enabled: bool = True
 
