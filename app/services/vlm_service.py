@@ -190,17 +190,21 @@ class VlmService:
         frame_ref: str | None = None,
         frame_dir: str | None = None,
         labels: list[str] | None = None,
+        process_name: str | None = None,
     ) -> VlmInferResponse:
-        # 카메라 기준으로 공정·프레임폴더 자동 해석(요청에 없을 때). 각 카메라가
-        # 자기 소속 공정(process_code)과 자기 프레임 폴더(frame_dir)를 DB cctv_info
-        # 에서 가져오므로, 프론트는 camera_id 만 보내면 된다(드롭다운 의존 제거).
-        if process_code is None or frame_dir is None:
+        # 카메라 기준으로 공정·프레임폴더·공정명 자동 해석(요청에 없을 때). 각 카메라가
+        # 자기 소속 공정(process_code/process_name)과 프레임 폴더(frame_dir)를 DB
+        # cctv_info 에서 가져오므로, 프론트는 camera_id 만 보내면 된다(드롭다운 의존 제거).
+        if process_code is None or frame_dir is None or process_name is None:
             cam = self._resolve_camera(camera_id)
             if cam:
                 if process_code is None:
                     process_code = cam.get("process_code") or None
                 if frame_dir is None:
                     frame_dir = cam.get("frame_dir") or None
+                if process_name is None:
+                    # get_camera 는 공정명을 label 로 준다(미연결 시 "CCTV N" 폴백).
+                    process_name = cam.get("label") or None
 
         code = process_code or "PRC-19"
 
@@ -210,7 +214,8 @@ class VlmService:
 
         # 1) Call the VLM Server's /analyze (장애 시 무탐지 결과).
         #    labels: 신호등에서 체크된 분석 대상 행동 키만 VLM 서버로 전달.
-        vlm = await self._vlm.analyze(frame_dir, labels=labels)
+        #    process_name: 이 카메라의 공정명(위험 스냅샷 파일명 규칙에 사용).
+        vlm = await self._vlm.analyze(frame_dir, labels=labels, process_name=process_name)
 
         # 2) 탐지된 불안전행동 매핑 (TTS 발동 여부 판단에도 사용).
         #    구조화된 action 키가 있으면 직접 매핑, 없으면 자유텍스트 키워드 폴백.

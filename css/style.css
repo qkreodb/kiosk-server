@@ -2297,7 +2297,7 @@
 .qab-btn:hover { background: rgba(255,255,255,0.08) !important; }
 .icon-btn-ghost { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: #fff; transition: background 0.15s, border-color 0.15s; }
 .icon-btn-ghost:hover { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.35); }
-.bh-reset-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 4px; padding: 0; margin-left: 4px; font-size: 18px; }
+.bh-reset-btn, .bh-danger-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 4px; padding: 0; margin-left: 4px; font-size: 18px; }
 .emergency-contact-btn { width: 160px; height: 40px; padding: 0; border-radius: 4px; font-size: 15px; font-family: 'Pretendard', sans-serif; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: rgba(255,255,255,0.85); cursor: pointer; }
 .footer {
   display: flex; flex-direction: column; align-items: stretch;

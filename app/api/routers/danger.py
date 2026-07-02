@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 
 from app.api.deps import get_danger_service
 from app.schemas.danger import DangerFramesResponse
@@ -17,12 +18,26 @@ from app.services.danger_service import DangerFrameService
 router = APIRouter(prefix="/danger-frames", tags=["danger-frames"])
 
 
+class DangerClearResponse(BaseModel):
+    deleted: int
+    dir: str
+
+
 @router.get("", response_model=DangerFramesResponse, summary="위험 탐지 사진 목록")
 async def list_frames(
     service: DangerFrameService = Depends(get_danger_service),
 ) -> DangerFramesResponse:
     frames = service.list_frames()
     return DangerFramesResponse(dir=service.dir_str, count=len(frames), frames=frames)
+
+
+@router.delete("", response_model=DangerClearResponse, summary="위험 탐지 사진 전체 삭제")
+async def clear_frames(
+    service: DangerFrameService = Depends(get_danger_service),
+) -> DangerClearResponse:
+    """폴더의 위험 스냅샷을 모두 삭제(신호등 [초기화]와 연동)."""
+    deleted = service.clear_frames()
+    return DangerClearResponse(deleted=deleted, dir=service.dir_str)
 
 
 @router.get(

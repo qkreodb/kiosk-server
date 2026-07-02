@@ -110,3 +110,21 @@ class DangerFrameService:
         if not resolved.is_file() or resolved.suffix.lower() not in _IMAGE_EXTS:
             return None
         return resolved
+
+    def clear_frames(self) -> int:
+        """폴더의 이미지 파일을 모두 삭제하고 삭제한 개수를 반환. 폴더 없으면 0.
+
+        신호등 [초기화] 와 연동 — 카운트 리셋과 함께 누적된 위험 스냅샷도 비운다.
+        이미지 확장자만 지우므로 폴더 내 다른 파일은 건드리지 않는다.
+        """
+        if not self._dir.is_dir():
+            return 0
+        deleted = 0
+        for p in self._dir.iterdir():
+            if p.is_file() and p.suffix.lower() in _IMAGE_EXTS:
+                try:
+                    p.unlink()
+                    deleted += 1
+                except OSError as exc:
+                    logger.warning("[danger] 파일 삭제 실패 %s: %s", p, exc)
+        return deleted

@@ -849,8 +849,12 @@
       row.querySelectorAll('.bhm-lamp').forEach(l => l.classList.remove('on'));
       row.dataset.active = '-1';
     });
+    // 카운트 0 리셋 + 위험 탐지 사진 폴더 비우기(둘 다 오프라인이면 무시).
     try {
       await fetch(API + '/behavior/reset?process_code=' + encodeURIComponent(processCode), { method: 'POST' });
+    } catch (_) { /* 오프라인이면 무시 */ }
+    try {
+      await fetch(API + '/danger-frames', { method: 'DELETE' });
     } catch (_) { /* 오프라인이면 무시 */ }
   };
 
