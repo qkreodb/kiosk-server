@@ -390,11 +390,17 @@
     const v = input && input.value.trim();
     return v || DEFAULT_PROMPT;
   }
+  // 루프 계속 여부: 토큰 일치 + active + CCTV 모달이 실제로 열려 있음.
+  // 모달이 어떤 경로로 닫히든(closeCCTV 미호출 포함) cctvModalOpen()이 false가 되어
+  // 다음 요청을 내보내지 않고 루프가 스스로 종료된다(중복 호출 방지 안전망).
+  function promptLoopAlive(token) {
+    return promptLoop.token === token && promptLoop.active && cctvModalOpen();
+  }
   function startPromptLoop() {
     promptLoop.active = true;
     const myToken = ++promptLoop.token; // 이전 루프/in-flight 응답 무효화
     (async function loop() {
-      while (promptLoop.token === myToken && promptLoop.active) {
+      while (promptLoopAlive(myToken)) {
         try {
           const resp = await fetch(API + '/vlm/prompt', {
             method: 'POST',
@@ -403,11 +409,11 @@
           });
           if (!resp.ok) throw new Error('HTTP ' + resp.status);
           const d = await resp.json();
-          if (promptLoop.token !== myToken) return;
+          if (!promptLoopAlive(myToken)) return; // 응답 도착 시 이미 닫힘/전환됨
           if (d.ok && d.text) enqueueCaption(d.text);
           await sleep(PROMPT_INTERVAL_MS);
         } catch (e) {
-          if (promptLoop.token !== myToken) return;
+          if (!promptLoopAlive(myToken)) return;
           console.error('[VLM 프롬프트] 실패:', e);
           await sleep(PROMPT_ERROR_BACKOFF_MS);
         }
