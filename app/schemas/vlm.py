@@ -26,6 +26,28 @@ class VlmInferRequest(BaseModel):
     )
 
 
+class VlmPromptRequest(BaseModel):
+    """POST /vlm/prompt — 신규 CCTV 모달의 자유 프롬프트 질의.
+
+    ``path`` 를 생략하면 ``camera_id`` 의 DB frame_dir → 설정 기본값 순으로 해석한다.
+    """
+
+    camera_id: str = Field(default="CAM-2", examples=["CAM-2"])
+    path: str | None = Field(default=None, examples=["/home/ds/Desktop/frames/cam2"])
+    prompt: str = Field(min_length=1, examples=["현재 장면에서 위험 요소를 설명해줘"])
+
+
+class VlmPromptResponse(BaseModel):
+    """VLM /prompt 응답(정규화). ``text`` 가 키오스크 자막 큐로 들어간다."""
+
+    camera_id: str
+    path: str = Field(description="실제 VLM 서버로 전달된 프레임 폴더 경로")
+    prompt: str
+    ok: bool = Field(description="VLM 서버 호출 성공 여부")
+    text: str = Field(default="", description="VLM 답변 텍스트(자막 표시용)")
+    detail: str | None = Field(default=None, description="실패 시 원인")
+
+
 class BehaviorDelta(BaseModel):
     """Result of parsing one detected behavior into a category + DB increment."""
 

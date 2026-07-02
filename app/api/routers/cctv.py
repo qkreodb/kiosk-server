@@ -17,11 +17,18 @@ from __future__ import annotations
 
 import asyncio
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response, StreamingResponse
+from pydantic import BaseModel, Field
 
-from app.api.deps import get_app_settings, get_cctv_service
+from app.api.deps import (
+    get_app_settings,
+    get_cctv_service,
+    get_repo,
+    rtsp_camera_for,
+)
 from app.core.config import Settings
+from app.repositories.base import KioskRepository
 from app.services.cctv_service import CctvService
 
 router = APIRouter(prefix="/cctv", tags=["cctv"])
@@ -80,8 +87,11 @@ async def stream(service: CctvService = Depends(get_cctv_service)) -> StreamingR
     summary="최신 라이브 CCTV 프레임 (RTSP→JPEG)",
     responses={200: {"content": {"image/jpeg": {}}}},
 )
-async def live_frame(service: CctvService = Depends(get_cctv_service)) -> Response:
-    result = service.live_frame()
+async def live_frame(
+    cam: str | None = None,
+    service: CctvService = Depends(get_cctv_service),
+) -> Response:
+    result = service.live_frame(cam)
     return Response(
         content=result.data,
         media_type=result.content_type,
@@ -98,16 +108,20 @@ async def live_frame(service: CctvService = Depends(get_cctv_service)) -> Respon
     responses={200: {"content": {"multipart/x-mixed-replace": {}}}},
 )
 async def live(
+    cam: str | None = None,
     service: CctvService = Depends(get_cctv_service),
     settings: Settings = Depends(get_app_settings),
 ) -> StreamingResponse:
     fps = max(1, settings.cctv_stream_fps)
     interval = 1.0 / fps
+    # 스트림 시작 시 카메라를 1회만 해석(프레임마다 DB 조회 방지). IP 변경은 같은
+    # RtspCamera 객체에 set_url 로 반영되므로, 이 참조로도 재접속이 그대로 적용된다.
+    camera = service.resolve_camera(cam)
 
     async def gen():
         last_id = -1
         while True:
-            data, frame_id, _source = service.live_latest()
+            data, frame_id, _source = service.live_latest(camera)
             # 새 프레임일 때만 전송(대역폭 절약). 단, 연결 대기 중(placeholder,
             # frame_id=0)에도 화면이 비지 않도록 그대로 내보낸다.
             if frame_id != last_id or frame_id == 0:
@@ -128,3 +142,34 @@ async def live(
             "Pragma": "no-cache",
         },
     )
+
+
+class CctvUpdateRequest(BaseModel):
+    """카메라 IP/폴더 변경 — 둘 중 하나 이상."""
+
+    rtsp_url: str | None = Field(
+        default=None, examples=["rtsp://admin:pass@172.16.0.243:554/stream1"]
+    )
+    frame_dir: str | None = Field(default=None, examples=["/home/ds/Desktop/frames/cam1"])
+
+
+@router.put("/{cam_id}", summary="CCTV RTSP/프레임폴더 수정 (IP 변경 즉시 반영)")
+async def update_cctv(
+    cam_id: str,
+    body: CctvUpdateRequest,
+    repo: KioskRepository = Depends(get_repo),
+) -> dict:
+    """DB cctv_info 의 rtsp_url/frame_dir 을 수정한다.
+
+    IP가 바뀌었을 때 사용자 입력으로 반영하는 용도. rtsp_url 을 바꾸면 해당 카메라의
+    라이브 스트림이 서버 재시작 없이 새 주소로 즉시 재접속된다.
+    """
+    if body.rtsp_url is None and body.frame_dir is None:
+        raise HTTPException(status_code=400, detail="rtsp_url 또는 frame_dir 중 하나는 필요합니다")
+    ok = repo.update_camera(cam_id, rtsp_url=body.rtsp_url, frame_dir=body.frame_dir)
+    if not ok:
+        raise HTTPException(status_code=404, detail=f"카메라를 찾을 수 없거나 변경 없음: {cam_id}")
+    # rtsp_url 이 바뀌었으면 해당 카메라 스트림을 새 URL 로 즉시 재접속(set_url).
+    if body.rtsp_url is not None:
+        rtsp_camera_for(cam_id)
+    return repo.get_camera(cam_id) or {"cam_id": cam_id}

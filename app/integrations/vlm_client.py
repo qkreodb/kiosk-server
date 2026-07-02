@@ -67,6 +67,7 @@ class VlmClient:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
         self._url = settings.vlm_analyze_url
+        self._prompt_url = settings.vlm_prompt_url
         self._frame_dir = settings.vlm_frame_dir
         self._timeout = settings.vlm_timeout_seconds
 
@@ -99,6 +100,44 @@ class VlmClient:
                 exc.__class__.__name__,
             )
             return VlmResult(source="vlm")
+
+    # 응답에서 답변 텍스트를 찾을 후보 키(우선순위 순). /prompt 응답 스키마가
+    # 확정되지 않아 흔한 키들을 순서대로 탐색한다.
+    _PROMPT_TEXT_KEYS = ("response", "answer", "text", "result", "message", "description")
+
+    async def prompt(self, path: str, prompt: str) -> dict:
+        """VLM 서버의 /prompt 자유 질의. 실패 시 ok=False 로 파이프라인을 유지한다.
+
+        Request body::  {"path": "<프레임 폴더>", "prompt": "<사용자 입력>"}
+        Returns::       {"ok": bool, "text": str, "raw": dict, "detail": str|None}
+        """
+        payload = {"path": path, "prompt": prompt}
+        try:
+            async with httpx.AsyncClient(timeout=self._timeout) as client:
+                resp = await client.post(self._prompt_url, json=payload)
+                resp.raise_for_status()
+                data = resp.json()
+        except Exception as exc:  # noqa: BLE001 — VLM 장애 시 빈 응답(모달은 계속 재시도)
+            logger.warning(
+                "VLM /prompt unreachable/failed at %s (%s)",
+                self._prompt_url,
+                exc.__class__.__name__,
+            )
+            return {"ok": False, "text": "", "raw": {}, "detail": str(exc)}
+
+        text = ""
+        if isinstance(data, str):
+            text = data.strip()
+            data = {"response": data}
+        elif isinstance(data, dict):
+            for key in self._PROMPT_TEXT_KEYS:
+                val = data.get(key)
+                if isinstance(val, str) and val.strip():
+                    text = val.strip()
+                    break
+        else:
+            data = {"response": data}
+        return {"ok": True, "text": text, "raw": data, "detail": None}
 
     @staticmethod
     def _dedupe_known(parts: list[str]) -> list[str]:

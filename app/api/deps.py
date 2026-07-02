@@ -7,6 +7,7 @@ and constructed per request around the cached singletons.
 
 from __future__ import annotations
 
+import threading
 from functools import lru_cache
 
 from app.core.config import Settings, get_settings
@@ -44,12 +45,49 @@ def _shared_dir_reader() -> SharedDirReader:
 
 @lru_cache
 def _rtsp_camera() -> RtspCamera:
+    """.env 기반 단일 카메라(폴백). DB 에 카메라가 없을 때만 사용."""
     settings = get_settings()
     return RtspCamera(
         settings.cctv_rtsp_target,
         jpeg_quality=settings.cctv_jpeg_quality,
         reconnect_delay=settings.cctv_reconnect_delay,
     )
+
+
+# cam_id -> RtspCamera 레지스트리(공정별 여러 대 대응). DB rtsp_url 을 소스로 하고,
+# IP 변경(rtsp_url 갱신) 시 set_url() 로 재접속한다.
+_rtsp_cameras: dict[str, RtspCamera] = {}
+_rtsp_cameras_lock = threading.Lock()
+
+
+def rtsp_camera_for(cam_id: str | None) -> RtspCamera | None:
+    """cam_id 의 RTSP 카메라를 DB rtsp_url 기준으로 반환(없으면 .env 기본으로 폴백).
+
+    같은 cam_id 는 인스턴스를 재사용하고, DB 의 rtsp_url 이 바뀌었으면 재접속한다.
+    """
+    if not cam_id:
+        return _rtsp_camera()
+    try:
+        cam = get_repository().get_camera(cam_id)
+    except Exception:  # noqa: BLE001 — 조회 실패 시 기본 카메라로 폴백
+        cam = None
+    url = (cam or {}).get("rtsp_url")
+    if not url:
+        return _rtsp_camera()
+    key = str(cam["cam_id"])
+    settings = get_settings()
+    with _rtsp_cameras_lock:
+        obj = _rtsp_cameras.get(key)
+        if obj is None:
+            obj = RtspCamera(
+                url,
+                jpeg_quality=settings.cctv_jpeg_quality,
+                reconnect_delay=settings.cctv_reconnect_delay,
+            )
+            _rtsp_cameras[key] = obj
+        else:
+            obj.set_url(url)  # 변경 시에만 내부에서 재접속
+        return obj
 
 
 @lru_cache
@@ -80,7 +118,8 @@ def get_modal_service() -> ModalService:
 
 
 def get_cctv_service() -> CctvService:
-    return CctvService(_shared_dir_reader(), _rtsp_camera())
+    # cam_id 별 RTSP 카메라를 DB 기준으로 해석하는 resolver 를 넘긴다(다중 카메라 대응).
+    return CctvService(_shared_dir_reader(), rtsp_camera_for)
 
 
 @lru_cache
@@ -124,6 +163,21 @@ def get_led_service() -> LedService:
 
 def get_threshold_store() -> LightThresholdStore:
     return _threshold_store()
+
+
+@lru_cache
+def _vlm_scheduler() -> "VlmScheduler":
+    from app.services.vlm_scheduler import VlmScheduler
+
+    return VlmScheduler(
+        service_factory=get_vlm_service,
+        camera_lister=lambda: get_repository().get_cameras(),
+        interval=get_settings().vlm_scheduler_interval_seconds,
+    )
+
+
+def get_vlm_scheduler() -> "VlmScheduler":
+    return _vlm_scheduler()
 
 
 def get_app_settings() -> Settings:

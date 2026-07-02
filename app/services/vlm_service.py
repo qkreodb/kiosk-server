@@ -38,6 +38,7 @@ from app.schemas.vlm import (
     BehaviorDelta,
     TtsDispatch,
     VlmInferResponse,
+    VlmPromptResponse,
     WarningLightSignal,
 )
 
@@ -128,6 +129,21 @@ class VlmService:
             cooldown_state if cooldown_state is not None else {}
         )
 
+    def _resolve_camera(self, camera_id: str) -> dict | None:
+        """camera_id 로 DB cctv_info 행을 찾는다(공정·frame_dir 해석용).
+
+        프론트는 "CAM-1" 형태, DB cam_id 는 cctv_id(정수 문자열)라 숫자만 뽑아 매칭한다.
+        조회 실패/미연결 시 None → 호출부가 설정 기본값으로 폴백한다.
+        """
+        m = re.search(r"\d+", camera_id or "")
+        if not m:
+            return None
+        try:
+            return self._repo.get_camera(m.group())
+        except Exception as exc:  # noqa: BLE001 — 조회 실패해도 분석은 계속(폴백)
+            logger.warning("[VLM] 카메라 조회 실패(%s): %s", camera_id, exc)
+            return None
+
     def _threshold(self, key: str) -> int:
         """런타임 기준치(store). store 미주입 시 Settings(부팅값)로 폴백."""
         if self._thresholds is not None:
@@ -175,6 +191,17 @@ class VlmService:
         frame_dir: str | None = None,
         labels: list[str] | None = None,
     ) -> VlmInferResponse:
+        # 카메라 기준으로 공정·프레임폴더 자동 해석(요청에 없을 때). 각 카메라가
+        # 자기 소속 공정(process_code)과 자기 프레임 폴더(frame_dir)를 DB cctv_info
+        # 에서 가져오므로, 프론트는 camera_id 만 보내면 된다(드롭다운 의존 제거).
+        if process_code is None or frame_dir is None:
+            cam = self._resolve_camera(camera_id)
+            if cam:
+                if process_code is None:
+                    process_code = cam.get("process_code") or None
+                if frame_dir is None:
+                    frame_dir = cam.get("frame_dir") or None
+
         code = process_code or "PRC-19"
 
         # 재생 세대값을 분석 시작 시점에 캡처 — 분석 중 flush_tts()(예: CCTV 모달 종료)가
@@ -286,6 +313,34 @@ class VlmService:
             behaviors=deltas,
             warning_light=warning_light,
             tts=tts,
+        )
+
+    async def prompt(
+        self,
+        camera_id: str,
+        prompt: str,
+        path: str | None = None,
+    ) -> VlmPromptResponse:
+        """자유 프롬프트 질의(신규 CCTV 모달) — VLM /prompt 프록시.
+
+        분석 파이프라인(카운트·TTS·경광등)과 무관하게, 사용자가 입력한 프롬프트를
+        해당 카메라의 프레임 폴더와 함께 VLM 서버로 전달하고 답변 텍스트만 돌려준다.
+        ``path`` 미지정 시 카메라의 DB frame_dir → 설정 기본값 순으로 해석한다.
+        """
+        if path is None:
+            cam = self._resolve_camera(camera_id)
+            if cam:
+                path = cam.get("frame_dir") or None
+        path = path or self._settings.vlm_frame_dir
+
+        result = await self._vlm.prompt(path, prompt)
+        return VlmPromptResponse(
+            camera_id=camera_id,
+            path=path,
+            prompt=prompt,
+            ok=bool(result.get("ok")),
+            text=str(result.get("text") or ""),
+            detail=result.get("detail"),
         )
 
     def flush_tts(self) -> None:

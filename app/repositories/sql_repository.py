@@ -155,11 +155,12 @@ class SqlRepository(KioskRepository):
             "process_code": str(row["process_id"]),
             "online": True,
             "rtsp_url": row.get("rtsp_url"),
+            "frame_dir": row.get("frame_dir"),
         }
 
     def get_cameras(self, process_code: str | None = None) -> list[dict[str, Any]]:
         sql = (
-            "SELECT p.process_id, p.process_name, c.cctv_id, c.rtsp_url "
+            "SELECT p.process_id, p.process_name, c.cctv_id, c.rtsp_url, c.frame_dir "
             "FROM process p JOIN cctv_info c ON p.cctv_id = c.cctv_id"
         )
         params: tuple[Any, ...] = ()
@@ -180,7 +181,7 @@ class SqlRepository(KioskRepository):
             return None
         with self._lock:
             row = self._query_one(
-                "SELECT p.process_id, p.process_name, c.cctv_id, c.rtsp_url "
+                "SELECT p.process_id, p.process_name, c.cctv_id, c.rtsp_url, c.frame_dir "
                 "FROM cctv_info c LEFT JOIN process p ON p.cctv_id = c.cctv_id "
                 "WHERE c.cctv_id=%s LIMIT 1",
                 (cid,),
@@ -196,7 +197,37 @@ class SqlRepository(KioskRepository):
             "process_code": str(row["process_id"]) if row.get("process_id") is not None else "",
             "online": True,
             "rtsp_url": row.get("rtsp_url"),
+            "frame_dir": row.get("frame_dir"),
         }
+
+    def update_camera(
+        self,
+        cam_id: str,
+        *,
+        rtsp_url: str | None = None,
+        frame_dir: str | None = None,
+    ) -> bool:
+        """cctv_info 의 rtsp_url/frame_dir 갱신(주어진 필드만, 단일 행). 성공 시 True."""
+        cid = _pid(cam_id)  # cam_id is str(cctv_id)
+        if cid is None:
+            return False
+        sets: list[str] = []
+        params: list[Any] = []
+        if rtsp_url is not None:
+            sets.append("rtsp_url=%s")
+            params.append(rtsp_url)
+        if frame_dir is not None:
+            sets.append("frame_dir=%s")
+            params.append(frame_dir)
+        if not sets:
+            return False
+        params.append(cid)
+        with self._lock:
+            affected = self._execute(
+                f"UPDATE cctv_info SET {', '.join(sets)} WHERE cctv_id=%s",
+                tuple(params),
+            )
+        return affected > 0
 
     # ────────────────────────────── Sensors ──────────────────────────────
     @staticmethod

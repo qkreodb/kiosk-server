@@ -34,6 +34,16 @@ class KioskRepository(ABC):
     def get_camera(self, cam_id: str) -> dict[str, Any] | None:
         ...
 
+    @abstractmethod
+    def update_camera(
+        self,
+        cam_id: str,
+        *,
+        rtsp_url: str | None = None,
+        frame_dir: str | None = None,
+    ) -> bool:
+        """cctv_info 의 rtsp_url/frame_dir 갱신(주어진 필드만). 성공 시 True."""
+
     # --- Sensors ---
     @abstractmethod
     def get_temp_humid(

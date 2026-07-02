@@ -318,42 +318,7 @@
 }
 .bhm-name.bhm-focus:has(.bhm-focus-cb:not(:checked)) .bhm-focus-text { color: var(--t-4); }
 
-/* ===== CCTV 헤더 액션 버튼 영역 ===== */
-.cctv-head-actions { display: flex; align-items: center; gap: 10px; }
-.cctv-tts-btn,
-.cctv-analyze-btn {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 0 16px;
-  height: 42px;
-  border-radius: var(--r-md);
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-.cctv-tts-btn {
-  background: rgba(217, 119, 6, 0.10);
-  border: 1px solid rgba(217, 119, 6, 0.35);
-  color: var(--amber);
-}
-.cctv-tts-btn:hover { background: rgba(217, 119, 6, 0.20); border-color: var(--amber); }
-.cctv-analyze-btn {
-  background: rgba(2, 132, 199, 0.10);
-  border: 1px solid rgba(2, 132, 199, 0.35);
-  color: var(--cyan);
-}
-.cctv-analyze-btn:hover { background: rgba(2, 132, 199, 0.20); border-color: var(--cyan); }
-.cctv-tts-btn:active,
-.cctv-analyze-btn:active { transform: scale(0.95); }
-.cctv-tts-btn:disabled,
-.cctv-analyze-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
-.cctv-tts-btn svg,
-.cctv-analyze-btn svg { width: 18px; height: 18px; }
-
-/* ===== CCTV: IP카메라 라이브 이미지 (중앙 전시홀) ===== */
+/* ===== CCTV: IP카메라 라이브 이미지 ===== */
 .cctv-image {
   position: absolute;
   inset: 0;
@@ -386,6 +351,77 @@
 }
 .cctv-vlm-label { font-weight: 700; white-space: nowrap; }
 .cctv-vlm-val { color: #E5EDF7; }
+
+/* ===== CCTV: VLM 프롬프트 답변 자막 (화면 내부 하단, 반투명) ===== */
+.cctv-caption {
+  display: none;
+  position: absolute;
+  left: 14px; right: 14px; bottom: 14px;
+  padding: 12px 16px;
+  background: rgba(3, 7, 15, 0.55);
+  border-radius: 10px;
+  backdrop-filter: blur(3px);
+  z-index: 6;
+  pointer-events: none;
+}
+.cctv-caption.show { display: block; }
+.cctv-caption-text {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: #F3F7FD;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  word-break: keep-all;
+  white-space: pre-wrap;
+}
+/* 타자 중일 때만 깜빡이는 커서 표시 */
+.cctv-caption.typing .cctv-caption-text::after {
+  content: '▍';
+  margin-left: 2px;
+  color: var(--cyan);
+  animation: blink 0.9s step-end infinite;
+}
+
+/* ===== CCTV: 프롬프트 입력 바 (CAM-2 전용, 기본 숨김) ===== */
+.cctv-prompt-bar {
+  display: none;          /* CAM-2 모달에서 JS 가 flex 로 전환 */
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+.cctv-prompt-input {
+  flex: 1;
+  min-width: 0;
+  height: 46px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  color: var(--t-1);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.cctv-prompt-input:focus { border-color: var(--cyan); }
+.cctv-prompt-input::placeholder { color: var(--t-4); }
+.cctv-prompt-send {
+  height: 46px;
+  padding: 0 22px;
+  background: rgba(2, 132, 199, 0.12);
+  border: 1px solid rgba(2, 132, 199, 0.4);
+  border-radius: var(--r-md);
+  color: var(--cyan);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.cctv-prompt-send:hover { background: rgba(2, 132, 199, 0.22); border-color: var(--cyan); }
+.cctv-prompt-send:active { transform: scale(0.96); }
 
 /* ===== 사업장 지도: 이상현상 수신 시 중앙 CCTV 미니 팝업 ===== */
 .cctv-mini {

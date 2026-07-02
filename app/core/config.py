@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     # 키오스크는 구조화된 결과(action + tts_message)를 주는 ``/analyze`` 를 사용한다.
     vlm_base_url: str = "http://localhost:8000"
     vlm_analyze_path: str = "/analyze"
+    # 자유 프롬프트 질의 엔드포인트(신규 CCTV 모달의 실시간 장면 설명용).
+    # body: {"path": "<프레임 폴더>", "prompt": "<사용자 입력>"}
+    vlm_prompt_path: str = "/prompt"
     # ``/analyze`` 가 Jetson 파일시스템에서 읽을 프레임 폴더(절대 경로). 하드웨어
     # 서버가 30fps 프레임을 기록하는 공유 디렉터리를 가리켜야 한다. 기본값은
     # VLM 서버 README의 테스트 폴더.
@@ -135,6 +138,12 @@ class Settings(BaseSettings):
     # 만료 후 재감지되면 다시 카운트한다(vlm_service.infer 참고).
     behavior_cooldown_seconds: float = Field(default=10.0, ge=0)
 
+    # --- VLM 서버 측 분석 스케줄러 (브라우저 없이 다중 카메라 순회 분석) ---
+    # 한 사이클(모든 카메라 순차 분석) 이후 다음 사이클까지 대기(초).
+    vlm_scheduler_interval_seconds: float = Field(default=2.0, ge=0)
+    # True 면 서버 부팅 시 스케줄러를 자동 시작한다(기본은 수동 start).
+    vlm_scheduler_autostart: bool = False
+
     # --- Warning light LED (실물 경광등, ST80EL-USB HID) ---
     # ``led_dry_run=False`` 이면 실제 HID 장치로 전송을 시도하고, hidapi 미설치/
     # 장치 미연결이면 자동으로 시뮬레이션(simulated) 응답으로 폴백한다. Jetson에
@@ -174,6 +183,10 @@ class Settings(BaseSettings):
     @property
     def vlm_analyze_url(self) -> str:
         return f"{self.vlm_base_url.rstrip('/')}/{self.vlm_analyze_path.lstrip('/')}"
+
+    @property
+    def vlm_prompt_url(self) -> str:
+        return f"{self.vlm_base_url.rstrip('/')}/{self.vlm_prompt_path.lstrip('/')}"
 
 
 @lru_cache

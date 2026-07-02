@@ -39,7 +39,17 @@ async def lifespan(app: FastAPI):
         settings.app_name, settings.app_version, active_repository_name(),
         settings.vlm_analyze_url, settings.shared_dir,
     )
+
+    # 설정 시 서버 측 VLM 분석 스케줄러 자동 시작(브라우저 없이 다중 카메라 감시).
+    from app.api.deps import get_vlm_scheduler
+
+    scheduler = get_vlm_scheduler()
+    if settings.vlm_scheduler_autostart:
+        scheduler.start()
+
     yield
+
+    await scheduler.stop()  # 진행 중 분석 루프 정리
     logger.info("%s shutting down.", settings.app_name)
 
 

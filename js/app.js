@@ -48,40 +48,15 @@ function tick() {
 }
 setInterval(tick, 1000); tick();
 
-// CCTV modal control
-const CCTV_VIDEO_ID = 'zNma5G0oNF8';
-function cctvSrc(autoplay) {
-  // file:// 로컬 실행 호환: youtube-nocookie 도메인은 origin 검증이 없어 보안 오리진 차단을 회피
-  // autoplay + mute(자동재생 허용 조건) + 반복재생 + 컨트롤 최소화
-  return 'https://www.youtube-nocookie.com/embed/' + CCTV_VIDEO_ID
-    + '?autoplay=' + (autoplay ? 1 : 0)
-    + '&mute=1&loop=1&playlist=' + CCTV_VIDEO_ID
-    + '&controls=0&modestbranding=1&rel=0&playsinline=1';
-}
-function openCCTV() {
-  const frame = document.getElementById('cctvFrame');
-  if (frame) frame.src = cctvSrc(true);
-  document.getElementById('cctvOverlay').classList.add('open');
-}
+// CCTV modal control (더미 버전 — 실서버 스트림/프롬프트 연동은 backend.js 가 덮어씀)
 function closeCCTV() {
   document.querySelectorAll('.cctv-btn-item').forEach(b => b.classList.remove('monitoring'));
   document.getElementById('cctvOverlay').classList.remove('open');
-  const frame = document.getElementById('cctvFrame');
-  if (frame) frame.src = '';
 }
 // Close when clicking the dimmed backdrop
 document.getElementById('cctvOverlay').addEventListener('click', e => {
   if (e.target.id === 'cctvOverlay') closeCCTV();
 });
-// Switch camera feed (updates overlay location + process)
-function switchCam(el, locName, locProc) {
-  document.querySelectorAll('.cctv-cam-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  // 좌측 하단 위치 라벨은 제거됨(현장 특이사항 로그로 대체). locName/locProc 미사용.
-  // 카메라 전환 시 영상 리로드 (실제 운영 시 카메라별 스트림 URL 적용)
-  const frame = document.getElementById('cctvFrame');
-  if (frame) frame.src = cctvSrc(true);
-}
 
 // ===== NOTICE rolling messages (5s) =====
 const noticeEls = Array.from(document.querySelectorAll('.ticker-msg'));
@@ -143,12 +118,11 @@ function syncMonitoringToProc() {
 }
 document.addEventListener('DOMContentLoaded', syncMonitoringToProc);
 
-// 신호등 헤더 CCTV 선택 (1/2/3) → 해당 CCTV 영상 팝업(강조는 공정 선택을 따름)
+// 신호등 헤더 CCTV 선택 (1/2) → 해당 CCTV 영상 팝업(강조는 공정 선택을 따름)
 function bhSelectCctv(val, btn) {
   const map = {
-    '1': 'CAM-1 · 정밀가공 라인',
-    '2': 'CAM-2 · 절단기 작업존',
-    '3': 'CAM-3 · 관람객 통로'
+    '1': 'CAM-1 · 부스 A 정밀가공',
+    '2': 'CAM-2 · 부스 C 절단·용접'
   };
   openCCTVFor(map[val] || map['1']);
 }
@@ -1102,11 +1076,9 @@ function openWatchWorker(name, watchId, proc) {
 }
 
 // ===== 현장사진 / CCTV =====
+// 더미 버전 — 실서버 스트림/프롬프트 연동은 backend.js 의 openCCTVFor 가 덮어씀.
 function openCCTVFor(region) {
   document.getElementById('cctvHeadSub').textContent = region + ' · 실시간';
-  // 좌측 하단 위치 라벨은 제거됨(현장 특이사항 로그로 대체).
-  const frame = document.getElementById('cctvFrame');
-  if (frame) frame.src = cctvSrc(true);
   document.getElementById('cctvOverlay').classList.add('open');
 }
 function openSitePhoto(region) {

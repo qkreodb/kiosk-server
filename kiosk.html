@@ -21,7 +21,7 @@
   <!-- ============== STATUS BAR ============== -->
   <header class="statusbar">
     <img src="images/head_v.png" class="sb-head-img" alt=""/>
-    <div class="sb-site-name">고양시 사업장</div>
+    <div class="sb-site-name">AI안전보건박람회</div>
     <div class="stat-chip">
       <span class="stat-dot"></span>
       <span class="stat-label">SYSTEM</span>
@@ -102,8 +102,8 @@
         <span class="hero-dot" style="background:#FFC200;"></span>
         <span class="hero-dot" style="background:#009B0A;"></span>
       </div>
-      <h1 class="hero-title">실시간 안전 현황을 확인하시겠습니까?</h1>
-      <p class="hero-sub">고양시 사업장의 실시간 안전 상태와 현장 환경을 확인할 수 있습니다.</p>
+      <h1 class="hero-title">되고세이퍼로 현장 안전을 확인할게요.</h1>
+      <p class="hero-sub">AI안전보건박람회의 실시간 안전 상태와 현장 환경을 확인할 수 있습니다.</p>
     </section>
 
     <!-- 불안전행동 감시 신호등 -->
@@ -120,14 +120,13 @@
               <ul class="bps-dropdown" id="bhProcDropdown" onclick="event.stopPropagation();">
                 <li class="bps-option active" data-value="정밀가공 공정 · PRC-19" data-cctv="1" onclick="bhPickProc(this)">정밀가공 · PRC-19</li>
                 <li class="bps-option" data-value="용접 공정 · PRC-07" data-cctv="2" onclick="bhPickProc(this)">용접 · PRC-07</li>
-                <li class="bps-option" data-value="도장 공정 · PRC-12" data-cctv="3" onclick="bhPickProc(this)">도장 · PRC-12</li>
+                <li class="bps-option" data-value="도장 공정 · PRC-12" data-cctv="1" onclick="bhPickProc(this)">도장 · PRC-12</li>
               </ul>
             </div>
           </div>
           <div class="behavior-head-right">
             <button type="button" class="cctv-btn-item" data-cctv="1" onclick="bhSelectCctv('1', this)">CCTV-1</button>
             <button type="button" class="cctv-btn-item" data-cctv="2" onclick="bhSelectCctv('2', this)">CCTV-2</button>
-            <button type="button" class="cctv-btn-item" data-cctv="3" onclick="bhSelectCctv('3', this)">CCTV-3</button>
             <button type="button" title="초기화" onclick="resetBehavior()" class="icon-btn-ghost bh-reset-btn"><i class="ri-refresh-line"></i></button>
           </div>
         </div>
@@ -289,16 +288,11 @@
                 <circle cx="790" cy="185" r="18" fill="#6628E1" fill-opacity="0.18"/>
                 <image x="776" y="171" width="28" height="28" href="images/icon_cctv.svg"/>
               </g>
-              <g class="ai-marker" id="cctvCentralMarker" style="cursor:pointer;" onclick="openCCTVFor('CAM-3 · 중앙 전시홀')">
-                <circle cx="525" cy="225" r="22" fill="#6628E1"><animate attributeName="opacity" values="0.5;0;0.5" dur="1.6s" repeatCount="indefinite"/></circle>
-                <circle cx="525" cy="225" r="18" fill="#6628E1" fill-opacity="0.18"/>
-                <!-- 이상현상 수신 시 빨간 점멸 링(기본 숨김) -->
-                <circle id="cctvAlertRing" cx="150" cy="185" r="26" fill="none" stroke="#FF2B33" stroke-width="3" style="display:none;">
-                  <animate attributeName="opacity" values="1;0.2;1" dur="0.8s" repeatCount="indefinite"/>
-                  <animate attributeName="r" values="24;32;24" dur="0.8s" repeatCount="indefinite"/>
-                </circle>
-                <image x="511" y="211" width="28" height="28" href="images/icon_cctv.svg"/>
-              </g>
+              <!-- 이상현상 수신 시 CAM-1 주위 빨간 점멸 링(기본 숨김) -->
+              <circle id="cctvAlertRing" cx="150" cy="185" r="26" fill="none" stroke="#FF2B33" stroke-width="3" style="display:none;">
+                <animate attributeName="opacity" values="1;0.2;1" dur="0.8s" repeatCount="indefinite"/>
+                <animate attributeName="r" values="24;32;24" dur="0.8s" repeatCount="indefinite"/>
+              </circle>
               <!-- 이상현상 수신 시 CAM-1 CCTV 미니 팝업(기본 숨김). 클릭 시 전체 CCTV 모달. -->
               <foreignObject id="cctvAlertPopup" x="184" y="68" width="244" height="192" style="display:none;overflow:visible;">
                 <div xmlns="http://www.w3.org/1999/xhtml" class="cctv-mini" onclick="hideCctvAlert();openCCTVFor('CAM-1 · 부스 A 정밀가공')">
@@ -421,16 +415,18 @@
           </svg>
           <div class="cctv-fallback-txt">영상 신호 연결 중...</div>
         </div>
-        <!-- Live CCTV feed (YouTube embed) -->
-        <iframe id="cctvFrame" class="cctv-video"
-          src=""
-          title="CCTV Live"
-          frameborder="0"
-          allow="autoplay; encrypted-media; picture-in-picture; web-share"
-          allowfullscreen></iframe>
-        <!-- IP 카메라 RTSP→MJPEG 라이브 스트림 (중앙 전시홀) -->
+        <!-- IP 카메라 RTSP→MJPEG 라이브 스트림 -->
         <img id="cctvImage" class="cctv-video cctv-image" alt="IP camera live stream" />
+        <!-- VLM 프롬프트 답변 자막 (화면 내부 하단, 반투명 배경 + 타자 효과) -->
+        <div class="cctv-caption" id="cctvCaption"><span class="cctv-caption-text" id="cctvCaptionText"></span></div>
       </div>
+      <!-- CAM-2(신규 CCTV) 전용: 사용자 프롬프트 입력 바 -->
+      <form class="cctv-prompt-bar" id="cctvPromptBar" onsubmit="sendCctvPrompt(event)">
+        <input type="text" class="cctv-prompt-input" id="cctvPromptInput"
+               value="지금 CCTV 장면에서 무슨 일이 일어나고 있는지 한 문장으로 설명해줘."
+               placeholder="VLM에게 물어볼 내용을 입력하세요" autocomplete="off" />
+        <button type="submit" class="cctv-prompt-send">전송</button>
+      </form>
     </div>
   </div>
   </div>

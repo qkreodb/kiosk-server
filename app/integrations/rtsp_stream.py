@@ -56,6 +56,7 @@ class RtspCamera:
         self._thread: Optional[threading.Thread] = None
         self._started = False
         self._stop = threading.Event()
+        self._reconnect = threading.Event()  # set_url() 시 현재 연결을 끊고 새 URL 로 재접속
 
     # ---- 공개 API -------------------------------------------------------
     def start(self) -> None:
@@ -73,6 +74,21 @@ class RtspCamera:
 
     def stop(self) -> None:
         self._stop.set()
+
+    def set_url(self, url: str) -> bool:
+        """RTSP URL 을 바꾸고(변경 시에만) 현재 연결을 끊어 새 주소로 재접속시킨다.
+
+        DB cctv_info.rtsp_url 수정(카메라 IP 변경) 시 호출하면, 캡처 스레드가
+        재시작 없이 다음 루프에서 새 URL 로 접속한다. 반환값: 실제 변경되었는지.
+        """
+        url = (url or "").strip()
+        with self._lock:
+            if not url or url == self._url:
+                return False
+            self._url = url
+        self._reconnect.set()  # 현재 세션을 끊고 outer 루프가 새 URL 로 재접속
+        logger.info("RTSP URL 변경 → 재접속: %s", self.safe_url)
+        return True
 
     @property
     def connected(self) -> bool:
@@ -107,7 +123,10 @@ class RtspCamera:
             return
 
         while not self._stop.is_set():
-            cap = cv2.VideoCapture(self._url, cv2.CAP_FFMPEG)
+            self._reconnect.clear()
+            with self._lock:
+                url = self._url  # set_url() 로 바뀌었을 수 있으니 매 접속마다 스냅샷
+            cap = cv2.VideoCapture(url, cv2.CAP_FFMPEG)
             try:
                 # 디코더 버퍼를 최소화해 지연(latency)을 줄인다.
                 cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
@@ -129,6 +148,9 @@ class RtspCamera:
             consecutive_failures = 0
 
             while not self._stop.is_set():
+                if self._reconnect.is_set():
+                    logger.info("RTSP 재접속 요청 감지 — 현재 세션 종료 후 새 URL 접속")
+                    break
                 ok, frame = cap.read()
                 if not ok or frame is None:
                     consecutive_failures += 1

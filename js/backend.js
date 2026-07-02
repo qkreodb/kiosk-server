@@ -2,17 +2,17 @@
  * backend.js — 백엔드(PORT 8080) 연동 계층
  * ---------------------------------------------------------------------
  * 디자인(app.js)은 정적/더미 동작만 담고, 실제 서버 연동 기능은 여기에 모은다.
- * app.js 다음에 로드되어 일부 함수(openCCTV/openEnvDetail 등)를 실서버 버전으로
+ * app.js 다음에 로드되어 일부 함수(openCCTVFor/openEnvDetail 등)를 실서버 버전으로
  * 덮어쓴다(window 재할당). 인라인 onclick 에서 호출되는 함수는 window 에 노출한다.
  *
  *   GET  /space-name            → 신호등 행렬 + 공정 드롭다운
  *   POST /behavior/reset        → 카운트 0 리셋(경광등 소등)
- *   POST /vlm/infer             → CCTV [분석] 결과 오버레이
- *   POST /tts/demo              → CCTV [TTS] 데모 재생
+ *   POST /vlm/infer             → CAM-1 위험행동 분석 결과 오버레이
+ *   POST /vlm/prompt            → CAM-2 자유 프롬프트 질의(자막 타자 출력)
  *   POST /led/trigger           → 신호등 헤더(관심/주의/경고/위험) 경광등 점등
  *   GET  /sensor/temp-humid     → 온습도 라이브
  *   GET  /sensor/watch          → 스마트워치 심박 라이브
- *   GET  /cctv/live             → 중앙 전시홀 IP카메라 RTSP→MJPEG 중계
+ *   GET  /cctv/live?cam=N       → 카메라별 IP카메라 RTSP→MJPEG 중계
  * ===================================================================== */
 (function () {
   'use strict';
@@ -283,10 +283,18 @@
   }
 
   /* ===================== CCTV (라이브 스트림 포함) ===================== */
-  function cctvLiveSrc() { return (window.__API_BASE || 'http://localhost:8080') + '/cctv/live?ts=' + Date.now(); }
-  function isRtspCctv(region) {
-    return String(region || '').includes('CAM-1');
+  // cam: DB cctv_info 의 cctv_id(숫자 문자열). 백엔드가 카메라별 RTSP URL 을 해석한다.
+  function cctvLiveSrc(cam) {
+    return (window.__API_BASE || 'http://localhost:8080')
+      + '/cctv/live?cam=' + encodeURIComponent(cam || '1') + '&ts=' + Date.now();
   }
+  // 모달 제목("CAM-2 · …")에서 카메라 번호 추출. 못 찾으면 1(기존 CCTV).
+  function camNumFrom(region) {
+    const m = /CAM-(\d+)/i.exec(String(region || ''));
+    return m ? m[1] : '1';
+  }
+  // 프롬프트 질의(신규 CCTV) 모드로 동작하는 카메라 번호 — 지도 가장 우측 CAM-2.
+  const PROMPT_CAM_NUM = '2';
 
   /* ----- 이상현상 수신 시 CAM-1 CCTV 미니 팝업 알림 -----
    * VLM이 실제 이상행동을 카운트(쿨다운 통과)하면 사업장 지도 CCTV 탭의 CAM-1
@@ -305,7 +313,7 @@
     ring.style.display = '';
     popup.style.display = '';
     // CAM-1 미니 화면도 RTSP 라이브(MJPEG) 스트림을 사용한다.
-    if (img && !img.getAttribute('src')) img.src = cctvLiveSrc();
+    if (img && !img.getAttribute('src')) img.src = cctvLiveSrc('1');
     if (cctvAlertTimer) clearTimeout(cctvAlertTimer);
     cctvAlertTimer = setTimeout(hideCctvAlert, CCTV_ALERT_MS);
   }
@@ -321,53 +329,131 @@
   window.showCctvAlert = showCctvAlert;
   window.hideCctvAlert = hideCctvAlert;
 
-  window.openCCTV = function () {
-    const frame = document.getElementById('cctvFrame');
-    const image = document.getElementById('cctvImage');
-    if (image) { image.src = ''; image.style.display = 'none'; }
-    if (frame) { frame.style.display = 'block'; frame.src = cctvSrc(true); }
-    document.getElementById('cctvOverlay').classList.add('open');
-    syncCctvAnalysisUi(); // 분석은 메인화면 토글이 제어 — 현재 상태만 반영
+  /* ----- 프롬프트 자막 큐 (신규 CCTV · CAM-2) -----
+   * /vlm/prompt 응답 텍스트를 큐에 쌓고, CCTV 화면 하단 반투명 자막에 타자 효과로
+   * 한 글자씩 쓴다. 한 메시지를 다 쓰면 큐에서 "가장 최근" 메시지만 꺼내 출력하고
+   * 그 사이 쌓인 오래된 메시지는 버린다 — 응답이 타자 속도보다 빨라도 자막이
+   * 뒤처지지(지연 누적) 않게 하기 위해서다.                              */
+  const CAPTION_CHAR_MS = 45;    // 글자당 타자 간격
+  const CAPTION_HOLD_MS = 1500;  // 다 쓴 자막을 다음 메시지 전까지 잠깐 유지
+  const captionQueue = [];
+  let captionTyping = false;
+
+  function clearCaption() {
+    captionQueue.length = 0;
+    const box = document.getElementById('cctvCaption');
+    const span = document.getElementById('cctvCaptionText');
+    if (span) span.textContent = '';
+    if (box) box.classList.remove('show', 'typing');
+  }
+  function enqueueCaption(text) {
+    if (!text) return;
+    captionQueue.push(String(text));
+    drainCaptionQueue();
+  }
+  async function drainCaptionQueue() {
+    if (captionTyping) return;
+    const box = document.getElementById('cctvCaption');
+    const span = document.getElementById('cctvCaptionText');
+    if (!box || !span) return;
+    captionTyping = true;
+    try {
+      while (captionQueue.length) {
+        const text = captionQueue[captionQueue.length - 1]; // 최신 메시지만
+        captionQueue.length = 0;                            // 그 사이 메시지는 폐기
+        box.classList.add('show', 'typing');
+        for (let i = 1; i <= text.length; i++) {
+          span.textContent = text.slice(0, i);
+          await sleep(CAPTION_CHAR_MS);
+          if (!cctvModalOpen()) return; // 모달 닫힘 → 즉시 중단(clearCaption이 정리)
+        }
+        box.classList.remove('typing');
+        if (captionQueue.length) continue; // 새 메시지 이미 도착 → 바로 이어서
+        await sleep(CAPTION_HOLD_MS);
+      }
+    } finally {
+      captionTyping = false;
+    }
+  }
+
+  /* ----- 프롬프트 질의 루프 -----
+   * CAM-2 모달이 열리면 즉시 시작: 입력창의 프롬프트로 POST /vlm/prompt →
+   * 응답 텍스트를 자막 큐에 넣고 곧바로 다음 질의(응답 도착 주도). 프롬프트는
+   * 매 요청 시점에 입력창을 읽으므로 사용자가 수정하면 다음 질의부터 반영된다. */
+  const PROMPT_INTERVAL_MS = 300;      // 성공 응답 후 다음 질의까지 대기
+  const PROMPT_ERROR_BACKOFF_MS = 2000; // 오류 시 재시도 전 대기
+  const DEFAULT_PROMPT = '지금 CCTV 장면에서 무슨 일이 일어나고 있는지 한 문장으로 설명해줘.';
+  const promptLoop = { token: 0, active: false };
+
+  function currentPromptText() {
+    const input = document.getElementById('cctvPromptInput');
+    const v = input && input.value.trim();
+    return v || DEFAULT_PROMPT;
+  }
+  function startPromptLoop() {
+    promptLoop.active = true;
+    const myToken = ++promptLoop.token; // 이전 루프/in-flight 응답 무효화
+    (async function loop() {
+      while (promptLoop.token === myToken && promptLoop.active) {
+        try {
+          const resp = await fetch(API + '/vlm/prompt', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ camera_id: 'CAM-' + PROMPT_CAM_NUM, prompt: currentPromptText() }),
+          });
+          if (!resp.ok) throw new Error('HTTP ' + resp.status);
+          const d = await resp.json();
+          if (promptLoop.token !== myToken) return;
+          if (d.ok && d.text) enqueueCaption(d.text);
+          await sleep(PROMPT_INTERVAL_MS);
+        } catch (e) {
+          if (promptLoop.token !== myToken) return;
+          console.error('[VLM 프롬프트] 실패:', e);
+          await sleep(PROMPT_ERROR_BACKOFF_MS);
+        }
+      }
+    })();
+  }
+  function stopPromptLoop() {
+    promptLoop.active = false;
+    promptLoop.token++;
+  }
+  // 입력 바 [전송]/Enter — 루프가 매 요청 입력창을 읽으므로 다음 질의부터 반영된다.
+  window.sendCctvPrompt = function (ev) {
+    if (ev) ev.preventDefault();
+    if (window.showToast) showToast('프롬프트 적용 — 다음 응답부터 반영됩니다', 'ok');
   };
+
   window.closeCCTV = function () {
-    // 분석 루프는 메인화면 토글이 제어하므로 모달을 닫아도 멈추지 않는다.
+    // CAM-1 분석 루프는 메인화면 토글이 제어하므로 모달을 닫아도 멈추지 않는다.
     document.querySelectorAll('.cctv-btn-item').forEach(b => b.classList.remove('monitoring'));
     document.getElementById('cctvOverlay').classList.remove('open');
-    const frame = document.getElementById('cctvFrame');
     const image = document.getElementById('cctvImage');
-    if (frame) frame.src = '';
-    if (image) image.src = '';
+    if (image) image.src = ''; // MJPEG 스트림 중단(자원 절약)
+    stopPromptLoop();
+    clearCaption();
     const vlm = document.getElementById('cctvVlmOverlay');
     if (vlm) vlm.classList.remove('show');
-  };
-  window.switchCam = function (el, locName, locProc) {
-    document.querySelectorAll('.cctv-cam-chip').forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
-    // 좌측 하단 위치 라벨은 제거됨(현장 특이사항 로그로 대체). locName/locProc 미사용.
-    const frame = document.getElementById('cctvFrame');
-    const image = document.getElementById('cctvImage');
-    if (image) { image.src = ''; image.style.display = 'none'; }
-    if (frame) { frame.style.display = 'block'; frame.src = cctvSrc(true); }
-    // 가동 중이면 다음 요청부터 새 카메라로 자동 반영(루프가 매 요청마다 활성 카메라를 읽음).
   };
   window.openCCTVFor = function (region) {
     document.getElementById('cctvHeadSub').textContent = region + ' · 실시간';
-    // 좌측 하단 위치 라벨은 제거됨(현장 특이사항 로그로 대체).
-    const frame = document.getElementById('cctvFrame');
+    const cam = camNumFrom(region);
     const image = document.getElementById('cctvImage');
     const vlm = document.getElementById('cctvVlmOverlay');
+    const bar = document.getElementById('cctvPromptBar');
     if (vlm) vlm.classList.remove('show');
-    if (isRtspCctv(region) && image) {
-      // CAM-1: IP 카메라 RTSP 실시간 영상을 서버 MJPEG 중계로 송출
-      if (frame) { frame.src = ''; frame.style.display = 'none'; }
-      image.style.display = 'block';
-      image.src = cctvLiveSrc();
-    } else {
-      if (image) { image.src = ''; image.style.display = 'none'; }
-      if (frame) { frame.style.display = 'block'; frame.src = cctvSrc(true); }
-    }
+    stopPromptLoop();
+    clearCaption();
+    if (image) { image.style.display = 'block'; image.src = cctvLiveSrc(cam); }
     document.getElementById('cctvOverlay').classList.add('open');
-    syncCctvAnalysisUi(); // 분석은 메인화면 토글이 제어 — 현재 상태만 반영
+    if (cam === PROMPT_CAM_NUM) {
+      // 신규 CCTV: 프롬프트 입력 바 노출 + 모달 팝업 즉시 질의 시작
+      if (bar) bar.style.display = 'flex';
+      startPromptLoop();
+    } else {
+      if (bar) bar.style.display = 'none';
+      syncCctvAnalysisUi(); // 기존 CCTV: 분석은 메인화면 토글이 제어 — 현재 상태만 반영
+    }
   };
 
   /* ===================== VLM / TTS ===================== */
@@ -387,41 +473,14 @@
     el._t = setTimeout(() => el.classList.remove('show'), 2600);
   };
 
-  window.playTtsDemo = async function () {
-    const btn = document.getElementById('cctvTtsBtn');
-    if (!btn) return;
-    btn.disabled = true;
-    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/></svg> 재생 중…';
-    try {
-      const resp = await fetch((window.__API_BASE || 'http://localhost:8080') + '/tts/demo', { method: 'POST' });
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      await resp.json();
-      btn.style.borderColor = 'var(--green)';
-      btn.style.color = 'var(--green)';
-      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 완료';
-      setTimeout(resetTtsBtn, 1500);
-    } catch (e) {
-      resetTtsBtn();
-    }
-    function resetTtsBtn() {
-      btn.style.borderColor = '';
-      btn.style.color = '';
-      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg> TTS';
-      btn.disabled = false;
-    }
-  };
-
-  /* ----- VLM 연속 분석 루프 -----
-   * CCTV 모달이 열리면 분석을 시작하고, 응답이 올 때마다 즉시 다음 요청을 보낸다.
-   * 모달을 닫으면(또는 카메라 전환 시 토큰 무효화) 루프가 멈춘다.
-   * 분석 버튼은 이 루프의 일시정지/재개 토글로 동작한다.            */
-  // VLM 분석 요청 주기(성공 응답 후 다음 요청까지 대기). 응답 속도를 정확도보다
-  // 우선하는 환경이라 2~3초로 단축. 값은 이 상수 하나로만 조정한다(하드코딩 금지).
-  const VLM_POLL_INTERVAL_MS = 0; // 성공 응답 후 다음 요청까지 대기(2~3초)
+  /* ----- VLM 연속 분석 루프 (기존 CCTV · CAM-1) -----
+   * 메인화면의 "위험행동 분석" 토글이 켜지면 시작하고, 응답이 올 때마다 즉시
+   * 다음 요청을 보낸다. 토글을 끄면(토큰 무효화) 루프가 멈춘다.            */
+  // VLM 분석 요청 주기(성공 응답 후 다음 요청까지 대기). 값은 이 상수 하나로만 조정.
+  const VLM_POLL_INTERVAL_MS = 0;
   const VLM_ERROR_BACKOFF_MS = 1500; // 오류 시 재시도 전 대기
   // enabled: 메인화면 ON/OFF 토글이 결정하는 마스터 상태(분석 자체의 가동 여부).
-  // paused : (모달 내 [분석] 버튼) 가동 중 일시정지/재개. CCTV 모달 개폐와 무관.
-  const vlmLoop = { token: 0, paused: false, enabled: false };
+  const vlmLoop = { token: 0, enabled: false };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   // 가장 최근 VLM 분석 결과 — 현장 특이사항 탭의 "VLM 위험행동 감지" 항목 소스.
   let lastVlmDetection = null;
@@ -429,32 +488,6 @@
   function cctvModalOpen() {
     const o = document.getElementById('cctvOverlay');
     return !!(o && o.classList.contains('open'));
-  }
-
-  // 분석 버튼 표시 갱신: 진행 중 → '일시정지', 일시정지 → '재개'
-  const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>';
-  const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
-  const ICON_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>';
-
-  function updateAnalyzeBtn() {
-    const btn = document.getElementById('cctvAnalyzeBtn');
-    if (!btn) return;
-    btn.disabled = false;
-    if (!vlmLoop.enabled) { resetAnalyzeBtn(); return; }
-    if (vlmLoop.paused) {
-      btn.classList.remove('analyzing');
-      btn.innerHTML = ICON_PLAY + ' 재개';
-    } else {
-      btn.classList.add('analyzing');
-      btn.innerHTML = ICON_PAUSE + ' 분석 중';
-    }
-  }
-  function resetAnalyzeBtn() {
-    const btn = document.getElementById('cctvAnalyzeBtn');
-    if (!btn) return;
-    btn.classList.remove('analyzing');
-    btn.disabled = false;
-    btn.innerHTML = ICON_SEARCH + ' 분석';
   }
 
   function renderVlmResult(d) {
@@ -483,9 +516,9 @@
   window.onFocusToggle = function () { /* 선택값은 요청 시점에 읽으므로 별도 처리 불필요 */ };
 
   // 1회 분석 요청 + 렌더. token 이 어긋나거나 모달이 닫혔으면 결과 렌더를 건너뛴다.
+  // 분석 대상은 기존 CCTV(CAM-1) 고정 — 신규 CCTV(CAM-2)는 프롬프트 질의 전용.
   async function runVlmAnalysisOnce(token) {
-    const camEl = document.querySelector('.cctv-cam-chip.active .cctv-cam-id');
-    const camId = camEl ? camEl.textContent.trim() : 'CAM-1';
+    const camId = 'CAM-1';
     const processCode = (window.currentProcessCode && window.currentProcessCode()) || '';
 
     const resp = await fetch(API + '/vlm/infer', {
@@ -505,13 +538,11 @@
     hydrateMatrix(processCode).catch(() => {}); // 메인화면 신호등 행렬은 항상 갱신
   }
 
-  // 분석 루프 시작. opts.keepPaused: 카메라 전환 등에서 일시정지 상태 유지.
-  function startVlmLoop(opts) {
-    if (!(opts && opts.keepPaused)) vlmLoop.paused = false;
+  // 분석 루프 시작(토글 ON 시).
+  function startVlmLoop() {
     const myToken = ++vlmLoop.token; // 이전 루프/in-flight 응답 무효화
-    updateAnalyzeBtn();
     const det = document.getElementById('vlmDetection');
-    if (det && !vlmLoop.paused && cctvModalOpen()) {
+    if (det && cctvModalOpen()) {
       // 직전 분석 결과는 다음 응답이 도착할 때까지 그대로 유지한다.
       // (아직 한 번도 결과가 없을 때만 안내 문구를 보여준다)
       const cur = det.textContent.trim();
@@ -520,7 +551,6 @@
     }
     (async function loop() {
       while (vlmLoop.token === myToken && vlmLoop.enabled) {
-        if (vlmLoop.paused) { await sleep(250); continue; }
         try {
           await runVlmAnalysisOnce(myToken);
           // 성공 → 다음 요청까지 대기 (요청 → 응답 → 대기 → 요청)
@@ -542,7 +572,6 @@
   // 루프 중단(토큰 무효화). 진행 중 요청의 응답은 token 불일치로 렌더되지 않음.
   function stopVlmLoop() {
     vlmLoop.token++;
-    vlmLoop.paused = false;
   }
   window.startVlmLoop = startVlmLoop;
   window.stopVlmLoop = stopVlmLoop;
@@ -561,7 +590,6 @@
     on = !!on;
     if (vlmLoop.enabled === on) { updateVlmToggle(); return; }
     vlmLoop.enabled = on;
-    vlmLoop.paused = false;
     updateVlmToggle();
     if (on) {
       startVlmLoop(); // 가동 시작(모달 개폐와 무관하게 주기적으로 /vlm/infer 요청)
@@ -569,7 +597,6 @@
       stopVlmLoop(); // 루프 중단
       // 대기/지연 TTS 폐기(재생 중인 건 끝까지) — OFF 후 음성이 더 나오지 않도록
       fetch(API + '/vlm/stop', { method: 'POST' }).catch(() => {});
-      resetAnalyzeBtn();
       const ov = document.getElementById('cctvVlmOverlay');
       if (ov && !cctvModalOpen()) ov.classList.remove('show');
     }
@@ -577,31 +604,18 @@
   window.toggleVlm = function () { setVlmEnabled(!vlmLoop.enabled); };
   window.setVlmEnabled = setVlmEnabled;
 
-  // CCTV 모달이 열릴 때 현재 분석 상태를 오버레이/버튼에 반영(분석을 시작하지는 않음).
+  // CCTV 모달이 열릴 때 현재 분석 상태를 오버레이에 반영(분석을 시작하지는 않음).
   function syncCctvAnalysisUi() {
     const ov = document.getElementById('cctvVlmOverlay');
     if (vlmLoop.enabled) {
-      updateAnalyzeBtn();
       const det = document.getElementById('vlmDetection');
       if (det) { const cur = det.textContent.trim(); if (!cur || cur === '—') det.textContent = '분석 요청 중…'; }
       if (ov) ov.classList.add('show');
     } else {
-      resetAnalyzeBtn();
       if (ov) ov.classList.remove('show');
     }
   }
   window.syncCctvAnalysisUi = syncCctvAnalysisUi;
-
-  // 모달 내 [분석] 버튼 = 가동 중 일시정지/재개 토글 (마스터 OFF면 동작 안 함)
-  window.analyzeCurrentCam = function () {
-    if (!vlmLoop.enabled) {
-      if (window.showToast) showToast('메인 화면의 “위험행동 분석” 스위치를 켜세요', 'warn');
-      return;
-    }
-    vlmLoop.paused = !vlmLoop.paused;
-    updateAnalyzeBtn();
-    // 재개 시: 활성 루프가 일시정지 슬립에서 깨어나 다음 주기에 자동 재요청
-  };
 
   /* ===================== 신호등 행렬 / 공정 / 경광등 ===================== */
   // 카운트 → 램프 단계 임계값. 백엔드(KIOSK_LIGHT_*_THRESHOLD)와 동일하게 유지할 것.
@@ -749,7 +763,7 @@
       li.className = 'bps-option' + (active ? ' active' : '');
       li.dataset.value = (p.label || p.name || p.code);
       li.dataset.code = p.code;
-      li.dataset.cctv = String((i % 3) + 1);
+      li.dataset.cctv = String((i % 2) + 1); // CCTV 2대(CAM-1/CAM-2)에 번갈아 매핑
       li.textContent = p.label || p.name || p.code;
       li.setAttribute('onclick', 'bhPickProc(this)');
       dd.appendChild(li);

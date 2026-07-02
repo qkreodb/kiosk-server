@@ -27,3 +27,8 @@ class CameraInfo(BaseModel):
         description="CCTV RTSP 스트림 주소 (DB cctv_info.rtsp_url)",
         examples=["rtsp://192.168.0.10:554/stream1"],
     )
+    frame_dir: str | None = Field(
+        default=None,
+        description="이 카메라 프레임 폴더 경로 (DB cctv_info.frame_dir) — VLM 분석 대상",
+        examples=["/home/ds/Desktop/frames/cam1"],
+    )
