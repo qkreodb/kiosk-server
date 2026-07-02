@@ -19,6 +19,7 @@ from app.integrations.vlm_client import VlmClient
 from app.repositories.base import KioskRepository
 from app.repositories.factory import get_repository
 from app.services.cctv_service import CctvService
+from app.services.danger_service import DangerFrameService
 from app.services.led_service import LedService
 from app.services.modal_service import ModalService
 from app.services.sensor_service import SensorService
@@ -120,6 +121,10 @@ def get_modal_service() -> ModalService:
 def get_cctv_service() -> CctvService:
     # cam_id 별 RTSP 카메라를 DB 기준으로 해석하는 resolver 를 넘긴다(다중 카메라 대응).
     return CctvService(_shared_dir_reader(), rtsp_camera_for)
+
+
+def get_danger_service() -> DangerFrameService:
+    return DangerFrameService(get_settings())
 
 
 @lru_cache

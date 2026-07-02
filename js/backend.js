@@ -295,6 +295,9 @@
   }
   // 프롬프트 질의(신규 CCTV) 모드로 동작하는 카메라 번호 — 지도 가장 우측 CAM-2.
   const PROMPT_CAM_NUM = '2';
+  // 현재 열려 있는 CCTV 모달의 카메라 번호. 탐지 오버레이는 CAM-2가 아닌 모달에서만
+  // 노출한다(분석 대상은 CAM-1이라, CAM-2 모달엔 탐지 결과를 띄우지 않음).
+  let currentCctvCam = null;
 
   /* ----- 이상현상 수신 시 CAM-1 CCTV 미니 팝업 알림 -----
    * VLM이 실제 이상행동을 카운트(쿨다운 통과)하면 사업장 지도 CCTV 탭의 CAM-1
@@ -444,6 +447,7 @@
   window.openCCTVFor = function (region) {
     document.getElementById('cctvHeadSub').textContent = region + ' · 실시간';
     const cam = camNumFrom(region);
+    currentCctvCam = cam;
     const image = document.getElementById('cctvImage');
     const vlm = document.getElementById('cctvVlmOverlay');
     const bar = document.getElementById('cctvPromptBar');
@@ -460,6 +464,71 @@
       if (bar) bar.style.display = 'none';
       syncCctvAnalysisUi(); // 기존 CCTV: 분석은 메인화면 토글이 제어 — 현재 상태만 반영
     }
+  };
+
+  /* ===================== 위험 탐지 사진 갤러리 ===================== */
+  // [위험 탐지 사진] 버튼 → VLM 서버가 저장한 스냅샷 폴더(GET /danger-frames)를
+  // 카드 그리드로 보여주고, 카드 클릭 시 라이트박스로 확대한다.
+  let dangerFramesCache = [];
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+  }
+  async function refreshDangerFrames() {
+    const grid = document.getElementById('dangerGrid');
+    const sub = document.getElementById('dangerSub');
+    if (!grid) return;
+    let data;
+    try { data = await fetchJson('/danger-frames'); }
+    catch (e) { grid.innerHTML = '<div class="danger-empty">사진 목록을 불러올 수 없습니다 · 백엔드 연결 확인</div>'; return; }
+    const frames = (data && data.frames) || [];
+    dangerFramesCache = frames;
+    if (sub) sub.textContent = 'VLM 위험행동 감지 스냅샷 · ' + frames.length + '장';
+    if (!frames.length) {
+      grid.innerHTML = '<div class="danger-empty">저장된 위험 탐지 사진이 없습니다</div>';
+      return;
+    }
+    const base = window.__API_BASE || '';
+    grid.innerHTML = frames.map((f, i) => {
+      const src = base + f.url;
+      const badges = (f.violation_labels || [])
+        .map((l) => '<span class="danger-badge">' + escapeHtml(l) + '</span>').join('');
+      return '<button type="button" class="danger-card" onclick="openDangerLightbox(' + i + ')">'
+        + '<div class="danger-thumb"><img loading="lazy" src="' + src + '" alt=""></div>'
+        + '<div class="danger-meta">'
+        +   '<div class="danger-proc">' + escapeHtml(f.process || 'unknown') + '</div>'
+        +   '<div class="danger-badges">' + badges + '</div>'
+        +   '<div class="danger-time">' + escapeHtml(f.captured_at || '') + '</div>'
+        + '</div></button>';
+    }).join('');
+  }
+  window.openDangerFrames = function () {
+    const ov = document.getElementById('dangerOverlay');
+    if (!ov) return;
+    closeDangerLightbox();           // 이전에 열려있던 확대뷰 초기화
+    ov.classList.add('open');
+    const grid = document.getElementById('dangerGrid');
+    if (grid) grid.innerHTML = '<div class="danger-empty">불러오는 중…</div>';
+    refreshDangerFrames();
+    startModalPoll('dangerOverlay', refreshDangerFrames, 5000); // 열려있는 동안 새 사진 갱신
+  };
+  window.openDangerLightbox = function (i) {
+    const f = dangerFramesCache[i];
+    if (!f) return;
+    const img = document.getElementById('dangerLightboxImg');
+    const cap = document.getElementById('dangerLightboxCap');
+    const lb = document.getElementById('dangerLightbox');
+    if (img) img.src = (window.__API_BASE || '') + f.url;
+    if (cap) cap.textContent = [f.process, (f.violation_labels || []).join(', '), f.captured_at]
+      .filter(Boolean).join('  ·  ');
+    if (lb) lb.classList.add('open');
+  };
+  window.closeDangerLightbox = function () {
+    const lb = document.getElementById('dangerLightbox');
+    const img = document.getElementById('dangerLightboxImg');
+    if (lb) lb.classList.remove('open');
+    if (img) img.src = '';
   };
 
   /* ===================== VLM / TTS ===================== */
@@ -495,20 +564,14 @@
     const o = document.getElementById('cctvOverlay');
     return !!(o && o.classList.contains('open'));
   }
+  // 탐지 오버레이를 띄워도 되는 상태: CCTV 모달이 열려 있고, 그게 CAM-2(프롬프트
+  // 전용)가 아닐 때만. CAM-2 모달에는 분석 결과를 노출하지 않는다.
+  function analysisModalOpen() {
+    return cctvModalOpen() && currentCctvCam !== PROMPT_CAM_NUM;
+  }
 
   function renderVlmResult(d) {
     document.getElementById('vlmDetection').textContent = d.detection || '— (위험행동 미감지)';
-    document.getElementById('vlmWarning').textContent = d.warning_text || '—';
-    const wl = d.warning_light || {};
-    const ledTxt = wl.led && wl.led.status ? ' · LED ' + (wl.led.status === 'sent' ? '점등' : wl.led.status) : '';
-    document.getElementById('vlmLight').textContent = (wl.label || '—') + (wl.trigger_count != null ? ' (누적 ' + wl.trigger_count + '회)' : '') + ledTxt;
-    const tts = d.tts || {};
-    document.getElementById('vlmTts').textContent = {
-      synthesized: '🔊 음성 안내 재생 중',
-      stubbed: '🔊 음성 안내 재생 중(스텁)',
-      skipped: '경고문 없음 — 미재생',
-      failed: '재생 실패: ' + (tts.detail || ''),
-    }[tts.status] || (tts.status || '—');
   }
 
   // 불안전행동 감시 신호등에서 체크된 항목의 라벨 키 목록.
@@ -539,8 +602,9 @@
     renderVlmResult(d);
     // 이상현상(쿨다운 통과한 실제 카운트 발생) 시 중앙 CCTV 아이콘에 미니 팝업 알림.
     if (d.behaviors && d.behaviors.length) showCctvAlert();
-    // 결과 오버레이는 CCTV 모달이 열려 있을 때만 노출(분석은 모달과 무관하게 계속).
-    if (cctvModalOpen()) document.getElementById('cctvVlmOverlay').classList.add('show');
+    // 결과 오버레이는 CAM-1 모달이 열려 있을 때만 노출(CAM-2 모달엔 안 띄움).
+    // 텍스트는 다음 응답이 도착할 때까지 그대로 유지되고, 도착 시 이 줄에서 교체된다.
+    if (analysisModalOpen()) document.getElementById('cctvVlmOverlay').classList.add('show');
     hydrateMatrix(processCode).catch(() => {}); // 메인화면 신호등 행렬은 항상 갱신
   }
 
@@ -548,7 +612,7 @@
   function startVlmLoop() {
     const myToken = ++vlmLoop.token; // 이전 루프/in-flight 응답 무효화
     const det = document.getElementById('vlmDetection');
-    if (det && cctvModalOpen()) {
+    if (det && analysisModalOpen()) {
       // 직전 분석 결과는 다음 응답이 도착할 때까지 그대로 유지한다.
       // (아직 한 번도 결과가 없을 때만 안내 문구를 보여준다)
       const cur = det.textContent.trim();
@@ -564,9 +628,8 @@
         } catch (e) {
           if (vlmLoop.token !== myToken || !vlmLoop.enabled) break;
           console.error('[VLM 분석] 실패:', e);
-          if (cctvModalOpen()) {
+          if (analysisModalOpen()) {
             document.getElementById('vlmDetection').textContent = '분석 실패: ' + e.message;
-            document.getElementById('vlmWarning').textContent = '백엔드 연결을 확인하세요';
             document.getElementById('cctvVlmOverlay').classList.add('show');
           }
           await sleep(VLM_ERROR_BACKOFF_MS); // 오류 백오프 후 재시도

@@ -54,6 +54,12 @@ class Settings(BaseSettings):
     shared_dir: Path = Path("../kiosk-hardware/frames")
     frame_glob: str = "frame_*.jpg"
 
+    # --- Danger frames (VLM 서버가 위험 탐지 시 저장한 스냅샷 디렉터리) ---
+    # VLM 서버(kiosk-vlm)가 `공정_위반-위반_YYYYMMDD_HHMMSS.png` 형식으로 저장한 사진
+    # 폴더. 키오스크는 이 폴더를 읽어 [위험 탐지 사진] 갤러리로 보여준다(읽기 전용).
+    # 기본값은 kiosk-vlm 형제 저장소의 danger_frames(운영 배치 기준).
+    danger_frames_dir: Path = Path("../kiosk-vlm/danger_frames")
+
     # --- Live CCTV (IP 카메라 직결 RTSP) ---
     # Shared Dir 파이프라인이 준비되기 전, 키오스크가 IP 카메라의 RTSP 스트림을
     # 서버에서 직접 디코딩(OpenCV/FFmpeg)해 MJPEG 로 브라우저에 중계한다.
