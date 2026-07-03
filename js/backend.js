@@ -380,9 +380,10 @@
   }
 
   /* ----- 프롬프트 질의 루프 -----
-   * CAM-2 모달이 열리면 즉시 시작: 입력창의 프롬프트로 POST /vlm/prompt →
+   * [분석 시작] 버튼을 눌러야 시작: 입력창의 프롬프트로 POST /vlm/prompt →
    * 응답 텍스트를 자막 큐에 넣고 곧바로 다음 질의(응답 도착 주도). 프롬프트는
-   * 매 요청 시점에 입력창을 읽으므로 사용자가 수정하면 다음 질의부터 반영된다. */
+   * 매 요청 시점에 입력창을 읽으므로 사용자가 수정하면 다음 질의부터 반영된다.
+   * [중지] 버튼(같은 버튼 토글)을 누르면 루프를 멈추고 다시 [분석 시작]으로 되돌아간다. */
   const PROMPT_INTERVAL_MS = 300;      // 성공 응답 후 다음 질의까지 대기
   const PROMPT_ERROR_BACKOFF_MS = 2000; // 오류 시 재시도 전 대기
   const DEFAULT_PROMPT = '지금 CCTV 장면에서 무슨 일이 일어나고 있는지 한 문장으로 설명해줘.';
@@ -399,8 +400,16 @@
   function promptLoopAlive(token) {
     return promptLoop.token === token && promptLoop.active && cctvModalOpen();
   }
+  // [분석 시작]/[중지] 버튼 라벨·스타일을 루프 상태와 동기화.
+  function setPromptButtonState(active) {
+    const btn = document.getElementById('cctvPromptSendBtn');
+    if (!btn) return;
+    btn.textContent = active ? '중지' : '분석 시작';
+    btn.classList.toggle('active', active);
+  }
   function startPromptLoop() {
     promptLoop.active = true;
+    setPromptButtonState(true);
     const myToken = ++promptLoop.token; // 이전 루프/in-flight 응답 무효화
     (async function loop() {
       while (promptLoopAlive(myToken)) {
@@ -426,11 +435,17 @@
   function stopPromptLoop() {
     promptLoop.active = false;
     promptLoop.token++;
+    setPromptButtonState(false);
   }
-  // 입력 바 [전송]/Enter — 루프가 매 요청 입력창을 읽으므로 다음 질의부터 반영된다.
+  // 입력 바 [분석 시작]/[중지] 토글(Enter 키 제출도 동일하게 처리) —
+  // 모달을 열어도 API를 자동 호출하지 않고, 버튼을 눌러야 질의 루프가 시작/중단된다.
   window.sendCctvPrompt = function (ev) {
     if (ev) ev.preventDefault();
-    if (window.showToast) showToast('프롬프트 적용 — 다음 응답부터 반영됩니다', 'ok');
+    if (promptLoop.active) {
+      stopPromptLoop();
+    } else {
+      startPromptLoop();
+    }
   };
 
   window.closeCCTV = function () {
@@ -457,9 +472,9 @@
     if (image) { image.style.display = 'block'; image.src = cctvLiveSrc(cam); }
     document.getElementById('cctvOverlay').classList.add('open');
     if (cam === PROMPT_CAM_NUM) {
-      // 신규 CCTV: 프롬프트 입력 바 노출 + 모달 팝업 즉시 질의 시작
+      // 신규 CCTV: 프롬프트 입력 바만 노출 — API 호출은 [분석 시작] 버튼을 눌러야 시작된다.
       if (bar) bar.style.display = 'flex';
-      startPromptLoop();
+      setPromptButtonState(false);
     } else {
       if (bar) bar.style.display = 'none';
       syncCctvAnalysisUi(); // 기존 CCTV: 분석은 메인화면 토글이 제어 — 현재 상태만 반영

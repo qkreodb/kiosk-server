@@ -422,6 +422,12 @@
 }
 .cctv-prompt-send:hover { background: rgba(2, 132, 199, 0.22); border-color: var(--cyan); }
 .cctv-prompt-send:active { transform: scale(0.96); }
+.cctv-prompt-send.active {
+  background: rgba(220, 38, 38, 0.12);
+  border-color: rgba(220, 38, 38, 0.45);
+  color: var(--red);
+}
+.cctv-prompt-send.active:hover { background: rgba(220, 38, 38, 0.22); border-color: var(--red); }
 
 /* ===== 사업장 지도: 이상현상 수신 시 중앙 CCTV 미니 팝업 ===== */
 .cctv-mini {
