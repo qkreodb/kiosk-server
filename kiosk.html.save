@@ -1,3 +1,4 @@
+
 ﻿
 <!DOCTYPE html>
 <html lang="ko">
@@ -126,7 +127,6 @@
           <div class="behavior-head-right">
             <button type="button" class="cctv-btn-item" data-cctv="1" onclick="bhSelectCctv('1', this)">CCTV-1</button>
             <button type="button" class="cctv-btn-item" data-cctv="2" onclick="bhSelectCctv('2', this)">CCTV-2</button>
-            <button type="button" title="위험 탐지 사진" onclick="openDangerFrames()" class="icon-btn-ghost bh-danger-btn"><i class="ri-folder-image-line"></i></button>
             <button type="button" title="초기화" onclick="resetBehavior()" class="icon-btn-ghost bh-reset-btn"><i class="ri-refresh-line"></i></button>
           </div>
         </div>
@@ -404,6 +404,9 @@
         <!-- VLM 분석 결과 오버레이 (CCTV 화면 위 반투명) -->
         <div class="cctv-vlm-overlay" id="cctvVlmOverlay">
           <div class="cctv-vlm-row"><span class="cctv-vlm-label" style="color:var(--cyan);">탐지</span><span class="cctv-vlm-val" id="vlmDetection">—</span></div>
+          <div class="cctv-vlm-row"><span class="cctv-vlm-label" style="color:var(--amber);">경고</span><span class="cctv-vlm-val" id="vlmWarning">—</span></div>
+          <div class="cctv-vlm-row"><span class="cctv-vlm-label" style="color:var(--red);">경광등</span><span class="cctv-vlm-val" id="vlmLight">—</span></div>
+          <div class="cctv-vlm-row"><span class="cctv-vlm-label" style="color:var(--green);">음성</span><span class="cctv-vlm-val" id="vlmTts">—</span></div>
         </div>
         <!-- Fallback (영상 로드 전/실패 시 표시) -->
         <div class="cctv-fallback">
@@ -422,38 +425,10 @@
         <input type="text" class="cctv-prompt-input" id="cctvPromptInput"
                value="지금 CCTV 장면에서 무슨 일이 일어나고 있는지 한 문장으로 설명해줘."
                placeholder="VLM에게 물어볼 내용을 입력하세요" autocomplete="off" />
-        <button type="submit" class="cctv-prompt-send" id="cctvPromptSend">분석 시작</button>
+        <button type="submit" class="cctv-prompt-send">전송</button>
       </form>
     </div>
   </div>
-  </div>
-</div>
-
-<!-- ============== 위험 탐지 사진 갤러리 MODAL ============== -->
-<div class="modal-overlay" id="dangerOverlay" style="z-index:1002;">
-  <div class="modal-box" style="max-width: 1040px;">
-    <div class="modal-head">
-      <div class="modal-head-left">
-        <div class="modal-head-icon" style="background:rgba(220,38,38,0.1); border:1px solid rgba(220,38,38,0.3); color:var(--red); display:flex; align-items:center; justify-content:center; width:48px; height:48px; border-radius:10px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:26px; height:26px;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        </div>
-        <div>
-          <div class="modal-head-title">위험 탐지 사진</div>
-          <div class="modal-head-sub" id="dangerSub">VLM이 위험행동을 감지해 저장한 스냅샷</div>
-        </div>
-      </div>
-      <button class="modal-close" onclick="closeModal('dangerOverlay')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="modal-body">
-      <div class="danger-grid" id="dangerGrid"><!-- JS injected --></div>
-    </div>
-  </div>
-  <!-- 사진 확대(라이트박스) — 카드 클릭 시 -->
-  <div class="danger-lightbox" id="dangerLightbox" onclick="closeDangerLightbox()">
-    <img id="dangerLightboxImg" class="danger-lightbox-img" alt="위험 탐지 사진 확대" />
-    <div class="danger-lightbox-cap" id="dangerLightboxCap"></div>
   </div>
 </div>
 

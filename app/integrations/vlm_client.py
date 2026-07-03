@@ -75,6 +75,7 @@ class VlmClient:
         self,
         dir_path: str | None = None,
         labels: list[str] | None = None,
+        process_name: str | None = None,
     ) -> VlmResult:
         """Call the VLM Server's /analyze; on any failure, return an empty result.
 
@@ -83,10 +84,14 @@ class VlmClient:
         ``labels``: 분석 대상으로 선택된 행동 키 목록(불안전행동 감시 신호등 체크).
         값이 있으면 ``labels`` 필드로 함께 보내 해당 행동만 탐지하게 한다. None/빈
         목록이면 라벨 제약 없이(서버 기본 동작) 분석한다.
+        ``process_name``: 해당 카메라(CAM-1)의 공정명. VLM 서버가 위험 스냅샷 파일명
+        (``공정_위반_시각.png``)에 사용한다. 값이 있으면 ``process_name`` 으로 함께 보낸다.
         """
         payload: dict = {"dir_path": dir_path or self._frame_dir}
         if labels:
             payload["labels"] = labels
+        if process_name:
+            payload["process_name"] = process_name
         try:
             async with httpx.AsyncClient(timeout=self._timeout) as client:
                 resp = await client.post(self._url, json=payload)

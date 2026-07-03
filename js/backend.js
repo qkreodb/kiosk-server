@@ -380,9 +380,8 @@
   }
 
   /* ----- 프롬프트 질의 루프 -----
-   * CAM-2 모달이 열리면 즉시 시작: 입력창의 프롬프트로 POST /vlm/prompt →
-   * 응답 텍스트를 자막 큐에 넣고 곧바로 다음 질의(응답 도착 주도). 프롬프트는
-   * 매 요청 시점에 입력창을 읽으므로 사용자가 수정하면 다음 질의부터 반영된다. */
+   * CAM-2 모달에서 [분석 시작]을 눌렀을 때만 시작한다. 시작 시점의 입력 프롬프트로
+   * POST /vlm/prompt 를 반복 호출하고, [분석 중지]를 누르면 다음 요청을 내보내지 않는다. */
   const PROMPT_INTERVAL_MS = 300;      // 성공 응답 후 다음 질의까지 대기
   const PROMPT_ERROR_BACKOFF_MS = 2000; // 오류 시 재시도 전 대기
   const DEFAULT_PROMPT = '지금 CCTV 장면에서 무슨 일이 일어나고 있는지 한 문장으로 설명해줘.';
@@ -399,38 +398,58 @@
   function promptLoopAlive(token) {
     return promptLoop.token === token && promptLoop.active && cctvModalOpen();
   }
-  function startPromptLoop() {
+  function setPromptButtonAnalyzing(analyzing) {
+    const btn = document.getElementById('cctvPromptSend');
+    if (!btn) return;
+    btn.textContent = analyzing ? '분석 중지' : '분석 시작';
+    btn.classList.toggle('analyzing', !!analyzing);
+  }
+
+  function startPromptLoop(promptText) {
     promptLoop.active = true;
     const myToken = ++promptLoop.token; // 이전 루프/in-flight 응답 무효화
+    setPromptButtonAnalyzing(true);
     (async function loop() {
-      while (promptLoopAlive(myToken)) {
-        try {
-          const resp = await fetch(API + '/vlm/prompt', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ camera_id: 'CAM-' + PROMPT_CAM_NUM, prompt: currentPromptText() }),
-          });
-          if (!resp.ok) throw new Error('HTTP ' + resp.status);
-          const d = await resp.json();
-          if (!promptLoopAlive(myToken)) return; // 응답 도착 시 이미 닫힘/전환됨
-          if (d.ok && d.text) enqueueCaption(d.text);
-          await sleep(PROMPT_INTERVAL_MS);
-        } catch (e) {
-          if (!promptLoopAlive(myToken)) return;
-          console.error('[VLM 프롬프트] 실패:', e);
-          await sleep(PROMPT_ERROR_BACKOFF_MS);
+      try {
+        while (promptLoopAlive(myToken)) {
+          try {
+            const resp = await fetch(API + '/vlm/prompt', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ camera_id: 'CAM-' + PROMPT_CAM_NUM, prompt: promptText }),
+            });
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            const d = await resp.json();
+            if (!promptLoopAlive(myToken)) return; // 응답 도착 시 이미 닫힘/전환됨
+            if (d.ok && d.text) enqueueCaption(d.text);
+            await sleep(PROMPT_INTERVAL_MS);
+          } catch (e) {
+            if (!promptLoopAlive(myToken)) return;
+            console.error('[VLM 프롬프트] 실패:', e);
+            await sleep(PROMPT_ERROR_BACKOFF_MS);
+          }
         }
+      } finally {
+        if (promptLoop.token === myToken || !promptLoop.active) setPromptButtonAnalyzing(false);
       }
     })();
   }
   function stopPromptLoop() {
     promptLoop.active = false;
     promptLoop.token++;
+    setPromptButtonAnalyzing(false);
   }
-  // 입력 바 [전송]/Enter — 루프가 매 요청 입력창을 읽으므로 다음 질의부터 반영된다.
+  // 입력 바 [분석 시작]/[분석 중지] — 버튼을 토글처럼 사용해 프롬프트 질의 루프를 제어한다.
   window.sendCctvPrompt = function (ev) {
     if (ev) ev.preventDefault();
-    if (window.showToast) showToast('프롬프트 적용 — 다음 응답부터 반영됩니다', 'ok');
+    if (promptLoop.active) {
+      stopPromptLoop();
+      if (window.showToast) showToast('분석을 중지합니다', 'ok');
+      return;
+    }
+    const promptText = currentPromptText();
+    startPromptLoop(promptText);
+    if (window.showToast) showToast('새로 입력된 프롬프트를 기반으로 분석을 시작합니다.', 'ok');
   };
 
   window.closeCCTV = function () {
@@ -457,9 +476,9 @@
     if (image) { image.style.display = 'block'; image.src = cctvLiveSrc(cam); }
     document.getElementById('cctvOverlay').classList.add('open');
     if (cam === PROMPT_CAM_NUM) {
-      // 신규 CCTV: 프롬프트 입력 바 노출 + 모달 팝업 즉시 질의 시작
+      // 신규 CCTV: 프롬프트 입력 바만 노출한다. 분석은 [분석 시작] 클릭 후 시작된다.
       if (bar) bar.style.display = 'flex';
-      startPromptLoop();
+      setPromptButtonAnalyzing(false);
     } else {
       if (bar) bar.style.display = 'none';
       syncCctvAnalysisUi(); // 기존 CCTV: 분석은 메인화면 토글이 제어 — 현재 상태만 반영
@@ -842,15 +861,19 @@
     if (typeof window.syncMonitoringToProc === 'function') window.syncMonitoringToProc();
   }
 
-  // 초기화 버튼: UI 즉시 소등 + 백엔드 count 0 리셋
+  // 초기화 버튼: UI 즉시 소등 + 백엔드 count 0 리셋 + 위험 탐지 사진 폴더 비우기
   window.resetBehavior = async function () {
     const processCode = currentProcessCode();
     document.querySelectorAll('#bhMatrix .bh-matrix-row').forEach(row => {
       row.querySelectorAll('.bhm-lamp').forEach(l => l.classList.remove('on'));
       row.dataset.active = '-1';
     });
+    // 카운트 0 리셋 + 위험 탐지 사진 폴더 비우기(둘 다 오프라인이면 무시).
     try {
       await fetch(API + '/behavior/reset?process_code=' + encodeURIComponent(processCode), { method: 'POST' });
+    } catch (_) { /* 오프라인이면 무시 */ }
+    try {
+      await fetch(API + '/danger-frames', { method: 'DELETE' });
     } catch (_) { /* 오프라인이면 무시 */ }
   };
 
