@@ -44,7 +44,7 @@ async def tts_demo(
     result = await tts.synthesize(text)
 
     if result.audio_path:
-        speaker = SpeakerActuator()
+        speaker = SpeakerActuator(settings.speaker_alsa_device)
         # playsound는 블로킹 호출이므로 스레드 풀에서 실행
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, speaker.play, result.audio_path, result.text)

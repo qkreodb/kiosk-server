@@ -100,6 +100,9 @@ class Settings(BaseSettings):
     tts_engine: str = "edge"
     tts_output_dir: Path = Path("./tts_out")
     tts_enabled: bool = True
+    # Optional ALSA device for physical speaker output, e.g. "plughw:J7".
+    # When unset, playback uses the OS default audio output through playsound.
+    speaker_alsa_device: str = ""
 
     # Edge TTS 전용(엔진이 edge 일 때) 보이스 이름.
     tts_voice: str = "ko-KR-SunHiNeural"
@@ -142,7 +145,7 @@ class Settings(BaseSettings):
     # 급증을 막는다. 5가지 행동 각각에 대해 완전히 독립적으로 적용되는 쿨다운(초):
     # 한 행동이 카운트되면 이 시간 동안 같은 행동의 재카운트·TTS·경광등을 무시하고,
     # 만료 후 재감지되면 다시 카운트한다(vlm_service.infer 참고).
-    behavior_cooldown_seconds: float = Field(default=10.0, ge=0)
+    behavior_cooldown_seconds: float = Field(default=3.0, ge=0)
 
     # --- VLM 서버 측 분석 스케줄러 (브라우저 없이 다중 카메라 순회 분석) ---
     # 한 사이클(모든 카메라 순차 분석) 이후 다음 사이클까지 대기(초).

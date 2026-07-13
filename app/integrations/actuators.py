@@ -12,6 +12,7 @@ implementations for real device I/O without touching services/routers.
 from __future__ import annotations
 
 import threading
+import subprocess
 from pathlib import Path
 
 from app.core.logging import get_logger
@@ -44,7 +45,8 @@ class SpeakerActuator:
     들어온 대기분만 재생한다. 예) #1 재생 중 #2,#3 도착 → #1 종료 후 #3 재생(#2 폐기).
     """
 
-    def __init__(self) -> None:
+    def __init__(self, alsa_device: str = "") -> None:
+        self._alsa_device = alsa_device.strip()
         self._lock = threading.Lock()
         self._pending: tuple[str, str] | None = None  # 최신 1건만 보관
         self._worker_running = False
@@ -82,11 +84,46 @@ class SpeakerActuator:
             logger.warning("[SPEAKER] no audio file; cannot play: '%s'", text)
             return False
         try:
+            if self._alsa_device:
+                cmd = [
+                    "gst-launch-1.0",
+                    "-q",
+                    "filesrc",
+                    f"location={audio_path}",
+                    "!",
+                    "decodebin",
+                    "!",
+                    "audioconvert",
+                    "!",
+                    "audioresample",
+                    "!",
+                    "alsasink",
+                    f"device={self._alsa_device}",
+                ]
+                logger.info(
+                    "[SPEAKER] playing via ALSA %s: %s (%s)",
+                    self._alsa_device,
+                    audio_path,
+                    text,
+                )
+                subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+                logger.info("[SPEAKER] playback complete.")
+                return True
+
             from playsound import playsound  # noqa: PLC0415
-            logger.info("[SPEAKER] playing: %s ('%s')", audio_path, text)
+            logger.info("[SPEAKER] playing: %s (%s)", audio_path, text)
             playsound(audio_path)  # blocking — waits until playback finishes
             logger.info("[SPEAKER] playback complete.")
             return True
+        except subprocess.CalledProcessError as exc:
+            detail = (exc.stderr or b"").decode("utf-8", "ignore").strip()
+            logger.error(
+                "[SPEAKER] playback failed via ALSA %s (rc=%s): %s",
+                self._alsa_device,
+                exc.returncode,
+                detail,
+            )
+            return False
         except Exception as exc:  # noqa: BLE001
             logger.error("[SPEAKER] playback failed (%s): %s", exc.__class__.__name__, exc)
             return False

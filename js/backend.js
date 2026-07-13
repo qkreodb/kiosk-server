@@ -919,7 +919,7 @@
     const col = ok ? '#16A34A' : '#DC2626';
     badge.innerHTML =
       '<span class="conn-dot" style="background:' + col + ';box-shadow:0 0 8px ' + col + ';"></span>' +
-      (ok ? '백엔드 연결됨' : '백엔드 오프라인') + ' · :8080' + (msg ? ' · ' + msg : '');
+      (ok ? 'Jetson Connected' : '백엔드 오프라인') +  (msg ? ' · ' + msg : '');
   }
 
   /* ===================== 현장 특이사항 관리 모달 ===================== */

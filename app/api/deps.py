@@ -93,7 +93,7 @@ def rtsp_camera_for(cam_id: str | None) -> RtspCamera | None:
 
 @lru_cache
 def _speaker() -> SpeakerActuator:
-    return SpeakerActuator()
+    return SpeakerActuator(get_settings().speaker_alsa_device)
 
 
 @lru_cache
