@@ -791,6 +791,53 @@
 .env-detail-lbl { font-size: 14px; color: var(--t-2); font-weight: 600; }
 .env-detail-range { font-size: 12px; color: var(--t-3); font-family: 'Pretendard', sans-serif; }
 
+/* 체감온도 카드: 온도/습도 두 칸을 합쳐 왼쪽 세로 카드로. 오른쪽 열(소음/미세먼지) 2행을 차지한다. */
+.env-feels-card {
+  grid-row: span 2;
+  justify-content: flex-start; gap: 0; padding: 22px 20px;
+}
+.env-feels-lbl { font-size: 17px; font-weight: 600; color: var(--t-2); }
+.env-feels-val {
+  font-family: 'Pretendard', sans-serif; font-size: 58px; font-weight: 500;
+  line-height: 1.15; color: #192A84;
+  transition: color 0.3s ease;
+}
+.env-feels-val small { font-size: 34px; font-weight: 500; }
+/* 등급 pill — 숫자와 함께 색이 바뀐다 (관심/주의/경고/위험) */
+.env-feels-grade {
+  margin-top: 10px; padding: 7px 26px; border-radius: 999px;
+  font-size: 15px; font-weight: 600; color: #fff;
+  background: var(--t-3);
+  transition: background-color 0.3s ease;
+}
+.env-feels-rows {
+  width: 100%; margin-top: 22px;
+  display: flex; flex-direction: column;
+}
+.env-feels-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 12px 4px;
+  border-top: 1px solid var(--line);
+}
+.env-feels-row-lbl { font-size: 15px; font-weight: 600; color: var(--t-2); }
+.env-feels-row-val {
+  font-family: 'Pretendard', sans-serif; font-size: 24px; font-weight: 500;
+  color: var(--t-1); flex: 1; text-align: center;
+}
+.env-feels-row-val small { font-size: 17px; }
+
+/* 체감온도 등급색 (31 관심 / 33 주의 / 35 경고 / 38 위험) — 숫자와 pill 만 바뀐다 */
+.env-feels-card.grade-normal  .env-feels-val { color: #2E7D32; }
+.env-feels-card.grade-normal  .env-feels-grade { background: #2E7D32; }
+.env-feels-card.grade-attention .env-feels-val { color: #F2B21A; }
+.env-feels-card.grade-attention .env-feels-grade { background: #F2B21A; }
+.env-feels-card.grade-caution .env-feels-val { color: #FF9000; }
+.env-feels-card.grade-caution .env-feels-grade { background: #FF9000; }
+.env-feels-card.grade-warning .env-feels-val { color: #F4511E; }
+.env-feels-card.grade-warning .env-feels-grade { background: #F4511E; }
+.env-feels-card.grade-danger  .env-feels-val { color: #E53935; }
+.env-feels-card.grade-danger  .env-feels-grade { background: #E53935; }
+
 /* ============== 비상연락망 (모달) ============== */
 .contact-board {
   display: flex; flex-direction: column; gap: 14px;

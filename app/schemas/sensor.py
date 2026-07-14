@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
+from app.domain.thermal_comfort import calculate_feels_like
 
 
 class TempHumidReading(BaseModel):
@@ -21,6 +23,14 @@ class TempHumidReading(BaseModel):
     feels_like: float | None = Field(default=None, description="체감 온도 (°C)")
     dust: int | None = Field(default=None, description="미세먼지 (㎍/㎥)")
     timestamp: str = Field(description="ISO-8601 측정 시각")
+
+    @model_validator(mode="after")
+    def _fill_feels_like(self) -> TempHumidReading:
+        # DB(ERD)에 feels_like 컬럼이 없어 repository 가 항상 None 을 넣는다.
+        # 조회 시점에 temp/humidity 로 채우되, 값이 이미 있으면 그대로 둔다.
+        if self.feels_like is None:
+            self.feels_like = calculate_feels_like(self.temp, self.humidity)
+        return self
 
 
 class TempHumidResponse(BaseModel):

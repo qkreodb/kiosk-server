@@ -168,27 +168,37 @@
   window.openEnvDetail = async function (sensorId, zone, sensorName) {
     const sub = document.getElementById('envDetailSub');
     if (sub) sub.textContent = sensorId + ' · ' + zone;
-    setText('envDetailTemp', '--<small>°C</small>', true);
-    setText('envDetailHum', '--<small>%</small>', true);
+    setText('envDetailFeels', '-- <small>°C</small>', true);
+    setText('envDetailTemp', '-- <small>°C</small>', true);
+    setText('envDetailHum', '-- <small>%</small>', true);
+    if (typeof updateFeelsGrade === 'function') updateFeelsGrade(NaN);
     if (typeof updateEnvStatus === 'function') updateEnvStatus(NaN, NaN);
     document.getElementById('envDetailOverlay').classList.add('open');
+
+    // 체감온도: 실센서는 API 의 feels_like 를, 값이 없으면 같은 공식의 프론트 폴백을 쓴다.
+    function showEnv(temp, hum, feels) {
+      const f = Number.isFinite(feels) ? feels : feelsLikeC(temp, hum);
+      setText('envDetailFeels', (Number.isFinite(f) ? f.toFixed(1) : '--') + ' <small>°C</small>', true);
+      setText('envDetailTemp', temp.toFixed(1) + ' <small>°C</small>', true);
+      setText('envDetailHum', hum.toFixed(1) + ' <small>%</small>', true);
+      if (typeof updateFeelsGrade === 'function') updateFeelsGrade(f);
+      if (typeof updateEnvStatus === 'function') updateEnvStatus(temp, hum);
+    }
 
     const live = !!sensorName;
     const pollMs = TH_POLL_MS[sensorName] || MODAL_POLL_MS;
     async function update() {
       if (!live) {
         const dummy = dummyTempHumid(sensorId);
-        setText('envDetailTemp', dummy.temp + '<small>°C</small>', true);
-        setText('envDetailHum', dummy.humidity + '<small>%</small>', true);
-        if (typeof updateEnvStatus === 'function') updateEnvStatus(parseFloat(dummy.temp), parseFloat(dummy.humidity));
+        showEnv(parseFloat(dummy.temp), parseFloat(dummy.humidity), NaN);
         return;
       }
       const reading = await fetchTempHumidByName(sensorName);
       if (!reading) return;
       if (sub) sub.textContent = sensorId + ' · ' + zone + ' · LIVE';
-      setText('envDetailTemp', Number(reading.temp).toFixed(1) + '<small>°C</small>', true);
-      setText('envDetailHum', Number(reading.humidity).toFixed(1) + '<small>%</small>', true);
-      if (typeof updateEnvStatus === 'function') updateEnvStatus(Number(reading.temp), Number(reading.humidity));
+      // feels_like 가 null 이면 Number(null)===0 이므로 NaN 으로 바꿔 폴백 계산을 타게 한다.
+      const feels = reading.feels_like == null ? NaN : Number(reading.feels_like);
+      showEnv(Number(reading.temp), Number(reading.humidity), feels);
     }
 
     try { await update(); } catch (_) { /* 모달은 유지 */ }

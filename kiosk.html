@@ -968,15 +968,20 @@
     </div>
     <div class="modal-body">
       <div class="env-detail-grid">
-        <div class="env-detail-card">
-          <div class="env-detail-val" id="envDetailTemp">27.4<small>°C</small></div>
-          <div class="env-detail-lbl">현재 온도</div>
-          <div class="env-detail-range">적정 18~28°C</div>
-        </div>
-        <div class="env-detail-card">
-          <div class="env-detail-val" id="envDetailHum">58<small>%</small></div>
-          <div class="env-detail-lbl">상대 습도</div>
-          <div class="env-detail-range">적정 40~60%</div>
+        <div class="env-detail-card env-feels-card">
+          <div class="env-feels-lbl">체감 온도</div>
+          <div class="env-feels-val" id="envDetailFeels">29.8 <small>°C</small></div>
+          <div class="env-feels-grade" id="envDetailGrade">관심</div>
+          <div class="env-feels-rows">
+            <div class="env-feels-row">
+              <span class="env-feels-row-lbl">온도</span>
+              <span class="env-feels-row-val" id="envDetailTemp">27.4 <small>°C</small></span>
+            </div>
+            <div class="env-feels-row">
+              <span class="env-feels-row-lbl">습도</span>
+              <span class="env-feels-row-val" id="envDetailHum">58 <small>%</small></span>
+            </div>
+          </div>
         </div>
         <div class="env-detail-card">
           <div class="env-detail-val">76<small>dB</small></div>

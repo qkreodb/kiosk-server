@@ -155,15 +155,50 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 const ENV_TEMP_RANGE = { min: 18, max: 28 };
 const ENV_HUM_RANGE = { min: 40, max: 60 };
 
-// 측정값이 기준 범위를 벗어나면 카드 배경/문구를 경고 상태로 갱신
+// 체감온도(°C) — 서버 app/domain/thermal_comfort.py 와 같은 공식(Stull 습구온도 → 기상청 TWI).
+// 실센서는 API 의 feels_like 를 그대로 쓰고, 이 함수는 더미 센서/폴백용이다.
+function feelsLikeC(ta, rh) {
+  if (!Number.isFinite(ta) || !Number.isFinite(rh)) return NaN;
+  if (ta < 27) return Math.round(ta * 10) / 10;
+  rh = Math.min(100, Math.max(0, rh));
+  const tw = ta * Math.atan(0.151977 * Math.sqrt(rh + 8.313659))
+    + Math.atan(ta + rh)
+    - Math.atan(rh - 1.676331)
+    + 0.00391838 * Math.pow(rh, 1.5) * Math.atan(0.023101 * rh)
+    - 4.686035;
+  const hi = -0.2442 + 0.55399 * tw + 0.45535 * ta
+    - 0.0022 * tw * tw + 0.00278 * tw * ta + 3.0;
+  return Math.round(hi * 10) / 10;
+}
+
+// 체감온도 등급 (기상청 폭염 체감온도 단계) — 하한 이상이면 해당 등급.
+const ENV_FEELS_GRADES = [
+  { min: 38, cls: 'grade-danger',    label: '위험' },
+  { min: 35, cls: 'grade-warning',   label: '경고' },
+  { min: 33, cls: 'grade-caution',   label: '주의' },
+  { min: 31, cls: 'grade-attention', label: '관심' },
+  { min: -Infinity, cls: 'grade-normal', label: '정상' },
+];
+const ENV_GRADE_CLASSES = ENV_FEELS_GRADES.map((g) => g.cls);
+
+// 체감온도 값에 따라 숫자색과 등급 pill(색·문구)만 바꾼다. 카드 배경은 건드리지 않는다.
+function updateFeelsGrade(feels) {
+  const card = document.getElementById('envDetailFeels')?.closest('.env-feels-card');
+  const pill = document.getElementById('envDetailGrade');
+  if (!card || !pill) return;
+
+  card.classList.remove(...ENV_GRADE_CLASSES);
+  if (!Number.isFinite(feels)) { pill.textContent = '--'; return; }
+
+  const grade = ENV_FEELS_GRADES.find((g) => feels >= g.min);
+  card.classList.add(grade.cls);
+  pill.textContent = grade.label;
+}
+
+// 측정값이 기준 범위를 벗어나면 하단 안내 문구를 경고 상태로 갱신
 function updateEnvStatus(temp, hum) {
   const tempOut = Number.isFinite(temp) && (temp < ENV_TEMP_RANGE.min || temp > ENV_TEMP_RANGE.max);
   const humOut = Number.isFinite(hum) && (hum < ENV_HUM_RANGE.min || hum > ENV_HUM_RANGE.max);
-
-  const tempCard = document.getElementById('envDetailTemp')?.closest('.env-detail-card');
-  const humCard = document.getElementById('envDetailHum')?.closest('.env-detail-card');
-  if (tempCard) tempCard.classList.toggle('out-of-range', tempOut);
-  if (humCard) humCard.classList.toggle('out-of-range', humOut);
 
   const note = document.getElementById('envStatusNote');
   const icon = document.getElementById('envStatusIcon');
@@ -195,8 +230,11 @@ function openEnvDetail(sensorId, zone) {
   // 센서별로 약간 다른 값 (데모)
   const temp = (26 + Math.random() * 3).toFixed(1);
   const hum = Math.floor(52 + Math.random() * 12);
-  document.getElementById('envDetailTemp').innerHTML = temp + '<small>°C</small>';
-  document.getElementById('envDetailHum').innerHTML = hum + '<small>%</small>';
+  const feels = feelsLikeC(parseFloat(temp), hum);
+  document.getElementById('envDetailFeels').innerHTML = feels.toFixed(1) + ' <small>°C</small>';
+  document.getElementById('envDetailTemp').innerHTML = temp + ' <small>°C</small>';
+  document.getElementById('envDetailHum').innerHTML = hum + ' <small>%</small>';
+  updateFeelsGrade(feels);
   updateEnvStatus(parseFloat(temp), hum);
   setTimeout(() => document.getElementById('envDetailOverlay').classList.add('open'), 0);
 }
