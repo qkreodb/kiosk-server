@@ -67,3 +67,35 @@ def calculate_feels_like(ta: float, rh: float) -> float:
 def _clamp_humidity(rh: float) -> float:
     # 센서 노이즈로 0 미만/100 초과가 들어오면 sqrt·atan 항이 발산한다.
     return min(100.0, max(0.0, rh))
+
+
+# ── 체감온도 등급 (js/app.js:174-181 ENV_FEELS_GRADES 그대로 포팅) ───────────
+# 원본:
+#   const ENV_FEELS_GRADES = [
+#     { min: 38, cls: 'grade-danger',    label: '위험' },
+#     { min: 35, cls: 'grade-warning',   label: '경고' },
+#     { min: 33, cls: 'grade-caution',   label: '주의' },
+#     { min: 31, cls: 'grade-attention', label: '관심' },
+#     { min: -Infinity, cls: 'grade-normal', label: '정상' },
+#   ];
+# 임계값(31/33/35/38 — 기상청 폭염 체감온도 단계)은 JS 원본 그대로이며 설정으로
+# 빼거나 변형하지 않는다. 내림차순으로 나열해 "하한 이상인 첫 항목"을 채택한다.
+FEELS_GRADES: list[tuple[float, str]] = [
+    (38.0, "위험"),
+    (35.0, "경고"),
+    (33.0, "주의"),
+    (31.0, "관심"),
+    (float("-inf"), "정상"),
+]
+
+
+def grade_feels_like(feels: float) -> str:
+    """체감온도(°C)를 기상청 폭염 체감온도 단계 라벨로 분류.
+
+    js/app.js:192-193 의 ``ENV_FEELS_GRADES.find((g) => feels >= g.min)`` 과
+    동일한 판정: 경계값은 포함이다(예: 정확히 38.0°C 는 "위험").
+    """
+    for min_temp, label in FEELS_GRADES:
+        if feels >= min_temp:
+            return label
+    return "정상"  # FEELS_GRADES 마지막 항목이 -inf 라 이 줄에는 도달하지 않는다.

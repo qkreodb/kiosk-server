@@ -19,3 +19,5 @@ opencv-python-headless==4.10.0.84
 # ST80EL-USB warning-light control (imports as `hid`).
 # Source builds may require: pkg-config, libusb-1.0-0-dev, libudev-dev.
 hidapi==0.14.0.post4
+# MQTT (duego/heat 발행 — kiosk-hardware/kiosk-vlm과 동일 버전)
+paho-mqtt==2.1.0

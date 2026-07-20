@@ -54,6 +54,12 @@ class Settings(BaseSettings):
     shared_dir: Path = Path("../kiosk-hardware/frames")
     frame_glob: str = "frame_*.jpg"
 
+    # --- MQTT (duego/heat 공정별 체감온도 발행) ---
+    # kiosk-hardware 가 쓰는 것과 같은 Mosquitto 브로커. 연결은 서버 기동 시
+    # 1회만 맺는다(변경 시 재시작 필요 — 다른 host/port 설정과 동일 원칙).
+    mqtt_broker_host: str = "localhost"
+    mqtt_broker_port: int = 1883
+
     # --- Danger frames (VLM 서버가 위험 탐지 시 저장한 스냅샷 디렉터리) ---
     # VLM 서버(kiosk-vlm)가 `공정_위반-위반_YYYYMMDD_HHMMSS.png` 형식으로 저장한 사진
     # 폴더. 키오스크는 이 폴더를 읽어 [위험 탐지 사진] 갤러리로 보여준다(읽기 전용).

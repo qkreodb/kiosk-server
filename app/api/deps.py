@@ -12,6 +12,7 @@ from functools import lru_cache
 
 from app.core.config import Settings, get_settings
 from app.integrations.actuators import SpeakerActuator, WarningLightActuator
+from app.integrations.mqtt_publisher import MqttPublisher
 from app.integrations.rtsp_stream import RtspCamera
 from app.integrations.shared_dir import SharedDirReader
 from app.integrations.tts import TtsService
@@ -20,6 +21,8 @@ from app.repositories.base import KioskRepository
 from app.repositories.factory import get_repository
 from app.services.cctv_service import CctvService
 from app.services.danger_service import DangerFrameService
+from app.services.heat_publisher import HeatPublisher
+from app.services.heat_service import HeatService
 from app.services.led_service import LedService
 from app.services.modal_service import ModalService
 from app.services.sensor_service import SensorService
@@ -37,6 +40,15 @@ def _vlm_client() -> VlmClient:
 @lru_cache
 def _tts_service() -> TtsService:
     return TtsService(get_settings())
+
+
+@lru_cache
+def _mqtt_publisher() -> MqttPublisher:
+    return MqttPublisher(get_settings())
+
+
+def get_mqtt_publisher() -> MqttPublisher:
+    return _mqtt_publisher()
 
 
 @lru_cache
@@ -114,6 +126,10 @@ def get_sensor_service() -> SensorService:
     return SensorService(get_repository())
 
 
+def get_heat_service() -> HeatService:
+    return HeatService(get_repository())
+
+
 def get_modal_service() -> ModalService:
     return ModalService(get_repository())
 
@@ -183,6 +199,19 @@ def _vlm_scheduler() -> "VlmScheduler":
 
 def get_vlm_scheduler() -> "VlmScheduler":
     return _vlm_scheduler()
+
+
+@lru_cache
+def _heat_publisher() -> HeatPublisher:
+    return HeatPublisher(
+        service_factory=get_heat_service,
+        mqtt=_mqtt_publisher(),
+        interval=30.0,
+    )
+
+
+def get_heat_publisher() -> HeatPublisher:
+    return _heat_publisher()
 
 
 def get_app_settings() -> Settings:

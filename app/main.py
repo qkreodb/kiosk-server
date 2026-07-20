@@ -41,14 +41,22 @@ async def lifespan(app: FastAPI):
     )
 
     # 설정 시 서버 측 VLM 분석 스케줄러 자동 시작(브라우저 없이 다중 카메라 감시).
-    from app.api.deps import get_vlm_scheduler
+    from app.api.deps import get_heat_publisher, get_mqtt_publisher, get_vlm_scheduler
 
     scheduler = get_vlm_scheduler()
     if settings.vlm_scheduler_autostart:
         scheduler.start()
 
+    # duego/heat 발행 — MQTT 연결을 먼저 열고, 그 다음에 30초 주기 발행 스레드를 시작.
+    mqtt_publisher = get_mqtt_publisher()
+    heat_publisher = get_heat_publisher()
+    mqtt_publisher.start()
+    heat_publisher.start()
+
     yield
 
+    heat_publisher.stop()  # 발행 스레드 먼저 정지(진행 중 사이클 정리)
+    mqtt_publisher.stop()  # 그 다음 MQTT 연결 종료
     await scheduler.stop()  # 진행 중 분석 루프 정리
     logger.info("%s shutting down.", settings.app_name)
 
@@ -75,7 +83,7 @@ def create_app() -> FastAPI:
 
     # Routers (one per domain).
     from app.api.routers import (
-        cctv, danger, health, led, modal, sensor, space, tts, vlm,
+        cctv, danger, health, heat, led, modal, sensor, space, tts, vlm,
     )
 
     app.include_router(health.router)
@@ -87,6 +95,7 @@ def create_app() -> FastAPI:
     app.include_router(tts.router)
     app.include_router(led.router)
     app.include_router(danger.router)
+    app.include_router(heat.router)
 
     @app.get("/", tags=["meta"], summary="루트")
     async def root() -> dict:
