@@ -2,7 +2,8 @@
 -- Kiosk Shared DB — reference DDL (confirmed ERD, 5 tables).
 --
 -- The real DB is already built on the Jetson; this file is for LOCAL testing /
--- reference only. It mirrors the confirmed schema exactly (no extra columns).
+-- reference only. It includes the runtime cctv_info.frame_dir extension used
+-- to share each camera's latest VLM frame.
 --
 -- Usage (local MySQL):
 --   mysql -u root -p < db/schema.sql
@@ -39,7 +40,8 @@ CREATE TABLE heartbeat_sensor (
 
 CREATE TABLE cctv_info (
   cctv_id   INT          NOT NULL PRIMARY KEY,
-  rtsp_url  VARCHAR(255) NOT NULL
+  rtsp_url  VARCHAR(255) NOT NULL,
+  frame_dir VARCHAR(200) NULL
 );
 
 CREATE TABLE unstable_behavior (

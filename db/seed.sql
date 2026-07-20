@@ -24,13 +24,13 @@ INSERT INTO heartbeat_sensor (sensor_id, heart_rate, measured_at) VALUES
   (4, 115, NOW()),
   (5, 133, NOW());
 
--- CCTV streams.
-INSERT INTO cctv_info (cctv_id, rtsp_url) VALUES
-  (1, 'rtsp://192.168.0.11:554/stream1'),
-  (2, 'rtsp://192.168.0.12:554/stream1'),
-  (3, 'rtsp://192.168.0.13:554/stream1'),
-  (4, 'rtsp://192.168.0.14:554/stream1'),
-  (5, 'rtsp://192.168.0.15:554/stream1');
+-- CCTV streams. 분석용 최신 프레임은 RAM 기반 tmpfs에 둔다.
+INSERT INTO cctv_info (cctv_id, rtsp_url, frame_dir) VALUES
+  (1, 'rtsp://192.168.0.11:554/stream1', '/dev/shm/kiosk-frames/frame1'),
+  (2, 'rtsp://192.168.0.12:554/stream1', '/dev/shm/kiosk-frames/frame2'),
+  (3, 'rtsp://192.168.0.13:554/stream1', '/dev/shm/kiosk-frames/frame3'),
+  (4, 'rtsp://192.168.0.14:554/stream1', '/dev/shm/kiosk-frames/frame4'),
+  (5, 'rtsp://192.168.0.15:554/stream1', '/dev/shm/kiosk-frames/frame5');
 
 -- unsafe-behavior counters.
 -- columns: hat_removal=helmet_off, ladder_alone=ladder_alone, restricted_area=fence_crossing,
