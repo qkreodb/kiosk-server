@@ -42,10 +42,10 @@ INSERT INTO unstable_behavior (behavior_id, hat_removal_count, ladder_alone_coun
   (4, 0, 1, 0, 1, 2),
   (5, 2, 0, 3, 0, 0);
 
--- processes (central mapping).
-INSERT INTO process (process_id, process_name, behavior_id, th_sensor_id, hb_sensor_id, cctv_id) VALUES
-  (1, '정밀가공 공정',   1, 1, 1, 1),
-  (2, '용접 공정',       2, 2, 2, 2),
-  (3, '도장 공정',       3, 3, 3, 3),
-  (4, '조립 공정',       4, 4, 4, 4),
-  (5, '물류·하역 공정',  5, 5, 5, 5);
+-- processes (central mapping). th_sensor_name 은 sensor_name(문자열)으로 직접 매핑.
+INSERT INTO process (process_id, process_name, behavior_id, th_sensor_name, hb_sensor_id, cctv_id) VALUES
+  (1, '정밀가공 공정',   1, 'sonoff_1', 1, 1),
+  (2, '용접 공정',       2, 'shelly_1', 2, 2),
+  (3, '도장 공정',       3, 'th_3',     3, 3),
+  (4, '조립 공정',       4, 'th_4',     4, 4),
+  (5, '물류·하역 공정',  5, 'th_5',     5, 5);

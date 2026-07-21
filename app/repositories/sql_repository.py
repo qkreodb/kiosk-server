@@ -2,9 +2,9 @@
 
 Talks to the confirmed 5-table schema on the Jetson via PyMySQL + raw SQL:
 
-    process(process_id PK, process_name, behavior_id FK, th_sensor_id FK,
+    process(process_id PK, process_name, behavior_id FK, th_sensor_name,
             hb_sensor_id FK, cctv_id FK)        -- central mapping table
-    temperature_humidity_sensor(sensor_id PK, temperature, humidity, measured_at)
+    temperature_humidity_sensor(sensor_id PK, temperature, humidity, measured_at, sensor_name)
     heartbeat_sensor(sensor_id PK, heart_rate, measured_at)
     cctv_info(cctv_id PK, rtsp_url)
     unstable_behavior(behavior_id PK, hat_removal_count, ladder_alone_count,
@@ -233,7 +233,7 @@ class SqlRepository(KioskRepository):
     @staticmethod
     def _th_reading(row: dict[str, Any]) -> dict[str, Any]:
         # zone/feels_like/dust are not in the ERD; zone falls back to the process
-        # that references this sensor (process.th_sensor_id), then a generic label.
+        # that references this sensor (process.th_sensor_name), then a generic label.
         return {
             "sensor_id": str(row["sensor_id"]),
             "sensor_name": row.get("sensor_name"),
@@ -253,11 +253,16 @@ class SqlRepository(KioskRepository):
         # (sensor_id AUTO_INCREMENT). 따라서 sensor_name 별 "가장 최근(sensor_id 최대)"
         # 행만 골라야 한다. ORDER BY sensor_id ASC + readings[0] 는 가장 오래된 값이
         # 고정 반환되어 모달이 갱신되지 않으므로 사용하면 안 된다.
+        #
+        # process 는 sensor_name(안정적 식별자)으로 매핑한다 — sensor_id 는 매
+        # 측정마다 새로 발급되는 "그 행 하나"의 PK라서 process.th_sensor_id(구
+        # 컬럼)처럼 특정 sensor_id 값을 고정해서 참조하면, 새 측정이 쌓이는 순간
+        # 그 값은 다시는 "최신 행"과 일치하지 않는 죽은 참조가 된다.
         cols = (
             "SELECT t.sensor_id, t.sensor_name, t.temperature, t.humidity, t.measured_at, "
             "p.process_id, p.process_name "
             "FROM temperature_humidity_sensor t "
-            "LEFT JOIN process p ON p.th_sensor_id = t.sensor_id "
+            "LEFT JOIN process p ON p.th_sensor_name = t.sensor_name "
         )
         if sensor_name is not None:
             # 해당 센서의 최신 1행.
@@ -267,13 +272,10 @@ class SqlRepository(KioskRepository):
             pid = _pid(process_code)
             if pid is None:
                 return {"location": self._settings.site_location, "readings": []}
-            # 이 공정에 매핑된 센서(process.th_sensor_id)의 sensor_name 의 최신 1행.
+            # 이 공정에 매핑된 센서(process.th_sensor_name)의 최신 1행.
             sql = (
                 cols
-                + "WHERE t.sensor_name = ("
-                "  SELECT s.sensor_name FROM process pp "
-                "  JOIN temperature_humidity_sensor s ON s.sensor_id = pp.th_sensor_id "
-                "  WHERE pp.process_id = %s) "
+                + "WHERE t.sensor_name = (SELECT th_sensor_name FROM process WHERE process_id = %s) "
                 "ORDER BY t.sensor_id DESC LIMIT 1"
             )
             params = (pid,)

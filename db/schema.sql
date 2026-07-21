@@ -55,14 +55,13 @@ CREATE TABLE unstable_behavior (
 
 -- Central mapping table: each process points to one of each related row.
 CREATE TABLE process (
-  process_id    INT          NOT NULL PRIMARY KEY,
-  process_name  VARCHAR(100) NOT NULL,
-  behavior_id   INT          NOT NULL,
-  th_sensor_id  INT          NOT NULL,
-  hb_sensor_id  INT          NOT NULL,
-  cctv_id       INT          NOT NULL,
+  process_id      INT          NOT NULL PRIMARY KEY,
+  process_name    VARCHAR(100) NOT NULL,
+  behavior_id     INT          NOT NULL,
+  th_sensor_name  VARCHAR(100) NULL,      -- temperature_humidity_sensor.sensor_name (안정적 식별자, PK 아님이라 FK 불가)
+  hb_sensor_id    INT          NOT NULL,
+  cctv_id         INT          NOT NULL,
   CONSTRAINT fk_process_behavior FOREIGN KEY (behavior_id)  REFERENCES unstable_behavior(behavior_id),
-  CONSTRAINT fk_process_th       FOREIGN KEY (th_sensor_id) REFERENCES temperature_humidity_sensor(sensor_id),
   CONSTRAINT fk_process_hb       FOREIGN KEY (hb_sensor_id) REFERENCES heartbeat_sensor(sensor_id),
   CONSTRAINT fk_process_cctv     FOREIGN KEY (cctv_id)      REFERENCES cctv_info(cctv_id)
 );
