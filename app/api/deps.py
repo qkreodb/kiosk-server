@@ -164,6 +164,12 @@ def _behavior_cooldown() -> dict[tuple[str, str], float]:
     return {}
 
 
+@lru_cache
+def _debounce_state() -> dict:
+    """(공정,행동)별 플리커 디바운스 상태(요청 간 공유, 프로세스 전역 1개)."""
+    return {}
+
+
 def get_vlm_service() -> VlmService:
     return VlmService(
         repo=get_repository(),
@@ -175,6 +181,7 @@ def get_vlm_service() -> VlmService:
         led=_led_service(),
         cooldown_state=_behavior_cooldown(),
         thresholds=_threshold_store(),
+        debounce_state=_debounce_state(),
     )
 
 

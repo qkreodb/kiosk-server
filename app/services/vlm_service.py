@@ -107,6 +107,7 @@ class VlmService:
         led: LedService | None = None,
         cooldown_state: dict[tuple[str, str], float] | None = None,
         thresholds: LightThresholdStore | None = None,
+        debounce_state: dict | None = None,
     ) -> None:
         self._repo = repo
         self._vlm = vlm_client
@@ -117,6 +118,9 @@ class VlmService:
         self._led = led
         # 경광등·신호등 공용 런타임 기준치. 없으면 Settings(부팅값)로 폴백.
         self._thresholds = thresholds
+        # (공정,행동)별 플리커 디바운스 상태: {(code, cat): {"state": bool, "streak": int}}.
+        # 요청마다 새 VlmService 가 생기므로 요청 간 공유 dict 를 주입받아 상태를 유지한다.
+        self._debounce_state: dict = debounce_state if debounce_state is not None else {}
         # 행동별 독립 쿨다운 타이머. (process_code, category_id) -> 만료 monotonic 시각.
         # 5가지 불안전행동 각각이 상호 간섭 없이 독립적으로 디바운싱된다(동시에 여러
         # 행동이 감지돼도 각자의 만료 시각만 본다). 타임스탬프 기반이라 해제할 타이머
@@ -183,6 +187,47 @@ class VlmService:
             logger.warning("[LED] 자동 점등 실패(level=%s): %s", level, exc)
             return {"level": level, "status": "error", "detail": str(exc)}
 
+    def _stabilize(
+        self,
+        code: str,
+        matches: list[tuple[UnsafeBehavior, str]],
+        analyzed_ids: set,
+    ) -> list[tuple[UnsafeBehavior, str]]:
+        """raw 감지(matches)를 (공정,행동)별 대칭 디바운스로 안정화한다.
+
+        같은 결과(위반/정상)가 ``behavior_debounce_frames`` 회 '연속'돼야 상태를 켜거나
+        끈다. 한두 프레임 튀는 플리커는 흡수되고, 진짜 변화는 그 횟수만큼 지연 후 반영된다.
+        이번 사이클에 분석하지 않은 행동(analyzed_ids 밖)은 기존 상태를 그대로 유지한다.
+        반환은 안정화된 위반 행동 목록((cat_id, 라벨))으로, 이후 카운트/TTS/경광등이 이걸 쓴다.
+        """
+        need = max(1, int(self._settings.behavior_debounce_frames))
+        raw_label = {cid: lbl for cid, lbl in matches}
+        stable: list[tuple[UnsafeBehavior, str]] = []
+        for cat in BEHAVIOR_CATEGORIES:
+            cid = cat.id
+            key = (code, cid.value)
+            if cid not in analyzed_ids:
+                # 이번에 판정 안 한 행동 → 상태 유지(확정된 위반이면 계속 통과).
+                entry = self._debounce_state.get(key)
+                if entry and entry["state"]:
+                    stable.append((cid, cat.name))
+                continue
+            raw = cid in raw_label
+            entry = self._debounce_state.get(key)
+            if entry is None:
+                entry = {"state": False, "streak": 0}
+                self._debounce_state[key] = entry
+            if raw == entry["state"]:
+                entry["streak"] = 0          # 현재 상태와 같음 → 연속 카운터 리셋
+            else:
+                entry["streak"] += 1         # 반대 결과 연속
+                if entry["streak"] >= need:  # need 회 연속이면 상태 전환
+                    entry["state"] = raw
+                    entry["streak"] = 0
+            if entry["state"]:
+                stable.append((cid, raw_label.get(cid, cat.name)))
+        return stable
+
     async def infer(
         self,
         camera_id: str,
@@ -223,6 +268,18 @@ class VlmService:
             matches = categories_from_action_keys(vlm.action_keys)
         else:
             matches = match_categories(split_detection(vlm.detection))
+
+        # 2-a) 플리커 억제: (공정,행동)별로 같은 판정이 N회 연속돼야 위반 상태를 켜거나 끈다.
+        #      한 프레임 튀는 노이즈를 흡수한다(진짜 변화는 N프레임 지연 후 반영). 이번에
+        #      분석한 행동만 상태를 갱신하고, 안 본 행동은 기존 상태를 유지한다.
+        if labels:
+            analyzed_ids = {VLM_ACTION_KEY_MAP.get(k) for k in labels}
+            analyzed_ids.discard(None)
+            if not analyzed_ids:
+                analyzed_ids = {cat.id for cat in BEHAVIOR_CATEGORIES}
+        else:
+            analyzed_ids = {cat.id for cat in BEHAVIOR_CATEGORIES}
+        matches = self._stabilize(code, matches, analyzed_ids)
 
         # 2-b) 행동별 독립 쿨다운(디바운스) 적용.
         #    같은 행동이 쿨다운 중이면 이번 사이클에서는 무시(allowed에서 제외)하여
