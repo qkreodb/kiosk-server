@@ -44,6 +44,7 @@ logger = get_logger(__name__)
 KEY_ACTION = "action"        # 레거시: 쉼표 구분 문자열
 KEY_LABELS = "labels"        # 현행: 탐지 키 리스트
 KEY_RAW = "raw"              # 폴백: 키→"true"/"false" (dict 또는 JSON 문자열)
+KEY_UNKNOWN_LABELS = "unknown_labels"
 KEY_TTS = "tts_message"
 KEY_DESCRIPTION = "description"
 
@@ -53,6 +54,10 @@ class VlmResult(BaseModel):
 
     action_keys: list[str] = Field(
         default_factory=list, description="감지된 action 키 (예: helmet_off)"
+    )
+    unknown_action_keys: list[str] = Field(
+        default_factory=list,
+        description="판정 불가라 이번 사이클에서 상태를 갱신하지 않을 action 키",
     )
     detection: str = Field(default="", description="감지 라벨을 합친 요약 텍스트")
     warning_text: str = Field(default="", description="TTS 경고 메시지(tts_message)")
@@ -82,13 +87,13 @@ class VlmClient:
         ``dir_path`` is a directory on the *Jetson* filesystem holding frames.
         When omitted, the configured ``vlm_frame_dir`` is used.
         ``labels``: 분석 대상으로 선택된 행동 키 목록(불안전행동 감시 신호등 체크).
-        값이 있으면 ``labels`` 필드로 함께 보내 해당 행동만 탐지하게 한다. None/빈
-        목록이면 라벨 제약 없이(서버 기본 동작) 분석한다.
+        None이면 필드를 생략해 서버 기본값(전체 라벨)을 사용하고, 빈 목록이면
+        명시적으로 분석 라벨 없음으로 보낸다.
         ``process_name``: 해당 카메라(CAM-1)의 공정명. VLM 서버가 위험 스냅샷 파일명
         (``공정_위반_시각.png``)에 사용한다. 값이 있으면 ``process_name`` 으로 함께 보낸다.
         """
         payload: dict = {"dir_path": dir_path or self._frame_dir}
-        if labels:
+        if labels is not None:
             payload["labels"] = labels
         if process_name:
             payload["process_name"] = process_name
@@ -187,16 +192,24 @@ class VlmClient:
         return cls._dedupe_known(cls._truthy_keys_from_raw(data.get(KEY_RAW)))
 
     @classmethod
+    def _extract_unknown_action_keys(cls, data: dict) -> list[str]:
+        """현행 VLM의 unknown_labels를 알려진 action 키 목록으로 정규화한다."""
+        value = data.get(KEY_UNKNOWN_LABELS)
+        return cls._dedupe_known(value) if isinstance(value, list) else []
+
+    @classmethod
     def _normalize(cls, data: dict, source: str) -> VlmResult:
         if not isinstance(data, dict):
             data = {}
         action_keys = cls._extract_action_keys(data)
+        unknown_action_keys = cls._extract_unknown_action_keys(data)
         # detection 요약 = 감지된 카테고리 한글 이름들을 합친 것.
         from app.domain.constants import CATEGORY_BY_ID  # 지역 import (순환 방지)
 
         labels = [CATEGORY_BY_ID[VLM_ACTION_KEY_MAP[k]].name for k in action_keys]
         return VlmResult(
             action_keys=action_keys,
+            unknown_action_keys=unknown_action_keys,
             detection=", ".join(labels),
             warning_text=str(data.get(KEY_TTS, "")).strip(),
             scene_description=str(data.get(KEY_DESCRIPTION, "")).strip(),

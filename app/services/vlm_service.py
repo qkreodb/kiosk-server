@@ -264,7 +264,11 @@ class VlmService:
 
         # 2) 탐지된 불안전행동 매핑 (TTS 발동 여부 판단에도 사용).
         #    구조화된 action 키가 있으면 직접 매핑, 없으면 자유텍스트 키워드 폴백.
-        if vlm.action_keys:
+        if labels == []:
+            # 감시 라벨을 하나도 선택하지 않은 요청은 서버 응답과 무관하게
+            # 불안전행동을 반영하지 않는다.
+            matches = []
+        elif vlm.action_keys:
             matches = categories_from_action_keys(vlm.action_keys)
         else:
             matches = match_categories(split_detection(vlm.detection))
@@ -272,13 +276,21 @@ class VlmService:
         # 2-a) 플리커 억제: (공정,행동)별로 같은 판정이 N회 연속돼야 위반 상태를 켜거나 끈다.
         #      한 프레임 튀는 노이즈를 흡수한다(진짜 변화는 N프레임 지연 후 반영). 이번에
         #      분석한 행동만 상태를 갱신하고, 안 본 행동은 기존 상태를 유지한다.
-        if labels:
+        if labels is not None:
             analyzed_ids = {VLM_ACTION_KEY_MAP.get(k) for k in labels}
             analyzed_ids.discard(None)
-            if not analyzed_ids:
+            if labels and not analyzed_ids:
                 analyzed_ids = {cat.id for cat in BEHAVIOR_CATEGORIES}
         else:
             analyzed_ids = {cat.id for cat in BEHAVIOR_CATEGORIES}
+        # unknown은 정상(false)이 아니다. 이 사이클의 상태 전환/해제 근거에서
+        # 제외해 _stabilize()가 기존 상태를 유지하도록 한다.
+        unknown_ids = {
+            VLM_ACTION_KEY_MAP[key]
+            for key in vlm.unknown_action_keys
+            if key in VLM_ACTION_KEY_MAP
+        }
+        analyzed_ids -= unknown_ids
         matches = self._stabilize(code, matches, analyzed_ids)
 
         # 2-b) 행동별 독립 쿨다운(디바운스) 적용.
