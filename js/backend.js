@@ -609,6 +609,236 @@
   // 체크박스 토글 핸들러(인라인 onchange용). 선택은 다음 분석 요청 때 자동 반영된다.
   window.onFocusToggle = function () { /* 선택값은 요청 시점에 읽으므로 별도 처리 불필요 */ };
 
+  // 감시 규칙 편집/승인 UI는 아래에서 정의한다.
+  /* ===================== 감시 규칙 편집/승인 ===================== */
+  const ruleEditor = { editingRow: null, pending: null };
+
+  function ruleRowForKey(key) {
+    return Array.from(document.querySelectorAll("#bhMatrix .bh-matrix-row"))
+      .find((row) => {
+        const cb = row.querySelector(".bhm-focus-cb");
+        return cb && cb.dataset.focusKey === key;
+      }) || null;
+  }
+
+  function cancelInlineRuleEdit(row) {
+    if (!row) return;
+    const input = row.querySelector(".bhm-focus-editor");
+    if (input) {
+      const span = document.createElement("span");
+      span.className = "bhm-focus-text";
+      span.textContent = row.dataset.ruleOriginalText || "";
+      input.replaceWith(span);
+    }
+    row.classList.remove("rule-editing");
+    const button = row.querySelector(".bhm-edit");
+    if (button) {
+      button.disabled = false;
+      button.title = "수정";
+      const icon = button.querySelector("i");
+      if (icon) icon.className = "ri-edit-line";
+    }
+    if (ruleEditor.editingRow === row) ruleEditor.editingRow = null;
+  }
+
+  function beginInlineRuleEdit(button) {
+    const row = button && button.closest(".bh-matrix-row");
+    if (!row) return;
+    if (ruleEditor.editingRow && ruleEditor.editingRow !== row) {
+      cancelInlineRuleEdit(ruleEditor.editingRow);
+    }
+    const span = row.querySelector(".bhm-focus-text");
+    if (!span) return;
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "bhm-focus-editor";
+    input.maxLength = 240;
+    input.value = span.textContent.trim();
+    row.dataset.ruleOriginalText = input.value;
+    span.replaceWith(input);
+    row.classList.add("rule-editing");
+    ruleEditor.editingRow = row;
+    button.title = "초안 제출";
+    const icon = button.querySelector("i");
+    if (icon) icon.className = "ri-check-line";
+    input.focus();
+    input.select();
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.isComposing) {
+        event.preventDefault();
+        submitInlineRuleDraft(row, button);
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        cancelInlineRuleEdit(row);
+      }
+    });
+  }
+
+  async function submitInlineRuleDraft(row, button) {
+    const input = row && row.querySelector(".bhm-focus-editor");
+    const cb = row && row.querySelector(".bhm-focus-cb");
+    if (!input || !cb) return;
+    const text = input.value.trim();
+    if (!text) {
+      if (window.showToast) showToast("감시 조건을 입력해 주세요.", "warn");
+      input.focus();
+      return;
+    }
+    const key = cb.dataset.focusKey;
+    button.disabled = true;
+    input.disabled = true;
+    try {
+      const resp = await fetch(
+        API + "/vlm/rules/" + encodeURIComponent(key) + "/draft",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: text }),
+        }
+      );
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data.detail || ("HTTP " + resp.status));
+      cancelInlineRuleEdit(row);
+      openRuleApproval(data.rule, key, text, row);
+    } catch (error) {
+      button.disabled = false;
+      input.disabled = false;
+      if (window.showToast) showToast("초안 생성 실패: " + error.message, "warn");
+    }
+  }
+
+  window.editBehaviorRule = function (button) {
+    const row = button && button.closest(".bh-matrix-row");
+    if (!row) return;
+    if (row.classList.contains("rule-editing")) {
+      submitInlineRuleDraft(row, button);
+    } else {
+      beginInlineRuleEdit(button);
+    }
+  };
+
+  function ensureRuleApprovalOverlay() {
+    let overlay = document.getElementById("ruleApprovalOverlay");
+    if (overlay) return overlay;
+    overlay = document.createElement("div");
+    overlay.id = "ruleApprovalOverlay";
+    overlay.className = "rule-approval-overlay";
+    overlay.innerHTML = `
+      <div class="rule-approval-dialog" role="dialog" aria-modal="true" aria-labelledby="ruleApprovalTitle">
+        <div class="rule-approval-head">
+          <div><div class="rule-approval-kicker">RULE DRAFT</div><h3 id="ruleApprovalTitle">감시 항목 변경 승인</h3></div>
+          <button type="button" class="icon-btn-ghost rule-approval-close" data-rule-cancel aria-label="닫기"><i class="ri-close-line"></i></button>
+        </div>
+        <div class="rule-approval-body">
+          <div class="rule-approval-item"><span>기존 표시</span><strong data-rule-current></strong></div>
+          <div class="rule-approval-arrow"><i class="ri-arrow-down-line"></i></div>
+          <div class="rule-approval-item next"><span>변경 제안</span><strong data-rule-next></strong></div>
+          <div class="rule-approval-contract"><i class="ri-shield-check-line"></i><span data-rule-contract></span></div>
+          <details class="rule-approval-details"><summary>적용될 VLM 지침 보기</summary><pre data-rule-compiled></pre></details>
+        </div>
+        <div class="rule-approval-foot">
+          <button type="button" class="rule-approval-cancel" data-rule-cancel>취소</button>
+          <button type="button" class="rule-approval-apply" data-rule-approve>승인하고 적용</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) cancelRuleApproval();
+    });
+    overlay.querySelectorAll("[data-rule-cancel]").forEach((button) => {
+      button.addEventListener("click", cancelRuleApproval);
+    });
+    overlay.querySelector("[data-rule-approve]").addEventListener("click", approveRuleDraft);
+    return overlay;
+  }
+
+  function openRuleApproval(rule, key, text, row) {
+    const overlay = ensureRuleApprovalOverlay();
+    ruleEditor.pending = {
+      key: key,
+      text: text,
+      row: row,
+      oldLabel: row.dataset.ruleOriginalText || "",
+    };
+    overlay.querySelector("[data-rule-current]").textContent =
+      ruleEditor.pending.oldLabel;
+    overlay.querySelector("[data-rule-next]").textContent = text;
+    overlay.querySelector("[data-rule-contract]").textContent =
+      (rule ? [rule.evidence_contract, rule.result_contract, rule.tts_phrase ? "TTS: " + rule.tts_phrase : ""].filter(Boolean).join("\n") : "새 RuleSpec의 evidence와 판정 계약을 확인하세요.");
+    overlay.querySelector("[data-rule-compiled]").textContent =
+      (rule && rule.compiled_prompt) || "";
+    overlay.classList.add("open");
+  }
+
+  async function cancelRuleApproval() {
+    const pending = ruleEditor.pending;
+    const overlay = document.getElementById("ruleApprovalOverlay");
+    if (!pending) {
+      if (overlay) overlay.classList.remove("open");
+      return;
+    }
+    ruleEditor.pending = null;
+    if (overlay) overlay.classList.remove("open");
+    try {
+      await fetch(
+        API + "/vlm/rules/" + encodeURIComponent(pending.key) + "/discard",
+        { method: "POST" }
+      );
+    } catch (_) { /* 취소는 서버가 잠시 없어도 화면을 닫는다 */ }
+  }
+
+  async function approveRuleDraft() {
+    const pending = ruleEditor.pending;
+    const overlay = document.getElementById("ruleApprovalOverlay");
+    if (!pending || !overlay) return;
+    const applyButton = overlay.querySelector("[data-rule-approve]");
+    applyButton.disabled = true;
+    try {
+      const resp = await fetch(
+        API + "/vlm/rules/" + encodeURIComponent(pending.key) + "/approve",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: pending.text }),
+        }
+      );
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data.detail || ("HTTP " + resp.status));
+      const row = pending.row || ruleRowForKey(pending.key);
+      const rule = data.rule || {};
+      const cb = row && row.querySelector(".bhm-focus-cb");
+      const span = row && row.querySelector(".bhm-focus-text");
+      const label = rule.label || rule.proposed_label || pending.text;
+      if (span) span.textContent = label;
+      if (cb) cb.dataset.focusLabel = label;
+      if (row) row.dataset.ruleStatus = rule.status || "active";
+      overlay.classList.remove("open");
+      ruleEditor.pending = null;
+      if (window.showToast) showToast("감시 항목이 승인되어 적용됐습니다.", "ok");
+    } catch (error) {
+      if (window.showToast) showToast("감시 항목 적용 실패: " + error.message, "warn");
+    } finally {
+      applyButton.disabled = false;
+    }
+  }
+
+  async function loadBehaviorRules() {
+    const resp = await fetch(API + "/vlm/rules", { cache: "no-store" });
+    if (!resp.ok) throw new Error("GET /vlm/rules → " + resp.status);
+    const data = await resp.json();
+    if (!Array.isArray(data.rules)) return;
+    data.rules.forEach((rule) => {
+      const row = ruleRowForKey(rule.key);
+      if (!row) return;
+      const span = row.querySelector(".bhm-focus-text");
+      const cb = row.querySelector(".bhm-focus-cb");
+      if (span) span.textContent = rule.label || rule.default_label || span.textContent;
+      if (cb) cb.dataset.focusLabel = rule.label || rule.default_label || cb.dataset.focusLabel;
+      row.dataset.ruleStatus = rule.status || "default";
+    });
+  }
+  window.loadBehaviorRules = loadBehaviorRules;
+
   // 1회 분석 요청 + 렌더. token 이 어긋나거나 모달이 닫혔으면 결과 렌더를 건너뛴다.
   // 분석 대상은 기존 CCTV(CAM-1) 고정 — 신규 CCTV(CAM-2)는 프롬프트 질의 전용.
   async function runVlmAnalysisOnce(token) {
@@ -1108,6 +1338,10 @@
     // 공정 드롭다운을 실제 DB 목록으로 채움(실패해도 하드코딩 옵션 유지)
     try { await populateProcesses(); }
     catch (e) { console.warn('[공정 목록] 동적 로드 실패, 기본 옵션 사용:', e.message); }
+
+    // VLM 서버에서 승인된 5개 감시 규칙 표시명을 복원
+    try { await loadBehaviorRules(); }
+    catch (e) { console.warn("[감시 규칙] 동적 로드 실패, 기본 표시 사용:", e.message); }
 
     // 서버의 공용 기준치를 신호등에 동기화(경광등과 같은 값 사용)
     await fetchThresholds();

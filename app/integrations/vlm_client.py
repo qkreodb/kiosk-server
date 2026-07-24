@@ -47,6 +47,7 @@ KEY_RAW = "raw"              # 폴백: 키→"true"/"false" (dict 또는 JSON �
 KEY_UNKNOWN_LABELS = "unknown_labels"
 KEY_TTS = "tts_message"
 KEY_DESCRIPTION = "description"
+KEY_RULE_LABELS = "rule_labels"
 
 
 class VlmResult(BaseModel):
@@ -63,6 +64,8 @@ class VlmResult(BaseModel):
     warning_text: str = Field(default="", description="TTS 경고 메시지(tts_message)")
     scene_description: str = Field(default="", description="VLM 장면 설명 원문")
     source: str = Field(default="vlm", description="결과 출처")
+    # 슬롯 키별 현재 RuleSpec 표시명
+    rule_labels: dict[str, str] = Field(default_factory=dict)
     raw: dict = Field(default_factory=dict)
 
 
@@ -73,6 +76,7 @@ class VlmClient:
         self._settings = settings
         self._url = settings.vlm_analyze_url
         self._prompt_url = settings.vlm_prompt_url
+        self._rules_url = settings.vlm_rules_url
         self._frame_dir = settings.vlm_frame_dir
         self._timeout = settings.vlm_timeout_seconds
 
@@ -149,6 +153,61 @@ class VlmClient:
             data = {"response": data}
         return {"ok": True, "text": text, "raw": data, "detail": None}
 
+
+    async def list_rules(self) -> dict:
+        """VLM 서버의 5개 감시 규칙과 승인 상태를 조회한다."""
+        return await self._rule_request("GET", self._rules_url)
+
+
+    async def draft_rule(self, key: str, text: str) -> dict:
+        """새 감시 항목 전체를 VLM 서버에 RuleSpec 초안으로 제출한다."""
+        return await self._rule_request(
+            "POST",
+            self._rules_url + "/" + key + "/draft",
+            {"text": text},
+        )
+
+
+    async def approve_rule(self, key: str, text: str) -> dict:
+        """승인된 새 RuleSpec을 VLM 서버에 적용한다."""
+        return await self._rule_request(
+            "POST",
+            self._rules_url + "/" + key + "/approve",
+            {"text": text},
+        )
+
+
+    async def discard_rule(self, key: str) -> dict:
+        """승인 대기 중인 감시 규칙 초안을 폐기한다."""
+        return await self._rule_request(
+            "POST",
+            self._rules_url + "/" + key + "/discard",
+        )
+
+
+    async def _rule_request(
+        self,
+        method: str,
+        url: str,
+        payload: dict | None = None,
+    ) -> dict:
+        try:
+            async with httpx.AsyncClient(timeout=self._timeout) as client:
+                resp = await client.request(method, url, json=payload)
+                resp.raise_for_status()
+                data = resp.json()
+        except Exception as exc:
+            logger.warning(
+                "VLM rule API failed at %s (%s)",
+                url,
+                exc.__class__.__name__,
+            )
+            raise RuntimeError(str(exc)) from exc
+        if not isinstance(data, dict):
+            raise RuntimeError("VLM rule API가 JSON object를 반환하지 않았습니다.")
+        return data
+
+
     @staticmethod
     def _dedupe_known(parts: list[str]) -> list[str]:
         """Keep only known action keys, in order, without duplicates."""
@@ -203,13 +262,22 @@ class VlmClient:
             data = {}
         action_keys = cls._extract_action_keys(data)
         unknown_action_keys = cls._extract_unknown_action_keys(data)
-        # detection 요약 = 감지된 카테고리 한글 이름들을 합친 것.
+        rule_labels = {
+            str(key): str(value).strip()
+            for key, value in data.get(KEY_RULE_LABELS, {}).items()
+            if str(key) in VLM_ACTION_KEY_MAP and str(value).strip()
+        } if isinstance(data.get(KEY_RULE_LABELS), dict) else {}
+        # detection 요약 = 현재 RuleSpec 표시명을 우선 사용한다.
         from app.domain.constants import CATEGORY_BY_ID  # 지역 import (순환 방지)
 
-        labels = [CATEGORY_BY_ID[VLM_ACTION_KEY_MAP[k]].name for k in action_keys]
+        labels = [
+            rule_labels.get(k, CATEGORY_BY_ID[VLM_ACTION_KEY_MAP[k]].name)
+            for k in action_keys
+        ]
         return VlmResult(
             action_keys=action_keys,
             unknown_action_keys=unknown_action_keys,
+            rule_labels=rule_labels,
             detection=", ".join(labels),
             warning_text=str(data.get(KEY_TTS, "")).strip(),
             scene_description=str(data.get(KEY_DESCRIPTION, "")).strip(),

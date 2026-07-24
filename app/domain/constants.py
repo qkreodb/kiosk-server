@@ -24,7 +24,7 @@ class BehaviorGrade(str, Enum):
 
 
 class UnsafeBehavior(str, Enum):
-    """Stable identifiers for the 5 unsafe-behavior categories.
+    """Stable identifiers for the 5 monitor slots. A slot can be assigned a new RuleSpec at runtime; the ID remains stable for the existing DB and debounce plumbing.
 
     값은 VLM Server가 ``action`` 으로 내보내는 탐지 라벨 키와 1:1로 동일하다
     (VLM 측 ``LABEL_KO`` 딕셔너리 키와 일치). 따라서 별도 키 변환 없이 그대로

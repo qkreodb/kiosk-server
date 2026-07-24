@@ -48,6 +48,42 @@ class VlmPromptResponse(BaseModel):
     detail: str | None = Field(default=None, description="실패 시 원인")
 
 
+class VlmRuleTextRequest(BaseModel):
+    """기존 슬롯을 대체할 새 감시 항목 문장."""
+
+    text: str = Field(min_length=1, max_length=240)
+
+
+class VlmRule(BaseModel):
+    """한 감시 규칙의 표시명과 승인 상태."""
+
+    key: str
+    label: str
+    proposed_label: str = ""
+    default_label: str
+    custom_text: str = ""
+    pending_text: str | None = None
+    status: str
+    source: str = "default"
+    evidence_contract: str
+    result_contract: str = ""
+    tts_phrase: str = ""
+    base_prompt: str = ""
+    compiled_prompt: str = ""
+
+
+class VlmRulesResponse(BaseModel):
+    mode: str
+    max_batch_size: int
+    rules: list[VlmRule]
+
+
+class VlmRuleActionResponse(BaseModel):
+    status: str
+    rule: VlmRule
+    message: str | None = None
+
+
 class BehaviorDelta(BaseModel):
     """Result of parsing one detected behavior into a category + DB increment."""
 

@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     # 자유 프롬프트 질의 엔드포인트(신규 CCTV 모달의 실시간 장면 설명용).
     # body: {"path": "<프레임 폴더>", "prompt": "<사용자 입력>"}
     vlm_prompt_path: str = "/prompt"
+    # 홈페이지 감시 규칙 초안/승인 프록시 경로.
+    vlm_rules_path: str = "/rules"
     # ``/analyze`` 가 Jetson 파일시스템에서 읽을 프레임 폴더(절대 경로). 하드웨어
     # 서버가 30fps 프레임을 기록하는 공유 디렉터리를 가리켜야 한다. 기본값은
     # VLM 서버 README의 테스트 폴더.
@@ -208,6 +210,12 @@ class Settings(BaseSettings):
     def vlm_prompt_url(self) -> str:
         return f"{self.vlm_base_url.rstrip('/')}/{self.vlm_prompt_path.lstrip('/')}"
 
+    @property
+    def vlm_rules_url(self) -> str:
+        return (
+            self.vlm_base_url.rstrip("/") + "/"
+            + self.vlm_rules_path.lstrip("/")
+        )
 
 @lru_cache
 def get_settings() -> Settings:

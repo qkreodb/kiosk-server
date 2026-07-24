@@ -10,6 +10,9 @@ from app.schemas.vlm import (
     VlmInferResponse,
     VlmPromptRequest,
     VlmPromptResponse,
+    VlmRuleActionResponse,
+    VlmRuleTextRequest,
+    VlmRulesResponse,
 )
 from app.services.vlm_scheduler import VlmScheduler
 from app.services.vlm_service import VlmService
@@ -32,6 +35,58 @@ async def infer(
         labels=req.labels,
     )
 
+
+
+
+@router.get("/rules", response_model=VlmRulesResponse, summary="감시 규칙 조회")
+async def rules(
+    service: VlmService = Depends(get_vlm_service),
+) -> VlmRulesResponse:
+    return VlmRulesResponse.model_validate(await service.list_rules())
+
+
+@router.post(
+    "/rules/{key}/draft",
+    response_model=VlmRuleActionResponse,
+    summary="감시 규칙 초안 제출",
+)
+async def rule_draft(
+    key: str,
+    body: VlmRuleTextRequest,
+    service: VlmService = Depends(get_vlm_service),
+) -> VlmRuleActionResponse:
+    return VlmRuleActionResponse.model_validate(
+        await service.draft_rule(key, body.text)
+    )
+
+
+@router.post(
+    "/rules/{key}/approve",
+    response_model=VlmRuleActionResponse,
+    summary="감시 규칙 승인 적용",
+)
+async def rule_approve(
+    key: str,
+    body: VlmRuleTextRequest,
+    service: VlmService = Depends(get_vlm_service),
+) -> VlmRuleActionResponse:
+    return VlmRuleActionResponse.model_validate(
+        await service.approve_rule(key, body.text)
+    )
+
+
+@router.post(
+    "/rules/{key}/discard",
+    response_model=VlmRuleActionResponse,
+    summary="감시 규칙 초안 취소",
+)
+async def rule_discard(
+    key: str,
+    service: VlmService = Depends(get_vlm_service),
+) -> VlmRuleActionResponse:
+    return VlmRuleActionResponse.model_validate(
+        await service.discard_rule(key)
+    )
 
 @router.post("/prompt", response_model=VlmPromptResponse, summary="VLM 자유 프롬프트 질의")
 async def prompt(

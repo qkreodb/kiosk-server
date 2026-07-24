@@ -55,6 +55,7 @@ def split_detection(detection: str) -> list[str]:
 
 def categories_from_action_keys(
     action_keys: list[str],
+    rule_labels: dict[str, str] | None = None,
 ) -> list[tuple[UnsafeBehavior, str]]:
     """Map VLM /analyze ``action`` keys directly to categories.
 
@@ -67,7 +68,7 @@ def categories_from_action_keys(
         cat_id = VLM_ACTION_KEY_MAP.get(key)
         if cat_id is None or cat_id in seen:
             continue
-        matched.append((cat_id, CATEGORY_BY_ID[cat_id].name))
+        matched.append((cat_id, (rule_labels or {}).get(key, CATEGORY_BY_ID[cat_id].name)))
         seen.add(cat_id)
     return matched
 
@@ -192,6 +193,7 @@ class VlmService:
         code: str,
         matches: list[tuple[UnsafeBehavior, str]],
         analyzed_ids: set,
+        rule_labels: dict[str, str] | None = None,
     ) -> list[tuple[UnsafeBehavior, str]]:
         """raw 감지(matches)를 (공정,행동)별 대칭 디바운스로 안정화한다.
 
@@ -210,7 +212,7 @@ class VlmService:
                 # 이번에 판정 안 한 행동 → 상태 유지(확정된 위반이면 계속 통과).
                 entry = self._debounce_state.get(key)
                 if entry and entry["state"]:
-                    stable.append((cid, cat.name))
+                    stable.append((cid, (rule_labels or {}).get(cid.value, cat.name)))
                 continue
             raw = cid in raw_label
             entry = self._debounce_state.get(key)
@@ -269,7 +271,7 @@ class VlmService:
             # 불안전행동을 반영하지 않는다.
             matches = []
         elif vlm.action_keys:
-            matches = categories_from_action_keys(vlm.action_keys)
+            matches = categories_from_action_keys(vlm.action_keys, vlm.rule_labels)
         else:
             matches = match_categories(split_detection(vlm.detection))
 
@@ -291,7 +293,7 @@ class VlmService:
             if key in VLM_ACTION_KEY_MAP
         }
         analyzed_ids -= unknown_ids
-        matches = self._stabilize(code, matches, analyzed_ids)
+        matches = self._stabilize(code, matches, analyzed_ids, vlm.rule_labels)
 
         # 2-b) 행동별 독립 쿨다운(디바운스) 적용.
         #    같은 행동이 쿨다운 중이면 이번 사이클에서는 무시(allowed에서 제외)하여
@@ -334,7 +336,7 @@ class VlmService:
             deltas.append(
                 BehaviorDelta(
                     id=cat.id.value,
-                    name=cat.name,
+                    name=matched_label,
                     grade=cat.base_grade.value,
                     matched_label=matched_label,
                     increment=1,
@@ -388,6 +390,39 @@ class VlmService:
             warning_light=warning_light,
             tts=tts,
         )
+
+
+    async def list_rules(self) -> dict:
+        """홈페이지 감시 규칙 목록을 VLM 서버에서 조회한다."""
+        try:
+            return await self._vlm.list_rules()
+        except RuntimeError as exc:
+            raise HTTPException(status_code=502, detail=f"VLM 규칙 API 오류: {exc}") from exc
+
+
+    async def draft_rule(self, key: str, text: str) -> dict:
+        """홈페이지에서 제출한 새 RuleSpec 초안을 VLM 서버에 전달한다."""
+        try:
+            return await self._vlm.draft_rule(key, text)
+        except RuntimeError as exc:
+            raise HTTPException(status_code=502, detail=f"VLM 규칙 API 오류: {exc}") from exc
+
+
+    async def approve_rule(self, key: str, text: str) -> dict:
+        """승인된 감시 규칙을 VLM 서버에 적용한다."""
+        try:
+            return await self._vlm.approve_rule(key, text)
+        except RuntimeError as exc:
+            raise HTTPException(status_code=502, detail=f"VLM 규칙 API 오류: {exc}") from exc
+
+
+    async def discard_rule(self, key: str) -> dict:
+        """승인 대기 중인 감시 규칙을 폐기한다."""
+        try:
+            return await self._vlm.discard_rule(key)
+        except RuntimeError as exc:
+            raise HTTPException(status_code=502, detail=f"VLM 규칙 API 오류: {exc}") from exc
+
 
     async def prompt(
         self,
