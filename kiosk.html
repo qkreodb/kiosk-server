@@ -497,6 +497,42 @@
   </div>
 </div>
 
+<!-- ============== 감시 항목 재배정 승인 MODAL ============== -->
+<div class="modal-overlay" id="ruleApproveOverlay" style="z-index:1003;">
+  <div class="modal-box" style="max-width: 640px;">
+    <div class="modal-head">
+      <div class="modal-head-left">
+        <div class="modal-head-icon" style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.3); color:var(--cyan); display:flex; align-items:center; justify-content:center; width:48px; height:48px; border-radius:10px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        </div>
+        <div>
+          <div class="modal-head-title">감시 항목 변경 승인</div>
+          <div class="modal-head-sub">VLM이 입력을 분석해 만든 새 감시 항목입니다. 승인해야 적용됩니다.</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal('ruleApproveOverlay')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="rule-approve">
+        <div class="rule-approve-names">
+          <div class="rule-old"><span class="rule-tag">현재</span><span id="ruleOldName">—</span></div>
+          <div class="rule-arrow">→</div>
+          <div class="rule-new"><span class="rule-tag new">변경</span><span id="ruleNewName">—</span></div>
+        </div>
+        <div class="rule-badges" id="ruleBadges"></div>
+        <div class="rule-field"><div class="rule-field-label">음성 경고</div><div id="ruleTts" class="rule-field-val">—</div></div>
+        <div class="rule-field"><div class="rule-field-label">생성된 판정 지시(프롬프트)</div><pre id="rulePrompt" class="rule-prompt">—</pre></div>
+      </div>
+    </div>
+    <div class="modal-foot" style="display:flex; gap:8px; justify-content:flex-end; padding:14px 18px; border-top:1px solid rgba(255,255,255,0.08);">
+      <button type="button" class="btn-ghost" id="ruleCancelBtn">취소</button>
+      <button type="button" class="btn-primary" id="ruleApplyBtn">승인하고 적용</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============== 현장사진 MODAL ============== -->
 <div class="modal-overlay" id="photoOverlay">
   <div class="modal-box">

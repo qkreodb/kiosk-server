@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.deps import get_vlm_scheduler, get_vlm_service
 from app.schemas.vlm import (
+    RuleDraftRequest,
     VlmInferRequest,
     VlmInferResponse,
     VlmPromptRequest,
@@ -73,3 +74,39 @@ async def scheduler_stop(scheduler: VlmScheduler = Depends(get_vlm_scheduler)) -
 @router.get("/scheduler/status", summary="분석 스케줄러 상태")
 async def scheduler_status(scheduler: VlmScheduler = Depends(get_vlm_scheduler)) -> dict:
     return scheduler.status()
+
+
+# ── 감시 항목(RuleSpec) 편집 — VLM 서버 프록시 ───────────────────────────────
+# draft/approve/reset 은 QWEN(GPU)을 쓰므로, 홈페이지는 분석 토글 OFF 상태에서만
+# 이 버튼들을 활성화한다(단일 GPU 경합 방지). 서버는 VLM 응답 상태를 그대로 전달한다.
+def _relay(status: int, data: dict) -> dict:
+    if status >= 400:
+        raise HTTPException(status_code=status, detail=data.get("detail", data))
+    return data
+
+
+@router.get("/rules", summary="현재 5개 감시 항목 요약")
+async def rules_list(service: VlmService = Depends(get_vlm_service)) -> dict:
+    return _relay(*(await service.rules_list()))
+
+
+@router.post("/rules/{slot}/draft", summary="자연어 감시 항목 초안 컴파일(미적용)")
+async def rule_draft(
+    slot: str, body: RuleDraftRequest, service: VlmService = Depends(get_vlm_service)
+) -> dict:
+    return _relay(*(await service.rule_draft(slot, body.text)))
+
+
+@router.post("/rules/{slot}/approve", summary="초안 승인·적용 + 슬롯 카운트 리셋")
+async def rule_approve(slot: str, service: VlmService = Depends(get_vlm_service)) -> dict:
+    return _relay(*(await service.rule_approve(slot)))
+
+
+@router.post("/rules/{slot}/discard", summary="대기 중 초안 폐기")
+async def rule_discard(slot: str, service: VlmService = Depends(get_vlm_service)) -> dict:
+    return _relay(*(await service.rule_discard(slot)))
+
+
+@router.post("/rules/{slot}/reset", summary="슬롯을 내장 기본 항목으로 복원")
+async def rule_reset(slot: str, service: VlmService = Depends(get_vlm_service)) -> dict:
+    return _relay(*(await service.rule_reset(slot)))

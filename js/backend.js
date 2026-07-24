@@ -609,6 +609,151 @@
   // 체크박스 토글 핸들러(인라인 onchange용). 선택은 다음 분석 요청 때 자동 반영된다.
   window.onFocusToggle = function () { /* 선택값은 요청 시점에 읽으므로 별도 처리 불필요 */ };
 
+  /* ===== 감시 항목 자연어 재배정(수정 버튼) ===== */
+  // 편집은 분석 토글 OFF일 때만 허용한다(QWEN이 GPU를 쓰므로 분석 루프와 경합 방지).
+  let ruleDraftSlot = null; // 승인 대기 중인 슬롯
+
+  function rowOfEditBtn(btn) { return btn.closest('.bh-matrix-row'); }
+
+  // 페이지 로드/승인 후: 서버의 현재 감시 항목으로 5개 행의 표시명·라벨을 채운다.
+  async function hydrateRules() {
+    let data;
+    try {
+      const resp = await fetch(API + '/vlm/rules', { cache: 'no-store' });
+      if (!resp.ok) return;
+      data = await resp.json();
+    } catch (e) { return; }
+    (data.rules || []).forEach((r) => {
+      const cb = document.querySelector('.bhm-focus-cb[data-focus-key="' + r.key + '"]');
+      if (!cb) return;
+      const row = cb.closest('.bh-matrix-row');
+      const text = row && row.querySelector('.bhm-focus-text');
+      if (text) text.textContent = r.display_name;
+      cb.dataset.focusLabel = r.display_name;
+    });
+  }
+  window.hydrateRules = hydrateRules;
+
+  // 인라인 편집 시작: .bhm-focus-text 를 입력창으로 교체.
+  function startRuleEdit(row) {
+    if (vlmLoop.enabled) {
+      if (window.showToast) showToast('분석을 끄고(OFF) 감시 항목을 수정하세요', 'warn');
+      return;
+    }
+    if (row.querySelector('.bhm-edit-input')) return; // 이미 편집 중
+    const textEl = row.querySelector('.bhm-focus-text');
+    const cb = row.querySelector('.bhm-focus-cb');
+    if (!textEl || !cb) return;
+    const slot = cb.dataset.focusKey;
+    const original = textEl.textContent.trim();
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'bhm-edit-input';
+    input.value = original;
+    input.setAttribute('aria-label', '감시 항목 입력');
+    textEl.replaceWith(input);
+    input.focus();
+    input.select();
+
+    const restore = (name) => {
+      const span = document.createElement('span');
+      span.className = 'bhm-focus-text';
+      span.textContent = name;
+      if (input.parentNode) input.replaceWith(span);
+    };
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); submitRuleDraft(slot, input.value.trim(), original, restore); }
+      else if (e.key === 'Escape') { e.preventDefault(); restore(original); }
+    });
+    // 포커스 아웃 시 값이 그대로면 취소(제출은 Enter로만).
+    input.addEventListener('blur', () => { setTimeout(() => { if (input.parentNode) restore(original); }, 120); });
+  }
+
+  // 초안 컴파일 요청 → 승인 다이얼로그.
+  async function submitRuleDraft(slot, text, original, restore) {
+    if (!text || text === original) { restore(original); return; }
+    if (window.showToast) showToast('감시 항목을 분석하는 중입니다…', 'info');
+    let resp, data;
+    try {
+      resp = await fetch(API + '/vlm/rules/' + encodeURIComponent(slot) + '/draft', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+      data = await resp.json().catch(() => ({}));
+    } catch (e) {
+      if (window.showToast) showToast('VLM 서버에 연결할 수 없습니다', 'warn');
+      restore(original); return;
+    }
+    if (!resp.ok) {
+      const detail = (data && (data.detail || data.message)) || ('HTTP ' + resp.status);
+      if (window.showToast) showToast('생성 실패: ' + detail, 'warn');
+      restore(original); return;
+    }
+    restore(original); // 승인 전까지는 기존 이름 유지
+    openRuleApproval(slot, data);
+  }
+
+  // 승인 다이얼로그 채우기.
+  function openRuleApproval(slot, data) {
+    ruleDraftSlot = slot;
+    const old = data.old || {}, draft = data.draft || {};
+    document.getElementById('ruleOldName').textContent = old.display_name || '—';
+    document.getElementById('ruleNewName').textContent = draft.display_name || '—';
+    document.getElementById('ruleTts').textContent = draft.tts_phrase || '—';
+    document.getElementById('rulePrompt').textContent = data.compiled_prompt || '—';
+    const badges = document.getElementById('ruleBadges');
+    badges.innerHTML = '';
+    const addBadge = (label, on) => {
+      const b = document.createElement('span');
+      b.className = 'rule-badge ' + (on ? 'on' : 'off');
+      b.textContent = label + ': ' + (on ? '예' : '아니오');
+      badges.appendChild(b);
+    };
+    addBadge('대상 없을 수 있음', !!draft.empty_checks_safe);
+    addBadge('착용 전환(transition) 판정', !!draft.has_transition);
+    document.getElementById('ruleApproveOverlay').classList.add('open');
+  }
+
+  // 승인 → 적용. 취소/폐기 → 초안 버림.
+  async function approveRule() {
+    if (!ruleDraftSlot) return;
+    const slot = ruleDraftSlot;
+    try {
+      const resp = await fetch(API + '/vlm/rules/' + encodeURIComponent(slot) + '/approve', { method: 'POST' });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) { if (window.showToast) showToast('적용 실패: ' + ((data && data.detail) || resp.status), 'warn'); return; }
+      if (window.showToast) showToast('감시 항목이 변경되었습니다', 'ok');
+    } catch (e) {
+      if (window.showToast) showToast('적용 실패: 서버 연결 오류', 'warn'); return;
+    } finally {
+      ruleDraftSlot = null;
+      closeModal('ruleApproveOverlay');
+    }
+    await hydrateRules();
+  }
+
+  async function discardRule() {
+    if (ruleDraftSlot) {
+      fetch(API + '/vlm/rules/' + encodeURIComponent(ruleDraftSlot) + '/discard', { method: 'POST' }).catch(() => {});
+    }
+    ruleDraftSlot = null;
+    closeModal('ruleApproveOverlay');
+  }
+
+  function initRuleEditing() {
+    document.querySelectorAll('.bhm-edit').forEach((btn) => {
+      btn.addEventListener('click', () => startRuleEdit(rowOfEditBtn(btn)));
+    });
+    const applyBtn = document.getElementById('ruleApplyBtn');
+    const cancelBtn = document.getElementById('ruleCancelBtn');
+    if (applyBtn) applyBtn.addEventListener('click', approveRule);
+    if (cancelBtn) cancelBtn.addEventListener('click', discardRule);
+    const ov = document.getElementById('ruleApproveOverlay');
+    if (ov) ov.addEventListener('click', (e) => { if (e.target.id === 'ruleApproveOverlay') discardRule(); });
+    hydrateRules().catch(() => {});
+  }
+  window.initRuleEditing = initRuleEditing;
+
   // 1회 분석 요청 + 렌더. token 이 어긋나거나 모달이 닫혔으면 결과 렌더를 건너뛴다.
   // 분석 대상은 기존 CCTV(CAM-1) 고정 — 신규 CCTV(CAM-2)는 프롬프트 질의 전용.
   async function runVlmAnalysisOnce(token) {
@@ -1116,6 +1261,9 @@
     try { await hydrateMatrix(currentProcessCode()); setConn(true, '신호등 동기화 완료'); }
     catch (e) { setConn(false, e.message); }
     setInterval(() => hydrateMatrix(currentProcessCode()).catch(() => {}), MATRIX_POLL_MS);
+
+    // 감시 항목 수정 버튼·승인 다이얼로그 연결 + 현재 항목 이름 동기화.
+    initRuleEditing();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

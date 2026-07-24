@@ -9,6 +9,12 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 
+class RuleDraftRequest(BaseModel):
+    """홈페이지에서 입력한 자연어 감시 항목 문장."""
+
+    text: str = Field(min_length=1, examples=["안전화 미착용"])
+
+
 class VlmInferRequest(BaseModel):
     """Trigger payload from the kiosk for a connected camera."""
 

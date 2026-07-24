@@ -55,19 +55,22 @@ def split_detection(detection: str) -> list[str]:
 
 def categories_from_action_keys(
     action_keys: list[str],
+    rule_labels: dict[str, str] | None = None,
 ) -> list[tuple[UnsafeBehavior, str]]:
     """Map VLM /analyze ``action`` keys directly to categories.
 
-    Returns (category_id, matched_label) pairs. ``matched_label`` is the
-    category's Korean name. Each category counts at most once per call.
+    Returns (category_id, matched_label) pairs. ``matched_label`` is the current
+    감시 항목 표시명: 슬롯이 자연어로 재배정됐으면 ``rule_labels``의 동적 이름을,
+    없으면 내장 카테고리 한글 이름을 쓴다. Each category counts at most once.
     """
+    rule_labels = rule_labels or {}
     matched: list[tuple[UnsafeBehavior, str]] = []
     seen: set[UnsafeBehavior] = set()
     for key in action_keys:
         cat_id = VLM_ACTION_KEY_MAP.get(key)
         if cat_id is None or cat_id in seen:
             continue
-        matched.append((cat_id, CATEGORY_BY_ID[cat_id].name))
+        matched.append((cat_id, rule_labels.get(key) or CATEGORY_BY_ID[cat_id].name))
         seen.add(cat_id)
     return matched
 
@@ -192,6 +195,7 @@ class VlmService:
         code: str,
         matches: list[tuple[UnsafeBehavior, str]],
         analyzed_ids: set,
+        rule_labels: dict[str, str] | None = None,
     ) -> list[tuple[UnsafeBehavior, str]]:
         """raw 감지(matches)를 (공정,행동)별 대칭 디바운스로 안정화한다.
 
@@ -201,7 +205,13 @@ class VlmService:
         반환은 안정화된 위반 행동 목록((cat_id, 라벨))으로, 이후 카운트/TTS/경광등이 이걸 쓴다.
         """
         need = max(1, int(self._settings.behavior_debounce_frames))
+        rule_labels = rule_labels or {}
         raw_label = {cid: lbl for cid, lbl in matches}
+
+        def _name(cid: UnsafeBehavior) -> str:
+            # 이번 사이클 매칭 이름 > VLM 동적 표시명 > 내장 카테고리 이름.
+            return raw_label.get(cid) or rule_labels.get(cid.value) or CATEGORY_BY_ID[cid].name
+
         stable: list[tuple[UnsafeBehavior, str]] = []
         for cat in BEHAVIOR_CATEGORIES:
             cid = cat.id
@@ -210,7 +220,7 @@ class VlmService:
                 # 이번에 판정 안 한 행동 → 상태 유지(확정된 위반이면 계속 통과).
                 entry = self._debounce_state.get(key)
                 if entry and entry["state"]:
-                    stable.append((cid, cat.name))
+                    stable.append((cid, _name(cid)))
                 continue
             raw = cid in raw_label
             entry = self._debounce_state.get(key)
@@ -225,8 +235,46 @@ class VlmService:
                     entry["state"] = raw
                     entry["streak"] = 0
             if entry["state"]:
-                stable.append((cid, raw_label.get(cid, cat.name)))
+                stable.append((cid, _name(cid)))
         return stable
+
+    # ── 감시 항목(RuleSpec) 프록시 + 슬롯 상태 리셋 ──────────────────────────
+    async def rules_list(self) -> tuple[int, dict]:
+        return await self._vlm.rules_request("GET", "/rules")
+
+    async def rule_draft(self, slot: str, text: str) -> tuple[int, dict]:
+        return await self._vlm.rules_request("POST", f"/rules/{slot}/draft", {"text": text})
+
+    async def rule_discard(self, slot: str) -> tuple[int, dict]:
+        return await self._vlm.rules_request("POST", f"/rules/{slot}/discard")
+
+    def _reset_slot_state(self, slot: str) -> None:
+        """재배정/리셋된 슬롯의 옛 카운트·디바운스·쿨다운을 정리한다.
+
+        옛 의미의 누적치가 새 의미와 섞이지 않도록 전역 카운트를 0으로 만들고,
+        해당 슬롯의 디바운스/쿨다운 상태를 모든 공정에서 제거한다(다음 사이클부터
+        새 의미로 처음부터 안정화).
+        """
+        try:
+            self._repo.reset_behavior_column(slot)
+        except Exception:  # noqa: BLE001 — DB 미가용 시에도 규칙 적용은 진행
+            logger.warning("슬롯 카운트 리셋 실패(무시): %s", slot)
+        for key in [k for k in self._debounce_state if k[1] == slot]:
+            self._debounce_state.pop(key, None)
+        for key in [k for k in self._cooldown_until if k[1] == slot]:
+            self._cooldown_until.pop(key, None)
+
+    async def rule_approve(self, slot: str) -> tuple[int, dict]:
+        status, data = await self._vlm.rules_request("POST", f"/rules/{slot}/approve")
+        if status == 200:
+            self._reset_slot_state(slot)
+        return status, data
+
+    async def rule_reset(self, slot: str) -> tuple[int, dict]:
+        status, data = await self._vlm.rules_request("POST", f"/rules/{slot}/reset")
+        if status == 200:
+            self._reset_slot_state(slot)
+        return status, data
 
     async def infer(
         self,
@@ -269,7 +317,7 @@ class VlmService:
             # 불안전행동을 반영하지 않는다.
             matches = []
         elif vlm.action_keys:
-            matches = categories_from_action_keys(vlm.action_keys)
+            matches = categories_from_action_keys(vlm.action_keys, vlm.rule_labels)
         else:
             matches = match_categories(split_detection(vlm.detection))
 
@@ -291,7 +339,7 @@ class VlmService:
             if key in VLM_ACTION_KEY_MAP
         }
         analyzed_ids -= unknown_ids
-        matches = self._stabilize(code, matches, analyzed_ids)
+        matches = self._stabilize(code, matches, analyzed_ids, vlm.rule_labels)
 
         # 2-b) 행동별 독립 쿨다운(디바운스) 적용.
         #    같은 행동이 쿨다운 중이면 이번 사이클에서는 무시(allowed에서 제외)하여
@@ -334,7 +382,8 @@ class VlmService:
             deltas.append(
                 BehaviorDelta(
                     id=cat.id.value,
-                    name=cat.name,
+                    # 재배정된 슬롯은 동적 표시명(matched_label)을 UI/알림에 노출한다.
+                    name=matched_label or cat.name,
                     grade=cat.base_grade.value,
                     matched_label=matched_label,
                     increment=1,

@@ -318,6 +318,56 @@
 }
 .bhm-name.bhm-focus:has(.bhm-focus-cb:not(:checked)) .bhm-focus-text { color: var(--t-4); }
 
+/* ===== 감시 항목 자연어 재배정(수정 버튼) ===== */
+.bhm-edit-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fs-base);
+  color: #fff;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid var(--cyan);
+  border-radius: 6px;
+  padding: 4px 8px;
+  outline: none;
+}
+.bhm-edit-input::placeholder { color: var(--t-4); }
+
+.rule-approve-names {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  font-size: var(--fs-lg, 16px); font-weight: 600; color: #fff;
+}
+.rule-arrow { color: var(--cyan); font-size: 20px; }
+.rule-old { color: var(--t-3); text-decoration: line-through; }
+.rule-tag {
+  display: inline-block; margin-right: 6px; padding: 1px 8px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; background: rgba(255,255,255,0.10); color: var(--t-3);
+}
+.rule-tag.new { background: rgba(34,211,238,0.18); color: var(--cyan); }
+.rule-badges { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
+.rule-badge {
+  padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.16);
+}
+.rule-badge.on { background: rgba(34,211,238,0.14); color: var(--cyan); border-color: rgba(34,211,238,0.4); }
+.rule-badge.off { background: rgba(255,255,255,0.05); color: var(--t-4); }
+.rule-field { margin-top: 12px; }
+.rule-field-label { font-size: 12px; color: var(--t-4); margin-bottom: 4px; }
+.rule-field-val { font-size: var(--fs-base); color: #fff; }
+.rule-prompt {
+  white-space: pre-wrap; word-break: break-word; margin: 0;
+  font-size: 12.5px; line-height: 1.5; color: var(--t-2);
+  background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px; padding: 10px 12px; max-height: 240px; overflow-y: auto;
+}
+.btn-ghost, .btn-primary {
+  font-size: var(--fs-base); font-weight: 600; border-radius: 8px;
+  padding: 8px 16px; cursor: pointer; transition: background 0.15s, border-color 0.15s;
+}
+.btn-ghost { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); color: #fff; }
+.btn-ghost:hover { background: rgba(255,255,255,0.16); }
+.btn-primary { background: var(--cyan); border: 1px solid var(--cyan); color: #04121a; }
+.btn-primary:hover { filter: brightness(1.08); }
+
 /* ===== CCTV: IP카메라 라이브 이미지 ===== */
 .cctv-image {
   position: absolute;

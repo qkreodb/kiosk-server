@@ -386,6 +386,18 @@ class SqlRepository(KioskRepository):
                 (pid,),
             )
 
+    def reset_behavior_column(self, behavior_id: str) -> None:
+        """한 슬롯(behavior_id)의 카운트를 모든 공정에서 0으로 초기화한다.
+
+        감시 항목을 자연어로 재배정하면 그 슬롯의 옛 의미 누적치가 새 의미와 섞이지
+        않도록 전역으로 리셋한다. col 은 고정 화이트리스트라 문자열 삽입이 안전하다.
+        """
+        col = BEHAVIOR_COLUMN.get(behavior_id)
+        if col is None:
+            raise ValueError(f"Unknown behavior_id: {behavior_id!r}")
+        with self._lock:
+            self._execute(f"UPDATE unstable_behavior SET {col} = 0", ())
+
     def increment_behavior(self, process_code: str, behavior_id: str, delta: int = 1) -> int:
         col = BEHAVIOR_COLUMN.get(behavior_id)
         if col is None:
