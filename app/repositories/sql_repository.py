@@ -7,8 +7,8 @@ Talks to the confirmed 5-table schema on the Jetson via PyMySQL + raw SQL:
     temperature_humidity_sensor(sensor_id PK, temperature, humidity, measured_at, sensor_name)
     heartbeat_sensor(sensor_id PK, heart_rate, measured_at)
     cctv_info(cctv_id PK, rtsp_url)
-    unstable_behavior(behavior_id PK, slot_1_count, slot_4_count,
-                      slot_3_count, slot_2_count, slot_5_count)
+    unstable_behavior(behavior_id PK, slot_1_count, slot_2_count,
+                      slot_3_count, slot_4_count)
 
 Design notes:
   * The DB has no string "code" column, so the API process ``code`` is
@@ -36,14 +36,11 @@ from app.repositories.base import KioskRepository
 logger = get_logger(__name__)
 
 # unsafe-behavior id  ->  unstable_behavior column (confirmed schema mapping).
-# slot_2/slot_3 는 기존 touch/crossing 컬럼을 그대로 재사용하고,
-# slot_5 는 신규 추가된 slot_5_count 컬럼에 매핑된다.
 BEHAVIOR_COLUMN: dict[str, str] = {
     UnsafeBehavior.SLOT_1.value: "slot_1_count",
     UnsafeBehavior.SLOT_2.value: "slot_2_count",
     UnsafeBehavior.SLOT_3.value: "slot_3_count",
     UnsafeBehavior.SLOT_4.value: "slot_4_count",
-    UnsafeBehavior.SLOT_5.value: "slot_5_count",
 }
 
 
@@ -358,8 +355,8 @@ class SqlRepository(KioskRepository):
             return zeros
         with self._lock:
             row = self._query_one(
-                "SELECT u.slot_1_count, u.slot_4_count, "
-                "u.slot_3_count, u.slot_2_count, u.slot_5_count "
+                "SELECT u.slot_1_count, u.slot_2_count, "
+                "u.slot_3_count, u.slot_4_count "
                 "FROM process p JOIN unstable_behavior u ON p.behavior_id = u.behavior_id "
                 "WHERE p.process_id=%s",
                 (pid,),
@@ -371,7 +368,6 @@ class SqlRepository(KioskRepository):
             UnsafeBehavior.SLOT_2.value: int(row["slot_2_count"]),
             UnsafeBehavior.SLOT_3.value: int(row["slot_3_count"]),
             UnsafeBehavior.SLOT_4.value: int(row["slot_4_count"]),
-            UnsafeBehavior.SLOT_5.value: int(row["slot_5_count"]),
         }
 
     def reset_behavior_counts(self, process_code: str) -> None:

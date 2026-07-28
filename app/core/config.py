@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     # 자유 프롬프트 질의 엔드포인트(신규 CCTV 모달의 실시간 장면 설명용).
     # body: {"path": "<프레임 폴더>", "prompt": "<사용자 입력>"}
     vlm_prompt_path: str = "/prompt"
+    # 중앙 CCTV 전용: 사람 탐지 → 차량번호 + 안전모 동시 판정 엔드포인트.
+    # body: {"path": "<프레임 폴더>"}
+    vlm_vehicle_safety_path: str = "/vehicle-safety"
+    # 같은 차량번호로 반복 발화하지 않도록 하는 대기 시간(초). 번호가 바뀌면 즉시 발화한다.
+    vehicle_tts_cooldown_seconds: float = 10.0
     # ``/analyze`` 가 Jetson 파일시스템에서 읽을 프레임 폴더(절대 경로). 하드웨어
     # 서버가 30fps 프레임을 기록하는 공유 디렉터리를 가리켜야 한다. 기본값은
     # VLM 서버 README의 테스트 폴더.
@@ -209,6 +214,13 @@ class Settings(BaseSettings):
     @property
     def vlm_prompt_url(self) -> str:
         return f"{self.vlm_base_url.rstrip('/')}/{self.vlm_prompt_path.lstrip('/')}"
+
+    @property
+    def vlm_vehicle_safety_url(self) -> str:
+        return (
+            f"{self.vlm_base_url.rstrip('/')}/"
+            f"{self.vlm_vehicle_safety_path.lstrip('/')}"
+        )
 
 
 @lru_cache

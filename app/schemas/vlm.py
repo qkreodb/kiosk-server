@@ -65,6 +65,45 @@ class VlmPromptResponse(BaseModel):
     tts: TtsDispatch = Field(description="답변을 읽어준 음성 합성/재생 결과")
 
 
+class VlmVehicleSafetyRequest(BaseModel):
+    """POST /vlm/vehicle-safety — 중앙 CCTV의 차량번호 + 안전모 점검 1회.
+
+    ``path`` 를 생략하면 ``camera_id`` 의 DB frame_dir → 설정 기본값 순으로 해석한다.
+    """
+
+    camera_id: str = Field(default="CAM-2", examples=["CAM-2"])
+    path: str | None = Field(default=None, examples=["/home/ds/Desktop/frames/cam2"])
+
+
+class VlmVehicleSafetyResponse(BaseModel):
+    """차량번호 + 안전모 점검 1회의 결과.
+
+    ``reason`` 이 이번 사이클의 결말을 설명한다:
+
+    * ``no_person`` — 사람 없음(VLM 호출 없이 종료)
+    * ``person_unclear`` — 사람 존재 판정 불가
+    * ``helmet_ok`` — 보이는 사람 전원 안전모 착용
+    * ``helmet_unclear`` — 안전모 판정 불가
+    * ``plate_unclear`` — 미착용은 확인했으나 차량번호를 못 읽음 → 발화 안 함
+    * ``warn`` — 번호 확인 + 미착용 → 경고 문구 생성
+    * ``vlm_error`` — VLM 서버 호출 실패
+    """
+
+    camera_id: str
+    path: str = Field(description="실제 VLM 서버로 전달된 프레임 폴더 경로")
+    ok: bool = Field(description="VLM 서버 호출 성공 여부")
+    reason: str = Field(description="이번 사이클의 결말 코드")
+    person: bool | None = Field(default=None, description="사람 존재(None=판정 불가)")
+    plate: str | None = Field(default=None, description="확실히 읽힌 차량번호")
+    helmet_violation: bool | None = Field(
+        default=None, description="안전모 미착용 여부(None=판정 불가)"
+    )
+    text: str = Field(default="", description="경고 문구(발화 대상이 없으면 빈 문자열)")
+    spoken: bool = Field(default=False, description="이번 응답으로 실제 음성을 재생했는지")
+    detail: str | None = Field(default=None, description="실패/건너뜀 사유")
+    tts: TtsDispatch | None = Field(default=None, description="음성 합성/재생 결과")
+
+
 class BehaviorDelta(BaseModel):
     """Result of parsing one detected behavior into a category + DB increment."""
 

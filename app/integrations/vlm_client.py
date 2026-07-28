@@ -78,6 +78,7 @@ class VlmClient:
         self._settings = settings
         self._url = settings.vlm_analyze_url
         self._prompt_url = settings.vlm_prompt_url
+        self._vehicle_safety_url = settings.vlm_vehicle_safety_url
         self._frame_dir = settings.vlm_frame_dir
         self._timeout = settings.vlm_timeout_seconds
         self._base = settings.vlm_base_url.rstrip("/")
@@ -156,6 +157,31 @@ class VlmClient:
             data = {"response": data}
         return {"ok": True, "text": text, "raw": data, "detail": None}
 
+    async def vehicle_safety(self, path: str) -> dict:
+        """VLM 서버의 /vehicle-safety 질의(중앙 CCTV). 실패 시 ok=False 로 유지한다.
+
+        Request body::  {"path": "<프레임 폴더>"}
+        Returns::       {"ok": bool, "data": dict, "detail": str|None}
+
+        ``data`` 는 VLM 응답 원문이며 ``reason``/``plate``/``tts_message`` 를 담는다.
+        실패해도 예외를 올리지 않는다 — 모달의 반복 질의 루프가 끊기면 안 되기 때문.
+        """
+        try:
+            async with httpx.AsyncClient(timeout=self._timeout) as client:
+                resp = await client.post(self._vehicle_safety_url, json={"path": path})
+                resp.raise_for_status()
+                data = resp.json()
+        except Exception as exc:  # noqa: BLE001 — VLM 장애를 안전 결과로 취급하지 않음
+            logger.warning(
+                "VLM /vehicle-safety unreachable/failed at %s (%s)",
+                self._vehicle_safety_url,
+                exc.__class__.__name__,
+            )
+            return {"ok": False, "data": {}, "detail": str(exc)}
+        if not isinstance(data, dict):
+            return {"ok": False, "data": {}, "detail": "예상치 못한 응답 형식"}
+        return {"ok": True, "data": data, "detail": None}
+
     async def rules_request(
         self, method: str, path: str, json_body: dict | None = None
     ) -> tuple[int, dict]:
@@ -210,7 +236,7 @@ class VlmClient:
 
         ``labels``(또는 레거시 ``action``)가 응답에 존재하면 그것이 정답이다.
         값이 비어 있으면 "탐지 없음"을 의미하므로 raw 폴백으로 넘어가지 않는다
-        (raw 에 slot_5 처럼 위반이 아닌 키가 true 로 남아 오탐되는 것 방지).
+        (raw에 위반이 아닌 키가 true로 남아 오탐되는 것을 방지).
         raw 폴백은 labels·action 키가 아예 없는 응답에서만 사용한다.
         """
         if isinstance(data.get(KEY_LABELS), list):

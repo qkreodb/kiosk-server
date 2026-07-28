@@ -122,7 +122,7 @@
             </div>
           </div>
           <div class="behavior-head-right">
-            <button type="button" id="bhExpertPresetBtn" class="bh-expert-preset-btn" title="안전모·쓰러짐·라바콘·안전고리·안전조끼 전용 판별 프리셋 적용">시연 5종 프리셋 적용</button>
+            <button type="button" id="bhExpertPresetBtn" class="bh-expert-preset-btn" title="안전모·라바콘·안전하네스·쓰러짐 전용 판별 프리셋 적용">시연 4종 프리셋 적용</button>
             <button type="button" title="위험 탐지 사진" onclick="openDangerFrames()" class="icon-btn-ghost bh-danger-btn"><img class="bh-action-icon" src="images/danger-photos.svg" alt="" aria-hidden="true" /></button>
             <button type="button" title="초기화" onclick="resetBehavior()" class="icon-btn-ghost bh-reset-btn"><img class="bh-action-icon" src="images/reset.svg" alt="" aria-hidden="true" /></button>
           </div>
@@ -194,21 +194,6 @@
               <span class="bhm-lamp danger"></span>
             </div>
           </div>
-          <div class="bh-matrix-row" data-active="-1">
-            <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><img class="bhm-edit-icon" src="images/edit.svg" alt="" aria-hidden="true" /></button>
-            <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
-              <input type="checkbox" class="bhm-focus-cb" data-focus-key="slot_5" data-focus-label="" onchange="onFocusToggle()">
-              <span class="bhm-focus-text">불러오는 중…</span>
-            </label>
-            <div class="bhm-lamps">
-              <span class="bhm-lamp interest"></span>
-              <span class="bhm-lamp caution"></span>
-              <span class="bhm-lamp warning"></span>
-              <span class="bhm-lamp danger"></span>
-            </div>
-          </div>
-
-
         </div>
       </div>
     </section>
@@ -284,6 +269,14 @@
                 <circle cx="790" cy="185" r="22" fill="#6628E1"><animate attributeName="opacity" values="0.5;0;0.5" dur="1.6s" repeatCount="indefinite"/></circle>
                 <circle cx="790" cy="185" r="18" fill="#6628E1" fill-opacity="0.18"/>
                 <image x="776" y="171" width="28" height="28" href="images/icon_cctv.svg"/>
+              </g>
+              <!-- 중앙 전시홀 CCTV — 모달은 CAM-2와 같은 화면이지만 variant 'center' 로
+                   구분되어, [분석 시작] 시 자유 프롬프트 대신 차량번호+안전모 점검
+                   (POST /vlm/vehicle-safety)을 반복 호출한다. -->
+              <g class="ai-marker" style="cursor:pointer;" onclick="openCCTVFor('CAM-2 · 중앙 전시홀', 'center')">
+                <circle cx="470" cy="185" r="22" fill="#6628E1"><animate attributeName="opacity" values="0.5;0;0.5" dur="1.6s" repeatCount="indefinite"/></circle>
+                <circle cx="470" cy="185" r="18" fill="#6628E1" fill-opacity="0.18"/>
+                <image x="456" y="171" width="28" height="28" href="images/icon_cctv.svg"/>
               </g>
               <!-- 이상현상 수신 시 CAM-1 주위 빨간 점멸 링(기본 숨김) -->
               <circle id="cctvAlertRing" cx="150" cy="185" r="26" fill="none" stroke="#FF2B33" stroke-width="3" style="display:none;">

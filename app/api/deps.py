@@ -174,6 +174,12 @@ def _debounce_state() -> dict:
     return {}
 
 
+@lru_cache
+def _vehicle_cooldown() -> dict[tuple[str, str], float]:
+    """(카메라, 차량번호)별 경고 음성 쿨다운(요청 간 공유). _behavior_cooldown 과 동일 이유."""
+    return {}
+
+
 def get_vlm_service() -> VlmService:
     return VlmService(
         repo=get_repository(),
@@ -186,6 +192,7 @@ def get_vlm_service() -> VlmService:
         cooldown_state=_behavior_cooldown(),
         thresholds=_threshold_store(),
         debounce_state=_debounce_state(),
+        vehicle_cooldown_state=_vehicle_cooldown(),
     )
 
 

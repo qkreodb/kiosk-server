@@ -1,7 +1,7 @@
 """Domain enums and constants shared across the server.
 
 The single source of truth for:
-  * the 5 unsafe-behavior ("불안전행동") categories the kiosk monitors, and
+  * the 4 unsafe-behavior ("불안전행동") categories the kiosk monitors, and
   * the warning-light ("경광등") states the /vlm/infer pipeline can emit.
 
 Category names match the labels rendered by the kiosk frontend
@@ -24,7 +24,7 @@ class BehaviorGrade(str, Enum):
 
 
 class UnsafeBehavior(str, Enum):
-    """Stable identifiers for the 5 unsafe-behavior categories.
+    """Stable identifiers for the 4 unsafe-behavior categories.
 
     값은 VLM Server가 ``action`` 으로 내보내는 탐지 라벨 키와 1:1로 동일하다
     (VLM 측 ``LABEL_KO`` 딕셔너리 키와 일치). 따라서 별도 키 변환 없이 그대로
@@ -33,9 +33,8 @@ class UnsafeBehavior(str, Enum):
 
     SLOT_1 = "slot_1"          # 안전모 미착용
     SLOT_2 = "slot_2"          # 라바콘 접촉
-    SLOT_3 = "slot_3"          # 위험 펜스 넘음
-    SLOT_4 = "slot_4"          # 사다리 단독 이용
-    SLOT_5 = "slot_5"          # 안전 조끼 미착용
+    SLOT_3 = "slot_3"          # 안전하네스 미착용
+    SLOT_4 = "slot_4"          # 쓰러진 사람
 
 
 @dataclass(frozen=True)
@@ -71,19 +70,13 @@ BEHAVIOR_CATEGORIES: tuple[BehaviorCategory, ...] = (
         id=UnsafeBehavior.SLOT_3,
         name="감시항목 3",
         base_grade=BehaviorGrade.DANGER,
-        keywords=("펜스", "울타리", "넘", "차단", "fence"),
+        keywords=("안전하네스", "하네스", "안전대", "harness"),
     ),
     BehaviorCategory(
         id=UnsafeBehavior.SLOT_4,
         name="감시항목 4",
-        base_grade=BehaviorGrade.NORMAL,
-        keywords=("사다리", "단독", "혼자", "ladder"),
-    ),
-    BehaviorCategory(
-        id=UnsafeBehavior.SLOT_5,
-        name="감시항목 5",
         base_grade=BehaviorGrade.DANGER,
-        keywords=("안전 조끼", "조끼", "안전대", "안전벨트", "vest", "harness"),
+        keywords=("쓰러진", "넘어짐", "낙상", "fallen", "collapsed"),
     ),
 )
 
@@ -98,15 +91,13 @@ CATEGORY_BY_ID: dict[UnsafeBehavior, BehaviorCategory] = {
 # 키와 1:1 로 일치한다(자유텍스트 키워드 매칭 불필요).
 #   slot_1      안전모 미착용
 #   slot_2      라바콘 접촉
-#   slot_3  위험 펜스 넘음
-#   slot_4    사다리 단독 이용
-#   slot_5     안전 조끼 미착용
+#   slot_3      안전하네스 미착용
+#   slot_4      쓰러진 사람
 VLM_ACTION_KEY_MAP: dict[str, UnsafeBehavior] = {
     "slot_1": UnsafeBehavior.SLOT_1,
     "slot_2": UnsafeBehavior.SLOT_2,
     "slot_3": UnsafeBehavior.SLOT_3,
     "slot_4": UnsafeBehavior.SLOT_4,
-    "slot_5": UnsafeBehavior.SLOT_5,
 }
 
 # 키오스크가 `/analyze` 요청 시 함께 보내는 detect_actions(키+라벨). 키오스크가
@@ -116,7 +107,6 @@ VLM_DETECT_ACTIONS: list[dict[str, str]] = [
     {"key": "slot_2", "label": "감시항목 2"},
     {"key": "slot_3", "label": "감시항목 3"},
     {"key": "slot_4", "label": "감시항목 4"},
-    {"key": "slot_5", "label": "감시항목 5"},
 ]
 
 

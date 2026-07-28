@@ -11,6 +11,8 @@ from app.schemas.vlm import (
     VlmInferResponse,
     VlmPromptRequest,
     VlmPromptResponse,
+    VlmVehicleSafetyRequest,
+    VlmVehicleSafetyResponse,
 )
 from app.services.vlm_scheduler import VlmScheduler
 from app.services.vlm_service import VlmService
@@ -51,6 +53,26 @@ async def prompt(
     )
 
 
+@router.post(
+    "/vehicle-safety",
+    response_model=VlmVehicleSafetyResponse,
+    summary="차량번호 + 안전모 점검 (중앙 CCTV)",
+)
+async def vehicle_safety(
+    body: VlmVehicleSafetyRequest | None = None,
+    service: VlmService = Depends(get_vlm_service),
+) -> VlmVehicleSafetyResponse:
+    """중앙 CCTV 모달의 [분석 시작] 전용 — 사람 → 차량번호 + 안전모 → 경고 음성 1회.
+
+    사람이 없으면 VLM 판정 없이 즉시 끝난다. 차량번호를 확실히 읽었고 안전모
+    미착용이 확인된 경우에만 "차량번호 OOOO, 안전모를 착용하세요."를 재생하고,
+    같은 차량번호는 쿨다운이 끝날 때까지 다시 발화하지 않는다.
+    path 생략 시 camera_id 의 DB frame_dir 로 자동 해석한다.
+    """
+    req = body or VlmVehicleSafetyRequest()
+    return await service.vehicle_safety(camera_id=req.camera_id, path=req.path)
+
+
 @router.post("/stop", summary="대기 중 TTS 취소(재생 중인 건 유지)")
 async def stop(service: VlmService = Depends(get_vlm_service)) -> dict:
     """CCTV 모달 종료 등에서 호출 — 재생 중인 음성은 끝까지 두고 대기/지연 TTS만 폐기."""
@@ -85,16 +107,16 @@ def _relay(status: int, data: dict) -> dict:
     return data
 
 
-@router.get("/rules", summary="현재 5개 감시 항목 요약")
+@router.get("/rules", summary="현재 4개 감시 항목 요약")
 async def rules_list(service: VlmService = Depends(get_vlm_service)) -> dict:
     return _relay(*(await service.rules_list()))
 
 
-@router.post("/rules/preset/expert-safety", summary="기업 시연용 전용 5종 preset 적용")
+@router.post("/rules/preset/expert-safety", summary="기업 시연용 전용 4종 preset 적용")
 async def expert_safety_preset(
     service: VlmService = Depends(get_vlm_service),
 ) -> dict:
-    """기존 사용자 재배정 항목을 명시적으로 전용 5종 preset으로 교체한다."""
+    """기존 사용자 재배정 항목을 명시적으로 전용 4종 preset으로 교체한다."""
     return _relay(*(await service.restore_expert_safety_preset()))
 
 

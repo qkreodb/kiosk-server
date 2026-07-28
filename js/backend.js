@@ -308,6 +308,10 @@
   // 현재 열려 있는 CCTV 모달의 카메라 번호. 탐지 오버레이는 CAM-2가 아닌 모달에서만
   // 노출한다(분석 대상은 CAM-1이라, CAM-2 모달엔 탐지 결과를 띄우지 않음).
   let currentCctvCam = null;
+  // 같은 CAM-2 모달을 쓰지만 지도상 어느 아이콘으로 열었는지 구분하는 값
+  // (null = 우측 CAM-2, 'center' = 중앙 전시홀). [분석 시작]에서 호출할 API 를
+  // 아이콘별로 다르게 붙일 때 사용한다.
+  let currentCctvVariant = null;
 
   /* ----- 이상현상 수신 시 CAM-1 CCTV 미니 팝업 알림 -----
    * VLM이 실제 이상행동을 카운트(쿨다운 통과)하면 사업장 지도 CCTV 탭의 CAM-1
@@ -417,26 +421,58 @@
     btn.textContent = active ? '중지' : '분석 시작';
     btn.classList.toggle('active', active);
   }
+  /* ----- 중앙 CCTV: 차량번호 + 안전모 점검 -----
+   * 같은 [분석 시작] 버튼이지만 중앙 아이콘('center')으로 연 모달에서는 자유
+   * 프롬프트 대신 POST /vlm/vehicle-safety 를 반복 호출한다. 경고 음성은 서버가
+   * 재생하므로 프론트는 이번 사이클 결과를 자막으로만 보여준다. */
+  const VEHICLE_REASON_CAPTION = {
+    no_person: '사람이 감지되지 않았습니다.',
+    person_unclear: '사람 여부를 판정하지 못했습니다.',
+    helmet_ok: '안전모 착용이 확인되었습니다.',
+    helmet_unclear: '안전모 착용 여부를 판정하지 못했습니다.',
+    plate_unclear: '차량번호를 읽지 못했습니다 · 다음 분석으로 넘어갑니다.',
+    vlm_error: '분석 서버에 연결하지 못했습니다.',
+  };
+  function vehicleCaption(d) {
+    // 경고가 나온 사이클은 실제 발화 문구를 그대로 자막으로 쓴다.
+    if (d && d.text) return d.text;
+    return (d && VEHICLE_REASON_CAPTION[d.reason]) || '분석 중…';
+  }
+  async function runVehicleSafetyOnce() {
+    const resp = await fetch(API + '/vlm/vehicle-safety', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ camera_id: 'CAM-' + PROMPT_CAM_NUM }),
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    return resp.json();
+  }
+  async function runPromptOnce() {
+    const resp = await fetch(API + '/vlm/prompt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ camera_id: 'CAM-' + PROMPT_CAM_NUM, prompt: currentPromptText() }),
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    return resp.json();
+  }
   function startPromptLoop() {
     promptLoop.active = true;
     setPromptButtonState(true);
     const myToken = ++promptLoop.token; // 이전 루프/in-flight 응답 무효화
+    // 어떤 아이콘으로 열었는지는 루프 시작 시점에 고정한다(도중 변경 방지).
+    const vehicleMode = currentCctvVariant === 'center';
     (async function loop() {
       while (promptLoopAlive(myToken)) {
         try {
-          const resp = await fetch(API + '/vlm/prompt', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ camera_id: 'CAM-' + PROMPT_CAM_NUM, prompt: currentPromptText() }),
-          });
-          if (!resp.ok) throw new Error('HTTP ' + resp.status);
-          const d = await resp.json();
+          const d = vehicleMode ? await runVehicleSafetyOnce() : await runPromptOnce();
           if (!promptLoopAlive(myToken)) return; // 응답 도착 시 이미 닫힘/전환됨
-          if (d.ok && d.text) enqueueCaption(d.text);
+          if (vehicleMode) enqueueCaption(vehicleCaption(d));
+          else if (d.ok && d.text) enqueueCaption(d.text);
           await sleep(PROMPT_INTERVAL_MS);
         } catch (e) {
           if (!promptLoopAlive(myToken)) return;
-          console.error('[VLM 프롬프트] 실패:', e);
+          console.error(vehicleMode ? '[차량·안전모] 실패:' : '[VLM 프롬프트] 실패:', e);
           await sleep(PROMPT_ERROR_BACKOFF_MS);
         }
       }
@@ -468,10 +504,11 @@
     const vlm = document.getElementById('cctvVlmOverlay');
     if (vlm) vlm.classList.remove('show');
   };
-  window.openCCTVFor = function (region) {
+  window.openCCTVFor = function (region, variant) {
     document.getElementById('cctvHeadSub').textContent = region + ' · 실시간';
     const cam = camNumFrom(region);
     currentCctvCam = cam;
+    currentCctvVariant = variant || null;
     const image = document.getElementById('cctvImage');
     const vlm = document.getElementById('cctvVlmOverlay');
     const bar = document.getElementById('cctvPromptBar');
@@ -483,6 +520,9 @@
     if (cam === PROMPT_CAM_NUM) {
       // 신규 CCTV: 프롬프트 입력 바만 노출 — API 호출은 [분석 시작] 버튼을 눌러야 시작된다.
       if (bar) bar.style.display = 'flex';
+      // 중앙 CCTV는 질문이 "차량번호 + 안전모"로 고정이라 입력창을 숨기고 버튼만 남긴다.
+      const input = document.getElementById('cctvPromptInput');
+      if (input) input.style.display = currentCctvVariant === 'center' ? 'none' : '';
       setPromptButtonState(false);
     } else {
       if (bar) bar.style.display = 'none';
@@ -616,7 +656,7 @@
 
   function rowOfEditBtn(btn) { return btn.closest('.bh-matrix-row'); }
 
-  // 페이지 로드/승인 후: 서버의 현재 감시 항목으로 5개 행의 표시명·라벨을 채운다.
+  // 페이지 로드/승인 후: 서버의 현재 감시 항목으로 4개 행의 표시명·라벨을 채운다.
   async function hydrateRules() {
     let data;
     try {
@@ -824,14 +864,14 @@
       return;
     }
     const message = [
-      "시연 5종 프리셋을 적용할까요?",
-      "안전모 미착용, 쓰러진 사람, 라바콘 접촉, 안전고리 미사용, 안전조끼 미착용으로 바뀝니다.",
+      "시연 4종 프리셋을 적용할까요?",
+      "안전모 미착용, 라바콘 접촉, 안전하네스 미착용, 쓰러진 사람으로 바뀝니다.",
       "현재 감시항목 사용자 설정과 해당 항목의 누적 카운트가 초기화됩니다.",
     ].join("\n");
     if (!window.confirm(message)) return;
 
     const button = document.getElementById("bhExpertPresetBtn");
-    const originalText = button ? button.textContent : "시연 5종 프리셋 적용";
+    const originalText = button ? button.textContent : "시연 4종 프리셋 적용";
     ruleRequestBusy = true;
     if (button) {
       button.disabled = true;
@@ -844,7 +884,7 @@
         throw new Error((data && (data.detail || data.message)) || ("HTTP " + resp.status));
       }
       await hydrateRules();
-      if (window.showToast) showToast("시연 5종 프리셋을 적용했습니다", "ok");
+      if (window.showToast) showToast("시연 4종 프리셋을 적용했습니다", "ok");
     } catch (e) {
       if (window.showToast) showToast("프리셋 적용 실패: " + e.message, "warn");
     } finally {

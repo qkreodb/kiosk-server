@@ -39,6 +39,7 @@ from app.schemas.vlm import (
     TtsDispatch,
     VlmInferResponse,
     VlmPromptResponse,
+    VlmVehicleSafetyResponse,
     WarningLightSignal,
 )
 
@@ -111,6 +112,7 @@ class VlmService:
         cooldown_state: dict[tuple[str, str, str], float] | None = None,
         thresholds: LightThresholdStore | None = None,
         debounce_state: dict | None = None,
+        vehicle_cooldown_state: dict[tuple[str, str], float] | None = None,
     ) -> None:
         self._repo = repo
         self._vlm = vlm_client
@@ -136,6 +138,12 @@ class VlmService:
         # 요청 간 공유되는 캐시 dict 를 주입받아 상태를 유지한다(없으면 단독 dict).
         self._cooldown_until: dict[tuple[str, str, str], float] = (
             cooldown_state if cooldown_state is not None else {}
+        )
+        # (카메라, 차량번호) -> 만료 monotonic 시각. 같은 차량에 대고 계속 반복해서
+        # 말하지 않기 위한 타이머로, 위와 같은 이유로 요청 간 공유 dict 를 주입받는다.
+        # 차량번호가 바뀌면 키가 달라지므로 새 차량은 대기 없이 즉시 경고한다.
+        self._vehicle_cooldown_until: dict[tuple[str, str], float] = (
+            vehicle_cooldown_state if vehicle_cooldown_state is not None else {}
         )
 
     def _resolve_camera(self, camera_id: str) -> dict | None:
@@ -280,7 +288,7 @@ class VlmService:
         return status, data
 
     async def restore_expert_safety_preset(self) -> tuple[int, dict]:
-        """기업 시연용 전용 5종 preset을 적용하고 모든 슬롯 상태를 비운다."""
+        """기업 시연용 전용 4종 preset을 적용하고 모든 슬롯 상태를 비운다."""
         status, data = await self._vlm.rules_request(
             "POST", "/rules/preset/expert-safety"
         )
@@ -507,6 +515,77 @@ class VlmService:
             detail=result.get("detail"),
             tts=TtsDispatch(**tts_result.model_dump()),
         )
+
+    async def vehicle_safety(
+        self,
+        camera_id: str,
+        path: str | None = None,
+    ) -> VlmVehicleSafetyResponse:
+        """중앙 CCTV 점검 1회 — 사람 → 차량번호 + 안전모 → 경고 음성.
+
+        판정은 VLM 서버(/vehicle-safety)가 하고, 여기서는 발화 정책만 담당한다:
+        경고 문구가 있을 때만, 그리고 같은 차량번호가 쿨다운 중이 아닐 때만 재생한다.
+        번호를 못 읽었거나 판정이 불확실한 사이클은 조용히 넘어간다(VLM 이 이미
+        ``tts_message`` 를 비워서 보낸다).
+
+        분석 카운트·경광등 파이프라인과는 무관하다 — 이 기능은 경고 음성 전용이다.
+        """
+        if path is None:
+            cam = self._resolve_camera(camera_id)
+            if cam:
+                path = cam.get("frame_dir") or None
+        path = path or self._settings.vlm_frame_dir
+
+        # 재생 세대값을 질의 시작 시점에 캡처 — 모달 종료(flush_tts) 시 이 요청의
+        # 늦은 TTS 재생은 폐기된다(infer()/prompt()와 동일 패턴).
+        play_epoch = self._speaker.current_epoch()
+
+        result = await self._vlm.vehicle_safety(path)
+        if not result.get("ok"):
+            return VlmVehicleSafetyResponse(
+                camera_id=camera_id,
+                path=path,
+                ok=False,
+                reason="vlm_error",
+                detail=result.get("detail"),
+            )
+
+        data = result.get("data") or {}
+        reason = str(data.get("reason") or "")
+        plate = data.get("plate") or None
+        text = str(data.get("tts_message") or "")
+
+        response = VlmVehicleSafetyResponse(
+            camera_id=camera_id,
+            path=path,
+            ok=True,
+            reason=reason,
+            person=data.get("person"),
+            plate=plate,
+            helmet_violation=data.get("helmet_violation"),
+            text=text,
+        )
+        if not text:
+            return response
+
+        # 같은 차량번호로 연속 경고하지 않는다. 쿨다운 중이면 문구는 화면 자막으로
+        # 남기되 음성만 생략한다.
+        now = time.monotonic()
+        key = (camera_id, plate or "")
+        if now < self._vehicle_cooldown_until.get(key, 0.0):
+            response.detail = "쿨다운 중 — 음성 생략"
+            return response
+        self._vehicle_cooldown_until[key] = (
+            now + self._settings.vehicle_tts_cooldown_seconds
+        )
+
+        tts_result = await self._tts.synthesize(text)
+        if tts_result.status in {"synthesized", "stubbed"}:
+            self._speaker.play_async(tts_result.audio_path, tts_result.text, epoch=play_epoch)
+            response.spoken = True
+        response.tts = TtsDispatch(**tts_result.model_dump())
+        logger.info("[VEHICLE] %s | plate=%s | 발화=%s", camera_id, plate, response.spoken)
+        return response
 
     def flush_tts(self) -> None:
         """대기 중인 TTS를 폐기(현재 재생 중인 건 끝까지 재생). CCTV 모달 종료 시 호출."""
