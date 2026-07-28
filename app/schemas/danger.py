@@ -12,13 +12,13 @@ from pydantic import BaseModel, Field
 class DangerFrame(BaseModel):
     """One saved danger snapshot, with its filename parsed into fields."""
 
-    filename: str = Field(examples=["A라인_helmet_off-ladder_alone_20260702_143005.png"])
+    filename: str = Field(examples=["A라인_slot_1-slot_4_20260702_143005.png"])
     process: str = Field(description="파일명에서 파싱한 공정명", examples=["A라인"])
     violations: list[str] = Field(
-        description="위반 키 목록", examples=[["helmet_off", "ladder_alone"]]
+        description="위반 키 목록", examples=[["slot_1", "slot_4"]]
     )
     violation_labels: list[str] = Field(
-        description="위반 키의 한글 라벨", examples=[["안전모 미착용", "사다리 단독 이용"]]
+        description="위반 키의 한글 라벨", examples=[["감시항목 1", "감시항목 4"]]
     )
     captured_at: str | None = Field(
         default=None, description="촬영 시각(표시용)", examples=["2026-07-02 14:30:05"]

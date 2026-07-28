@@ -12,6 +12,7 @@ VLM 서버가 위험행동 감지 시 저장한 스냅샷 폴더를 읽어, 파�
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 import re
 from pathlib import Path
 from urllib.parse import quote
@@ -26,7 +27,7 @@ logger = get_logger(__name__)
 _IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"}
 
 # 파일명 파서: ``{공정}_{위반(-위반)*}_{YYYYMMDD}_{HHMMSS}``.
-# 위반 키는 그 자체에 ``_`` 를 포함하므로(예: helmet_off) 알려진 키 집합으로만 매칭하고,
+# 위반 키는 그 자체에 ``_`` 를 포함하므로(예: slot_1) 알려진 키 집합으로만 매칭하고,
 # 공정명은 비탐욕(.+?)으로 잡아 위반/시각을 우선 확정한다.
 _VIOL_ALT = "|".join(re.escape(k) for k in VLM_ACTION_KEY_MAP)
 _NAME_RE = re.compile(
@@ -35,10 +36,16 @@ _NAME_RE = re.compile(
 )
 
 
-def _labels_for(keys: list[str]) -> list[str]:
-    """위반 키 → 한글 라벨(알 수 없는 키는 키 그대로)."""
+def _labels_for(
+    keys: list[str], rule_labels: Mapping[str, str] | None = None
+) -> list[str]:
+    """위반 키 → 현재 VLM 표시명, 실패 시 내장 라벨."""
     out: list[str] = []
     for k in keys:
+        dynamic = str(rule_labels.get(k, "")).strip() if rule_labels else ""
+        if dynamic:
+            out.append(dynamic)
+            continue
         cat_id = VLM_ACTION_KEY_MAP.get(k)
         out.append(CATEGORY_BY_ID[cat_id].name if cat_id else k)
     return out
@@ -52,7 +59,9 @@ class DangerFrameService:
     def dir_str(self) -> str:
         return str(self._dir)
 
-    def _parse(self, name: str) -> DangerFrame:
+    def _parse(
+        self, name: str, rule_labels: Mapping[str, str] | None = None
+    ) -> DangerFrame:
         """파일명 하나를 DangerFrame 으로 파싱. 형식이 안 맞으면 파일명만 채운다."""
         stem = name.rsplit(".", 1)[0]
         m = _NAME_RE.match(stem)
@@ -69,12 +78,14 @@ class DangerFrameService:
             filename=name,
             process=m.group("process") or "unknown",
             violations=keys,
-            violation_labels=_labels_for(keys),
+            violation_labels=_labels_for(keys, rule_labels),
             captured_at=captured_at,
             url=f"/danger-frames/file/{quote(name)}",
         )
 
-    def list_frames(self) -> list[DangerFrame]:
+    def list_frames(
+        self, rule_labels: Mapping[str, str] | None = None
+    ) -> list[DangerFrame]:
         """폴더의 이미지 파일을 최신순으로 파싱해 반환. 폴더 없으면 빈 목록."""
         if not self._dir.is_dir():
             return []
@@ -82,7 +93,7 @@ class DangerFrameService:
         for p in self._dir.iterdir():
             if not p.is_file() or p.suffix.lower() not in _IMAGE_EXTS:
                 continue
-            frame = self._parse(p.name)
+            frame = self._parse(p.name, rule_labels)
             # 정렬 키: 파싱된 시각이 있으면 그걸로, 없으면 파일 수정시각으로 폴백.
             sort_key = frame.captured_at or ""
             if not sort_key:

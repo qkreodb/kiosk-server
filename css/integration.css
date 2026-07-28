@@ -334,8 +334,33 @@
 
 .rule-approve-names {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  font-size: var(--fs-lg, 16px); font-weight: 600; color: #fff;
+  font-size: var(--fs-lg, 16px); font-weight: 600; color: var(--t-1);
 }
+.rule-approve[hidden] { display: none; }
+.rule-busy-state[hidden] { display: none; }
+.rule-busy-state {
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--t-1);
+  font-size: var(--fs-lg, 16px);
+  text-align: center;
+}
+.rule-busy-spinner {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border: 3px solid rgba(34, 211, 238, 0.24);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: rule-busy-spin 0.8s linear infinite;
+}
+@keyframes rule-busy-spin { to { transform: rotate(360deg); } }
+#ruleApproveOverlay.rule-busy .modal-box { cursor: wait; }
+#ruleApproveOverlay.rule-busy .modal-close,
+#ruleApproveOverlay.rule-busy .modal-foot { opacity: 0.5; }
 .rule-arrow { color: var(--cyan); font-size: 20px; }
 .rule-old { color: var(--t-3); text-decoration: line-through; }
 .rule-tag {
@@ -352,7 +377,7 @@
 .rule-badge.off { background: rgba(255,255,255,0.05); color: var(--t-4); }
 .rule-field { margin-top: 12px; }
 .rule-field-label { font-size: 12px; color: var(--t-4); margin-bottom: 4px; }
-.rule-field-val { font-size: var(--fs-base); color: #fff; }
+.rule-field-val { font-size: var(--fs-base); color: var(--t-1); }
 .rule-prompt {
   white-space: pre-wrap; word-break: break-word; margin: 0;
   font-size: 12.5px; line-height: 1.5; color: var(--t-2);
@@ -634,31 +659,6 @@
 .live-sensor-badge .lsb-temp { color: var(--orange); }
 .live-sensor-badge .lsb-hum { color: var(--cyan); }
 .live-sensor-badge .lsb-hr { color: var(--red); }
-
-/* ===== 백엔드 연결 상태 배지 (상단 중앙 고정) ===== */
-.conn-badge {
-  position: fixed;
-  top: 8px; left: 50%;
-  transform: translateX(-50%);
-  z-index: 9999;
-  font: 600 12px 'Pretendard', sans-serif;
-  padding: 5px 14px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid var(--line);
-  color: var(--t-2);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(8px);
-  white-space: nowrap;
-  pointer-events: none;
-}
-.conn-badge .conn-dot {
-  display: inline-block;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  margin-right: 7px;
-  vertical-align: middle;
-}
 
 /* ===== 경량 토스트 ===== */
 .kiosk-toast {

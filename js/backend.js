@@ -394,7 +394,7 @@
    * 응답 텍스트를 자막 큐에 넣고 곧바로 다음 질의(응답 도착 주도). 프롬프트는
    * 매 요청 시점에 입력창을 읽으므로 사용자가 수정하면 다음 질의부터 반영된다.
    * [중지] 버튼(같은 버튼 토글)을 누르면 루프를 멈추고 다시 [분석 시작]으로 되돌아간다. */
-  const PROMPT_INTERVAL_MS = 300;      // 성공 응답 후 다음 질의까지 대기
+  const PROMPT_INTERVAL_MS = 0;        // 성공 응답 직후 다음 질의 시작
   const PROMPT_ERROR_BACKOFF_MS = 2000; // 오류 시 재시도 전 대기
   const DEFAULT_PROMPT = '지금 CCTV 장면에서 무슨 일이 일어나고 있는지 한 문장으로 설명해줘.';
   const promptLoop = { token: 0, active: false };
@@ -460,7 +460,6 @@
 
   window.closeCCTV = function () {
     // CAM-1 분석 루프는 메인화면 토글이 제어하므로 모달을 닫아도 멈추지 않는다.
-    document.querySelectorAll('.cctv-btn-item').forEach(b => b.classList.remove('monitoring'));
     document.getElementById('cctvOverlay').classList.remove('open');
     const image = document.getElementById('cctvImage');
     if (image) image.src = ''; // MJPEG 스트림 중단(자원 절약)
@@ -612,6 +611,7 @@
   /* ===== 감시 항목 자연어 재배정(수정 버튼) ===== */
   // 편집은 분석 토글 OFF일 때만 허용한다(QWEN이 GPU를 쓰므로 분석 루프와 경합 방지).
   let ruleDraftSlot = null; // 승인 대기 중인 슬롯
+  let ruleRequestBusy = false; // 초안 생성 또는 적용 요청 진행 중
 
   function rowOfEditBtn(btn) { return btn.closest('.bh-matrix-row'); }
 
@@ -620,9 +620,14 @@
     let data;
     try {
       const resp = await fetch(API + '/vlm/rules', { cache: 'no-store' });
-      if (!resp.ok) return;
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
       data = await resp.json();
-    } catch (e) { return; }
+    } catch (e) {
+      document.querySelectorAll(".bhm-focus-text").forEach((el) => {
+        el.textContent = "감시항목 불러오기 실패";
+      });
+      return;
+    }
     (data.rules || []).forEach((r) => {
       const cb = document.querySelector('.bhm-focus-cb[data-focus-key="' + r.key + '"]');
       if (!cb) return;
@@ -636,6 +641,10 @@
 
   // 인라인 편집 시작: .bhm-focus-text 를 입력창으로 교체.
   function startRuleEdit(row) {
+    if (ruleRequestBusy || ruleDraftSlot) {
+      if (window.showToast) showToast("감시 항목을 처리하는 중입니다. 잠시 기다려 주세요", "info");
+      return;
+    }
     if (vlmLoop.enabled) {
       if (window.showToast) showToast('분석을 끄고(OFF) 감시 항목을 수정하세요', 'warn');
       return;
@@ -661,32 +670,65 @@
       span.textContent = name;
       if (input.parentNode) input.replaceWith(span);
     };
+    const submitEdit = () => {
+      submitRuleDraft(slot, input.value.trim(), original, restore);
+    };
+    input._submitRule = submitEdit;
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); submitRuleDraft(slot, input.value.trim(), original, restore); }
+      if (e.key === 'Enter') { e.preventDefault(); submitEdit(); }
       else if (e.key === 'Escape') { e.preventDefault(); restore(original); }
     });
-    // 포커스 아웃 시 값이 그대로면 취소(제출은 Enter로만).
+    // 포커스 아웃 시 값이 그대로면 취소(제출은 Enter 또는 수정 버튼 재클릭으로).
     input.addEventListener('blur', () => { setTimeout(() => { if (input.parentNode) restore(original); }, 120); });
+  }
+
+  // 초안 생성/적용 중에는 승인 모달을 닫을 수 없게 해 요청이 중간에 취소된 것처럼
+  // 보이지 않도록 한다. 서버 응답이 올 때까지 화면의 다른 클릭도 모달이 받는다.
+  function setRuleRequestBusy(busy, message) {
+    ruleRequestBusy = busy;
+    const overlay = document.getElementById("ruleApproveOverlay");
+    const busyState = document.getElementById("ruleBusyState");
+    const approveBody = document.querySelector("#ruleApproveOverlay .rule-approve");
+    const busyText = document.getElementById("ruleBusyText");
+    const buttons = [
+      document.getElementById("ruleCloseBtn"),
+      document.getElementById("ruleCancelBtn"),
+      document.getElementById("ruleApplyBtn"),
+    ].filter(Boolean);
+    if (!overlay) return;
+    overlay.classList.toggle("rule-busy", busy);
+    overlay.setAttribute("aria-busy", busy ? "true" : "false");
+    if (busyText && message) busyText.textContent = message;
+    if (busyState) busyState.hidden = !busy;
+    if (approveBody) approveBody.hidden = busy;
+    buttons.forEach((button) => { button.disabled = busy; });
+    if (busy) overlay.classList.add("open");
   }
 
   // 초안 컴파일 요청 → 승인 다이얼로그.
   async function submitRuleDraft(slot, text, original, restore) {
     if (!text || text === original) { restore(original); return; }
-    if (window.showToast) showToast('감시 항목을 분석하는 중입니다…', 'info');
+    if (ruleRequestBusy || ruleDraftSlot) return;
+    setRuleRequestBusy(true, "감시 항목을 분석하는 중입니다… 잠시만 기다려 주세요");
+    if (window.showToast) showToast("감시 항목을 분석하는 중입니다…", "info");
     let resp, data;
     try {
-      resp = await fetch(API + '/vlm/rules/' + encodeURIComponent(slot) + '/draft', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+      resp = await fetch(API + "/vlm/rules/" + encodeURIComponent(slot) + "/draft", {
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
       });
       data = await resp.json().catch(() => ({}));
     } catch (e) {
-      if (window.showToast) showToast('VLM 서버에 연결할 수 없습니다', 'warn');
+      setRuleRequestBusy(false);
+      closeModal("ruleApproveOverlay");
+      if (window.showToast) showToast("VLM 서버에 연결할 수 없습니다", "warn");
       restore(original); return;
     }
     if (!resp.ok) {
-      const detail = (data && (data.detail || data.message)) || ('HTTP ' + resp.status);
-      if (window.showToast) showToast('생성 실패: ' + detail, 'warn');
+      setRuleRequestBusy(false);
+      closeModal("ruleApproveOverlay");
+      const detail = (data && (data.detail || data.message)) || ("HTTP " + resp.status);
+      if (window.showToast) showToast("생성 실패: " + detail, "warn");
       restore(original); return;
     }
     restore(original); // 승인 전까지는 기존 이름 유지
@@ -695,6 +737,7 @@
 
   // 승인 다이얼로그 채우기.
   function openRuleApproval(slot, data) {
+    setRuleRequestBusy(false);
     ruleDraftSlot = slot;
     const old = data.old || {}, draft = data.draft || {};
     document.getElementById('ruleOldName').textContent = old.display_name || '—';
@@ -716,40 +759,73 @@
 
   // 승인 → 적용. 취소/폐기 → 초안 버림.
   async function approveRule() {
-    if (!ruleDraftSlot) return;
+    if (!ruleDraftSlot || ruleRequestBusy) return;
     const slot = ruleDraftSlot;
+    let applied = false;
+    setRuleRequestBusy(true, "새 감시 항목을 적용하는 중입니다… 잠시만 기다려 주세요");
     try {
-      const resp = await fetch(API + '/vlm/rules/' + encodeURIComponent(slot) + '/approve', { method: 'POST' });
+      const resp = await fetch(API + "/vlm/rules/" + encodeURIComponent(slot) + "/approve", { method: "POST" });
       const data = await resp.json().catch(() => ({}));
-      if (!resp.ok) { if (window.showToast) showToast('적용 실패: ' + ((data && data.detail) || resp.status), 'warn'); return; }
-      if (window.showToast) showToast('감시 항목이 변경되었습니다', 'ok');
-    } catch (e) {
-      if (window.showToast) showToast('적용 실패: 서버 연결 오류', 'warn'); return;
-    } finally {
+      if (!resp.ok) {
+        if (window.showToast) showToast("적용 실패: " + ((data && data.detail) || resp.status), "warn");
+        return;
+      }
+      applied = true;
       ruleDraftSlot = null;
-      closeModal('ruleApproveOverlay');
+      if (window.showToast) showToast("감시 항목이 변경되었습니다", "ok");
+    } catch (e) {
+      if (window.showToast) showToast("적용 실패: 서버 연결 오류", "warn");
+      return;
+    } finally {
+      setRuleRequestBusy(false);
+      if (applied) closeModal("ruleApproveOverlay");
     }
-    await hydrateRules();
+    if (applied) await hydrateRules();
   }
 
   async function discardRule() {
-    if (ruleDraftSlot) {
-      fetch(API + '/vlm/rules/' + encodeURIComponent(ruleDraftSlot) + '/discard', { method: 'POST' }).catch(() => {});
+    if (ruleRequestBusy) {
+      if (window.showToast) showToast("감시 항목을 처리하는 중입니다. 잠시 기다려 주세요", "info");
+      return;
     }
+    const slot = ruleDraftSlot;
     ruleDraftSlot = null;
-    closeModal('ruleApproveOverlay');
+    closeModal("ruleApproveOverlay");
+    if (slot) {
+      fetch(API + "/vlm/rules/" + encodeURIComponent(slot) + "/discard", { method: "POST" }).catch(() => {});
+    }
   }
 
   function initRuleEditing() {
     document.querySelectorAll('.bhm-edit').forEach((btn) => {
-      btn.addEventListener('click', () => startRuleEdit(rowOfEditBtn(btn)));
+      btn.addEventListener('pointerdown', (e) => {
+        const row = rowOfEditBtn(btn);
+        const input = row && row.querySelector('.bhm-edit-input');
+        if (!input || typeof input._submitRule !== 'function') return;
+        e.preventDefault();
+        btn._ruleSubmitHandled = true;
+        input._submitRule();
+      });
+      btn.addEventListener('click', () => {
+        if (btn._ruleSubmitHandled) {
+          btn._ruleSubmitHandled = false;
+          return;
+        }
+        const row = rowOfEditBtn(btn);
+        if (row && row.querySelector('.bhm-edit-input')) return;
+        if (row) startRuleEdit(row);
+      });
     });
     const applyBtn = document.getElementById('ruleApplyBtn');
     const cancelBtn = document.getElementById('ruleCancelBtn');
+    const closeBtn = document.getElementById('ruleCloseBtn');
     if (applyBtn) applyBtn.addEventListener('click', approveRule);
     if (cancelBtn) cancelBtn.addEventListener('click', discardRule);
+    if (closeBtn) closeBtn.addEventListener('click', discardRule);
     const ov = document.getElementById('ruleApproveOverlay');
-    if (ov) ov.addEventListener('click', (e) => { if (e.target.id === 'ruleApproveOverlay') discardRule(); });
+    if (ov) ov.addEventListener('click', (e) => {
+      if (e.target.id === 'ruleApproveOverlay' && !ruleRequestBusy) discardRule();
+    });
     hydrateRules().catch(() => {});
   }
   window.initRuleEditing = initRuleEditing;
@@ -1002,14 +1078,11 @@
       li.className = 'bps-option' + (active ? ' active' : '');
       li.dataset.value = (p.label || p.name || p.code);
       li.dataset.code = p.code;
-      li.dataset.cctv = String((i % 2) + 1); // CCTV 2대(CAM-1/CAM-2)에 번갈아 매핑
       li.textContent = p.label || p.name || p.code;
       li.setAttribute('onclick', 'bhPickProc(this)');
       dd.appendChild(li);
       if (active && label) label.textContent = li.textContent;
     });
-    // 새로 채운 드롭다운의 active 공정에 맞춰 CCTV 강조 동기화
-    if (typeof window.syncMonitoringToProc === 'function') window.syncMonitoringToProc();
   }
 
   // 초기화 버튼: UI 즉시 소등 + 백엔드 count 0 리셋
@@ -1029,7 +1102,6 @@
   };
 
   // 신호등 헤더 칸(관심/주의/경고/위험) 클릭 → 실물 경광등 점등
-  const LED_LABEL = { interest: '관심', caution: '주의', warning: '경고', danger: '위험' };
   window.triggerLed = async function (level, btn) {
     const allBtns = Array.from(document.querySelectorAll('.bhm-led-btn'));
     allBtns.forEach(b => { b.disabled = true; });
@@ -1041,7 +1113,6 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ level: level }),
       });
-      const name = LED_LABEL[level] || level;
       if (!resp.ok) {
         let detail = 'HTTP ' + resp.status;
         try { const err = await resp.json(); if (err && err.detail) detail = err.detail; } catch (_) {}
@@ -1050,14 +1121,9 @@
       const d = await resp.json();
       if (d.status === 'sent') {
         cooldown = ((d.signal && d.signal.duration_ms) || 5000) + 300;
-        setConn(true, '경광등 ' + name + ' 점등 중…');
-      } else if (d.status === 'simulated') {
-        setConn(true, '경광등 ' + name + ' · 시뮬(장치 없음)');
-      } else {
-        setConn(true, '경광등 ' + name + ' · dry-run');
       }
     } catch (e) {
-      setConn(false, '경광등 실패: ' + e.message);
+      console.warn("[경광등] 제어 실패:", e.message);
     } finally {
       setTimeout(() => {
         allBtns.forEach(b => { b.disabled = false; });
@@ -1065,17 +1131,6 @@
       }, cooldown);
     }
   };
-
-  /* ===================== 연결 상태 배지 ===================== */
-  const badge = document.createElement('div');
-  badge.id = 'connBadge';
-  badge.className = 'conn-badge';
-  function setConn(ok, msg) {
-    const col = ok ? '#16A34A' : '#DC2626';
-    badge.innerHTML =
-      '<span class="conn-dot" style="background:' + col + ';box-shadow:0 0 8px ' + col + ';"></span>' +
-      (ok ? 'Jetson Connected' : '백엔드 오프라인') +  (msg ? ' · ' + msg : '');
-  }
 
   /* ===================== 현장 특이사항 관리 모달 ===================== */
   // 온습도 이상 임계값(현장 특이사항 감지 기준).
@@ -1243,23 +1298,24 @@
 
   /* ===================== 초기화 ===================== */
   async function init() {
-    document.body.appendChild(badge);
-    setConn(false, '연결 중…');
-
     // 라이브 센서 폴링(모달·공정 행렬이 읽는 liveSensors 갱신) — 2초 주기
     refreshLiveSensors().catch(() => {});
     setInterval(() => refreshLiveSensors().catch(() => {}), LIVE_POLL_MS);
 
-    // 공정 드롭다운을 실제 DB 목록으로 채움(실패해도 하드코딩 옵션 유지)
+    // 공정 드롭다운을 실제 DB 목록으로 채움
     try { await populateProcesses(); }
-    catch (e) { console.warn('[공정 목록] 동적 로드 실패, 기본 옵션 사용:', e.message); }
+    catch (e) {
+      console.warn("[공정 목록] 동적 로드 실패:", e.message);
+      const label = document.getElementById("bhProcLabel");
+      if (label) label.textContent = "공정 불러오기 실패";
+    }
 
     // 서버의 공용 기준치를 신호등에 동기화(경광등과 같은 값 사용)
     await fetchThresholds();
 
     // 신호등 행렬 초기 동기화 + 2초마다 자동 갱신(F5 불필요)
-    try { await hydrateMatrix(currentProcessCode()); setConn(true, '신호등 동기화 완료'); }
-    catch (e) { setConn(false, e.message); }
+    try { await hydrateMatrix(currentProcessCode()); }
+    catch (e) { /* 초기 동기화 실패는 다음 주기에 재시도 */ }
     setInterval(() => hydrateMatrix(currentProcessCode()).catch(() => {}), MATRIX_POLL_MS);
 
     // 감시 항목 수정 버튼·승인 다이얼로그 연결 + 현재 항목 이름 동기화.

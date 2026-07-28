@@ -33,9 +33,9 @@ INSERT INTO cctv_info (cctv_id, rtsp_url, frame_dir) VALUES
   (5, 'rtsp://192.168.0.15:554/stream1', '/dev/shm/kiosk-frames/frame5');
 
 -- unsafe-behavior counters.
--- columns: hat_removal=helmet_off, ladder_alone=ladder_alone, restricted_area=fence_crossing,
---          speaker_touch=cone_touch, safety_vest=safety_vest
-INSERT INTO unstable_behavior (behavior_id, hat_removal_count, ladder_alone_count, restricted_area_count, speaker_touch_count, safety_vest_count) VALUES
+-- columns: slot_1_count=slot_1, slot_4_count=slot_4, slot_3_count=slot_3,
+--          slot_2_count=slot_2, slot_5_count=slot_5
+INSERT INTO unstable_behavior (behavior_id, slot_1_count, slot_4_count, slot_3_count, slot_2_count, slot_5_count) VALUES
   (1, 3, 0, 0, 1, 0),
   (2, 1, 2, 1, 0, 1),
   (3, 0, 0, 0, 2, 0),

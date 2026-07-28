@@ -28,7 +28,7 @@ class VlmInferRequest(BaseModel):
     # 분석 대상 라벨(불안전행동 감시 신호등에서 체크된 행동 키). VLM 서버에 그대로
     # 전달돼 해당 라벨만 탐지하게 한다. None/생략이면 라벨 제약 없이(서버 기본) 분석.
     labels: list[str] | None = Field(
-        default=None, examples=[["cone_touch", "helmet_off", "fence_crossing"]]
+        default=None, examples=[["slot_2", "slot_1", "slot_3"]]
     )
 
 
@@ -57,8 +57,8 @@ class VlmPromptResponse(BaseModel):
 class BehaviorDelta(BaseModel):
     """Result of parsing one detected behavior into a category + DB increment."""
 
-    id: str = Field(examples=["helmet_off"])
-    name: str = Field(examples=["안전모 미착용"])
+    id: str = Field(examples=["slot_1"])
+    name: str = Field(examples=["감시항목 1"])
     grade: str = Field(examples=["위험"])
     matched_label: str = Field(description="이 카테고리에 매칭된 원본 탐지 라벨")
     increment: int = Field(description="이번 추론으로 더해진 횟수", examples=[1])

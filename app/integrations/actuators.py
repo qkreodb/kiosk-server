@@ -13,12 +13,38 @@ from __future__ import annotations
 
 import threading
 import subprocess
+import re
 from pathlib import Path
 
 from app.core.logging import get_logger
 from app.domain.constants import WarningLightState
 
 logger = get_logger(__name__)
+
+_PIPEWIRE_MODE_NAMES = {"auto", "pipewire"}
+
+
+def _find_jbl_pipewire_target() -> str | None:
+    """Return the current JBL output node name, if PipeWire exposes one."""
+    try:
+        result = subprocess.run(
+            ["wpctl", "status", "-n"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=1.0,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if result.returncode != 0:
+        return None
+    for line in result.stdout.splitlines():
+        if "alsa_output" not in line.lower() or "jbl" not in line.lower():
+            continue
+        match = re.search(r"\.\s+(\S*JBL\S*)", line, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return None
 
 
 def _delete_audio_file(audio_path: str | None) -> None:
@@ -84,6 +110,33 @@ class SpeakerActuator:
             logger.warning("[SPEAKER] no audio file; cannot play: '%s'", text)
             return False
         try:
+            if self._alsa_device.lower() in _PIPEWIRE_MODE_NAMES:
+                target = _find_jbl_pipewire_target()
+                cmd = [
+                    "gst-launch-1.0",
+                    "-q",
+                    "filesrc",
+                    f"location={audio_path}",
+                    "!",
+                    "decodebin",
+                    "!",
+                    "audioconvert",
+                    "!",
+                    "audioresample",
+                    "!",
+                    "pipewiresink",
+                ]
+                if target:
+                    cmd.append(f"target-object={target}")
+                logger.info(
+                    "[SPEAKER] playing via PipeWire%s: %s (%s)",
+                    f" JBL={target}" if target else " default sink",
+                    audio_path,
+                    text,
+                )
+                subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+                logger.info("[SPEAKER] playback complete.")
+                return True
             if self._alsa_device:
                 cmd = [
                     "gst-launch-1.0",

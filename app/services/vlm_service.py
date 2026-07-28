@@ -1,7 +1,7 @@
 """Orchestrates the full POST /vlm/infer pipeline (right side of 001.png).
 
 Flow:
-  1. Call the external VLM Server's /analyze (장애 시 무탐지 처리).
+  1. Call the external VLM Server's /analyze (장애 시 unknown 처리).
   2. ``action``/``labels`` 키 -> 불안전행동 카테고리로 매핑(탐지 여부 판단).
   3. BRANCH A — TTS: 탐지된 행동이 있을 때만 ``tts_message`` -> Edge TTS -> speaker.
      이상 없음(탐지 0건)이면 음성 안내를 울리지 않는다(시연 시 음성 겹침 방지).
@@ -108,7 +108,7 @@ class VlmService:
         warning_light: WarningLightActuator,
         settings: Settings,
         led: LedService | None = None,
-        cooldown_state: dict[tuple[str, str], float] | None = None,
+        cooldown_state: dict[tuple[str, str, str], float] | None = None,
         thresholds: LightThresholdStore | None = None,
         debounce_state: dict | None = None,
     ) -> None:
@@ -121,18 +121,20 @@ class VlmService:
         self._led = led
         # 경광등·신호등 공용 런타임 기준치. 없으면 Settings(부팅값)로 폴백.
         self._thresholds = thresholds
-        # (공정,행동)별 플리커 디바운스 상태: {(code, cat): {"state": bool, "streak": int}}.
+        # (카메라,공정,행동)별 플리커 디바운스 상태:
+        # {(camera_id, code, cat): {"state": bool, "streak": int}}.
         # 요청마다 새 VlmService 가 생기므로 요청 간 공유 dict 를 주입받아 상태를 유지한다.
         self._debounce_state: dict = debounce_state if debounce_state is not None else {}
-        # 행동별 독립 쿨다운 타이머. (process_code, category_id) -> 만료 monotonic 시각.
+        # 행동별 독립 쿨다운 타이머. (camera_id, process_code, category_id)
+        # -> 만료 monotonic 시각. 카메라가 다른 카메라의 경고를 간섭하지 않는다.
         # 5가지 불안전행동 각각이 상호 간섭 없이 독립적으로 디바운싱된다(동시에 여러
         # 행동이 감지돼도 각자의 만료 시각만 본다). 타임스탬프 기반이라 해제할 타이머
-        # 핸들이 없어 자원 누수가 없고, 키는 행동 수만큼만(공정당 5개) 유지된다.
+        # 핸들이 없어 자원 누수가 없고, 키는 카메라·공정당 행동 수만큼만 유지된다.
         #
         # ⚠ VlmService 는 요청마다 새로 생성되므로(deps.get_vlm_service), 이 dict 를
         # 인스턴스 안에서 만들면 매 요청 초기화되어 쿨다운이 동작하지 않는다. 따라서
         # 요청 간 공유되는 캐시 dict 를 주입받아 상태를 유지한다(없으면 단독 dict).
-        self._cooldown_until: dict[tuple[str, str], float] = (
+        self._cooldown_until: dict[tuple[str, str, str], float] = (
             cooldown_state if cooldown_state is not None else {}
         )
 
@@ -192,12 +194,13 @@ class VlmService:
 
     def _stabilize(
         self,
+        camera_id: str,
         code: str,
         matches: list[tuple[UnsafeBehavior, str]],
         analyzed_ids: set,
         rule_labels: dict[str, str] | None = None,
     ) -> list[tuple[UnsafeBehavior, str]]:
-        """raw 감지(matches)를 (공정,행동)별 대칭 디바운스로 안정화한다.
+        """raw 감지(matches)를 (카메라,공정,행동)별 대칭 디바운스로 안정화한다.
 
         같은 결과(위반/정상)가 ``behavior_debounce_frames`` 회 '연속'돼야 상태를 켜거나
         끈다. 한두 프레임 튀는 플리커는 흡수되고, 진짜 변화는 그 횟수만큼 지연 후 반영된다.
@@ -215,7 +218,7 @@ class VlmService:
         stable: list[tuple[UnsafeBehavior, str]] = []
         for cat in BEHAVIOR_CATEGORIES:
             cid = cat.id
-            key = (code, cid.value)
+            key = (camera_id, code, cid.value)
             if cid not in analyzed_ids:
                 # 이번에 판정 안 한 행동 → 상태 유지(확정된 위반이면 계속 통과).
                 entry = self._debounce_state.get(key)
@@ -259,9 +262,9 @@ class VlmService:
             self._repo.reset_behavior_column(slot)
         except Exception:  # noqa: BLE001 — DB 미가용 시에도 규칙 적용은 진행
             logger.warning("슬롯 카운트 리셋 실패(무시): %s", slot)
-        for key in [k for k in self._debounce_state if k[1] == slot]:
+        for key in [k for k in self._debounce_state if k[-1] == slot]:
             self._debounce_state.pop(key, None)
-        for key in [k for k in self._cooldown_until if k[1] == slot]:
+        for key in [k for k in self._cooldown_until if k[-1] == slot]:
             self._cooldown_until.pop(key, None)
 
     async def rule_approve(self, slot: str) -> tuple[int, dict]:
@@ -305,7 +308,7 @@ class VlmService:
         # 호출되면 이 요청의 늦은 TTS 재생은 폐기된다.
         play_epoch = self._speaker.current_epoch()
 
-        # 1) Call the VLM Server's /analyze (장애 시 무탐지 결과).
+        # 1) Call the VLM Server's /analyze (장애 시 unknown 결과).
         #    labels: 신호등에서 체크된 분석 대상 행동 키만 VLM 서버로 전달.
         #    process_name: 이 카메라의 공정명(위험 스냅샷 파일명 규칙에 사용).
         vlm = await self._vlm.analyze(frame_dir, labels=labels, process_name=process_name)
@@ -321,16 +324,21 @@ class VlmService:
         else:
             matches = match_categories(split_detection(vlm.detection))
 
-        # 2-a) 플리커 억제: (공정,행동)별로 같은 판정이 N회 연속돼야 위반 상태를 켜거나 끈다.
+        # 2-a) 플리커 억제: (카메라,공정,행동)별로 같은 판정이 N회 연속돼야 위반 상태를 켜거나 끈다.
         #      한 프레임 튀는 노이즈를 흡수한다(진짜 변화는 N프레임 지연 후 반영). 이번에
         #      분석한 행동만 상태를 갱신하고, 안 본 행동은 기존 상태를 유지한다.
         if labels is not None:
-            analyzed_ids = {VLM_ACTION_KEY_MAP.get(k) for k in labels}
-            analyzed_ids.discard(None)
-            if labels and not analyzed_ids:
-                analyzed_ids = {cat.id for cat in BEHAVIOR_CATEGORIES}
+            # 명시적으로 선택된 감시항목만 이번 요청의 연계 범위로 삼는다.
+            # 선택되지 않은 슬롯의 디바운스 상태는 보존하더라도, 현재 요청의
+            # DB/TTS/경광등 계산에는 다시 섞이지 않아야 한다.
+            selected_ids = {VLM_ACTION_KEY_MAP.get(k) for k in labels}
+            selected_ids.discard(None)
+            if labels and not selected_ids:
+                selected_ids = {cat.id for cat in BEHAVIOR_CATEGORIES}
+            analyzed_ids = set(selected_ids)
         else:
-            analyzed_ids = {cat.id for cat in BEHAVIOR_CATEGORIES}
+            selected_ids = {cat.id for cat in BEHAVIOR_CATEGORIES}
+            analyzed_ids = set(selected_ids)
         # unknown은 정상(false)이 아니다. 이 사이클의 상태 전환/해제 근거에서
         # 제외해 _stabilize()가 기존 상태를 유지하도록 한다.
         unknown_ids = {
@@ -339,7 +347,12 @@ class VlmService:
             if key in VLM_ACTION_KEY_MAP
         }
         analyzed_ids -= unknown_ids
-        matches = self._stabilize(code, matches, analyzed_ids, vlm.rule_labels)
+        matches = self._stabilize(camera_id, code, matches, analyzed_ids, vlm.rule_labels)
+        if labels is not None:
+            # _stabilize()는 미분석 슬롯의 기존 안정 상태를 보존한다. 하지만
+            # 체크박스로 분석 범위를 제한한 요청에서는 그 상태를 현재 연계에
+            # 사용하지 않는다. 재선택 시에는 기존 슬롯 카운트를 그대로 이어간다.
+            matches = [(cat_id, label) for cat_id, label in matches if cat_id in selected_ids]
 
         # 2-b) 행동별 독립 쿨다운(디바운스) 적용.
         #    같은 행동이 쿨다운 중이면 이번 사이클에서는 무시(allowed에서 제외)하여
@@ -350,7 +363,15 @@ class VlmService:
         cooldown = self._settings.behavior_cooldown_seconds
         allowed: list[tuple[UnsafeBehavior, str]] = []
         for cat_id, matched_label in matches:
-            key = (code, cat_id.value)
+            # unknown은 기존 안정 상태를 응답에는 유지하지만, 최신 증거가 없으므로
+            # DB/TTS/경광등의 반복 부작용은 실행하지 않는다.
+            if cat_id in unknown_ids:
+                logger.info(
+                    "[unknown] %s — 기존 안정 상태는 유지하지만 카운트/TTS/경광등 무시",
+                    cat_id.value,
+                )
+                continue
+            key = (camera_id, code, cat_id.value)
             if self._cooldown_until.get(key, 0.0) > now:
                 logger.info(
                     "[쿨다운] %s 디바운스 — 카운트/TTS/경광등 무시(만료까지 %.1fs)",

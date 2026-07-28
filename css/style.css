@@ -2535,51 +2535,6 @@
 }
 .bh-dot.active { background: var(--cyan); box-shadow: 0 0 12px var(--cyan-glow); width: 34px; border-radius: var(--r-sm); }
 
-/* 통일 헤더 버튼 스타일 (CCTV 버튼 + 초기화 버튼 동일) */
-.bh-cctv-btns { display: flex; gap: 6px; }
-.bh-head-btn {
-  display: inline-flex; align-items: center; gap: 7px;
-  height: 34px;
-  font-size: 13px; font-weight: 700; color: var(--t-2);
-  padding: 0 14px;
-  background: #fff;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-md); cursor: pointer;
-  transition: all 0.15s;
-  font-family: 'Pretendard', sans-serif;
-  white-space: nowrap;
-}
-.bh-head-btn:hover { background: rgba(0,217,255,0.1); color: var(--cyan); border-color: var(--cyan); }
-.bh-head-btn:active { transform: scale(0.95); }
-.bh-head-btn svg { width: 15px; height: 15px; }
-/* CCTV 버튼 — behavior-head 안 반투명 스타일 */
-.cctv-btn-item {
-  display: inline-flex; align-items: center; justify-content: center;
-  height: 40px; padding: 0 16px;
-  font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 500;
-  color: rgba(255,255,255,0.55);
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.25);
-  border-radius: 4px;
-  cursor: pointer;
-  outline: none;
-  transition: all 0.15s;
-}
-.cctv-btn-item:hover { background: rgba(255,255,255,0.25); }
-.cctv-btn-item:focus, .cctv-btn-item:focus-visible { outline: none; text-decoration: none; box-shadow: none; }
-/* 현재 선택된 공정을 대변하는 CCTV — 강조 표시(그 외 버튼은 평상시 형태 유지) */
-.cctv-btn-item.monitoring {
-  background: rgba(255,255,255,0.9);
-  border-color: rgba(255,255,255,0.9);
-  color: var(--brand-blue);
-  font-weight: 700;
-}
-.cctv-btn-item.monitoring:hover { background: #fff; }
-
-/* 텍스트형 CCTV 선택 버튼 — monitoring 상태 override */
-.bh-cctv-txt.monitoring { background: transparent; border: none; color: var(--t-4); }
-.bh-cctv-txt.active { background: transparent; border: none; color: var(--t-1); }
-
 /* ===== 신호등 행렬 ===== */
 .bh-matrix {
   display: flex; flex-direction: column; gap: 0;
@@ -2644,7 +2599,9 @@
 .bh-legend-dot.warning  { background: #F97316; }
 .bh-legend-dot.danger   { background: #DC2626; }
 .bhm-name { font-size: var(--fs-base); font-weight: 500; color: #fff; }
-.bhm-edit { width: 36px; height: 36px; font-size: 18px; border-radius: 4px; }
+.bhm-edit { width: 36px; height: 36px; padding: 0; font-size: 18px; line-height: 1; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; }
+.bhm-edit-icon { width: 18px; height: 18px; display: block; filter: brightness(0) invert(1); }
+.bh-action-icon { width: 18px; height: 18px; display: block; filter: brightness(0) invert(1); }
 @keyframes neon-pulse-green  { 0%,100%{box-shadow:0 0 3px 1px rgba(34,197,94,0.7)} 50%{box-shadow:0 0 7px 3px rgba(34,197,94,1)} }
 @keyframes neon-pulse-amber  { 0%,100%{box-shadow:0 0 3px 1px rgba(234,179,8,0.7)} 50%{box-shadow:0 0 7px 3px rgba(234,179,8,1)} }
 @keyframes neon-pulse-orange { 0%,100%{box-shadow:0 0 3px 1px rgba(249,115,22,0.7)} 50%{box-shadow:0 0 7px 3px rgba(249,115,22,1)} }

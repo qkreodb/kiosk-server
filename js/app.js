@@ -50,7 +50,6 @@ setInterval(tick, 1000); tick();
 
 // CCTV modal control (더미 버전 — 실서버 스트림/프롬프트 연동은 backend.js 가 덮어씀)
 function closeCCTV() {
-  document.querySelectorAll('.cctv-btn-item').forEach(b => b.classList.remove('monitoring'));
   document.getElementById('cctvOverlay').classList.remove('open');
 }
 // Close when clicking the dimmed backdrop
@@ -93,7 +92,6 @@ function bhPickProc(opt) {
   opt.classList.add('active');
   if (label) label.textContent = opt.textContent;
   if (wrap) wrap.classList.remove('open');
-  setMonitoringCctv(opt.dataset.cctv || '1');
   // 공정 변경 시 백엔드 신호등 행렬 갱신 (backend 통합 코드 로드 후 사용 가능)
   if (typeof window.hydrateMatrix === 'function') {
     window.hydrateMatrix(typeof window.currentProcessCode === 'function' ? window.currentProcessCode() : '').catch(() => {});
@@ -103,29 +101,6 @@ document.addEventListener('click', () => {
   const wrap = document.getElementById('bhProcSelect');
   if (wrap) wrap.classList.remove('open');
 });
-
-// 현재 선택된 공정을 대변하는 CCTV 버튼만 강조(monitoring) 표시
-function setMonitoringCctv(val) {
-  document.querySelectorAll('.cctv-btn-item').forEach(b => {
-    b.classList.toggle('monitoring', b.dataset.cctv === val);
-  });
-}
-
-// 드롭다운에서 현재 active 인 공정의 CCTV로 강조를 맞춘다(로드/공정목록 갱신 시)
-function syncMonitoringToProc() {
-  const active = document.querySelector('#bhProcDropdown .bps-option.active');
-  setMonitoringCctv((active && active.dataset.cctv) || '1');
-}
-document.addEventListener('DOMContentLoaded', syncMonitoringToProc);
-
-// 신호등 헤더 CCTV 선택 (1/2) → 해당 CCTV 영상 팝업(강조는 공정 선택을 따름)
-function bhSelectCctv(val, btn) {
-  const map = {
-    '1': 'CAM-1 · 부스 A 정밀가공',
-    '2': 'CAM-2 · 부스 C 절단·용접'
-  };
-  openCCTVFor(map[val] || map['1']);
-}
 
 // ===== 사업장 온습도 현황: 온습도계/CCTV/심박 뷰 전환 =====
 function switchSiteView(view, btn) {

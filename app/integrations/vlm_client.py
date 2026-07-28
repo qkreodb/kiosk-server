@@ -2,8 +2,8 @@
 
 IMPORTANT: this is only a *client*. The VLM itself (Qwen2.5-VL on the Jetson
 Thor) is NOT implemented here. If the server is unreachable or errors, we return
-an empty result (no detection) so the kiosk pipeline keeps running without
-raising a false alarm.
+``unknown`` for the requested labels so the kiosk pipeline keeps its existing
+state without treating the failed cycle as a safe result.
 
 Request body::
 
@@ -14,9 +14,9 @@ Response (current VLM Server schema)::
     {
       "request_id": "string",
       "detected": true,
-      "labels": ["cone_touch", "fence_crossing"],
+      "labels": ["slot_2", "slot_3"],
       "tts_message": "string",
-      "raw": "{\"cone_touch\": \"true\", \"helmet_off\": \"true\", ...}",
+      "raw": "{\"slot_2\": \"true\", \"slot_1\": \"true\", ...}",
       "elapsed_sec": 0
     }
 
@@ -54,7 +54,7 @@ class VlmResult(BaseModel):
     """Normalized VLM result consumed by the pipeline."""
 
     action_keys: list[str] = Field(
-        default_factory=list, description="감지된 action 키 (예: helmet_off)"
+        default_factory=list, description="감지된 action 키 (예: slot_1)"
     )
     unknown_action_keys: list[str] = Field(
         default_factory=list,
@@ -88,7 +88,7 @@ class VlmClient:
         labels: list[str] | None = None,
         process_name: str | None = None,
     ) -> VlmResult:
-        """Call the VLM Server's /analyze; on any failure, return an empty result.
+        """Call the VLM Server's /analyze; on failure, mark requested labels unknown.
 
         ``dir_path`` is a directory on the *Jetson* filesystem holding frames.
         When omitted, the configured ``vlm_frame_dir`` is used.
@@ -109,13 +109,14 @@ class VlmClient:
                 resp.raise_for_status()
                 data = resp.json()
             return self._normalize(data, source="vlm")
-        except Exception as exc:  # noqa: BLE001 — VLM 장애 시 무탐지로 처리(거짓경보 방지)
+        except Exception as exc:  # noqa: BLE001 — 장애를 정상/안전 결과로 취급하지 않음
             logger.warning(
-                "VLM Server unreachable/failed at %s (%s); 이번 사이클은 무탐지 처리.",
+                "VLM Server unreachable/failed at %s (%s); 이번 사이클은 unknown 처리.",
                 self._url,
                 exc.__class__.__name__,
             )
-            return VlmResult(source="vlm")
+            unknown = list(VLM_ACTION_KEY_MAP) if labels is None else self._dedupe_known(labels)
+            return VlmResult(unknown_action_keys=unknown, source="vlm")
 
     # 응답에서 답변 텍스트를 찾을 후보 키(우선순위 순). /prompt 응답 스키마가
     # 확정되지 않아 흔한 키들을 순서대로 탐색한다.
@@ -209,7 +210,7 @@ class VlmClient:
 
         ``labels``(또는 레거시 ``action``)가 응답에 존재하면 그것이 정답이다.
         값이 비어 있으면 "탐지 없음"을 의미하므로 raw 폴백으로 넘어가지 않는다
-        (raw 에 safety_vest 처럼 위반이 아닌 키가 true 로 남아 오탐되는 것 방지).
+        (raw 에 slot_5 처럼 위반이 아닌 키가 true 로 남아 오탐되는 것 방지).
         raw 폴백은 labels·action 키가 아예 없는 응답에서만 사용한다.
         """
         if isinstance(data.get(KEY_LABELS), list):

@@ -114,20 +114,16 @@
             <span class="behavior-title">불안전행동 감시 신호등</span>
             <div class="bps-wrap" id="bhProcSelect">
               <button class="bps-trigger" id="bhProcTrigger" type="button" onclick="event.stopPropagation();document.getElementById('bhProcSelect').classList.toggle('open');">
-                <span class="bps-label" id="bhProcLabel">정밀가공 · PRC-19</span>
+                <span class="bps-label" id="bhProcLabel">불러오는 중…</span>
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
               </button>
               <ul class="bps-dropdown" id="bhProcDropdown" onclick="event.stopPropagation();">
-                <li class="bps-option active" data-value="정밀가공 공정 · PRC-19" data-cctv="1" onclick="bhPickProc(this)">정밀가공 · PRC-19</li>
-                <li class="bps-option" data-value="용접 공정 · PRC-07" data-cctv="2" onclick="bhPickProc(this)">용접 · PRC-07</li>
               </ul>
             </div>
           </div>
           <div class="behavior-head-right">
-            <button type="button" class="cctv-btn-item" data-cctv="1" onclick="bhSelectCctv('1', this)">CCTV-1</button>
-            <button type="button" class="cctv-btn-item" data-cctv="2" onclick="bhSelectCctv('2', this)">CCTV-2</button>
-            <button type="button" title="위험 탐지 사진" onclick="openDangerFrames()" class="icon-btn-ghost bh-danger-btn"><i class="ri-folder-image-line"></i></button>
-            <button type="button" title="초기화" onclick="resetBehavior()" class="icon-btn-ghost bh-reset-btn"><i class="ri-refresh-line"></i></button>
+            <button type="button" title="위험 탐지 사진" onclick="openDangerFrames()" class="icon-btn-ghost bh-danger-btn"><img class="bh-action-icon" src="images/danger-photos.svg" alt="" aria-hidden="true" /></button>
+            <button type="button" title="초기화" onclick="resetBehavior()" class="icon-btn-ghost bh-reset-btn"><img class="bh-action-icon" src="images/reset.svg" alt="" aria-hidden="true" /></button>
           </div>
         </div>
 
@@ -146,10 +142,10 @@
           </div>
 
           <div class="bh-matrix-row" data-active="-1">
-            <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><i class="ri-edit-line"></i></button>
+            <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><img class="bhm-edit-icon" src="images/edit.svg" alt="" aria-hidden="true" /></button>
             <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
-              <input type="checkbox" class="bhm-focus-cb" data-focus-key="helmet_off" data-focus-label="안전모를 착용하지 않은 행동" checked onchange="onFocusToggle()">
-              <span class="bhm-focus-text">안전모 미착용</span>
+              <input type="checkbox" class="bhm-focus-cb" data-focus-key="slot_1" data-focus-label="" checked onchange="onFocusToggle()">
+              <span class="bhm-focus-text">불러오는 중…</span>
             </label>
             <div class="bhm-lamps">
               <span class="bhm-lamp interest"></span>
@@ -159,10 +155,10 @@
             </div>
           </div>
           <div class="bh-matrix-row" data-active="-1">
-            <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><i class="ri-edit-line"></i></button>
+            <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><img class="bhm-edit-icon" src="images/edit.svg" alt="" aria-hidden="true" /></button>
             <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
-              <input type="checkbox" class="bhm-focus-cb" data-focus-key="cone_touch" data-focus-label="라바콘에 접촉하는 행동" onchange="onFocusToggle()">
-              <span class="bhm-focus-text">라바콘 접촉</span>
+              <input type="checkbox" class="bhm-focus-cb" data-focus-key="slot_2" data-focus-label="" onchange="onFocusToggle()">
+              <span class="bhm-focus-text">불러오는 중…</span>
             </label>
             <div class="bhm-lamps">
               <span class="bhm-lamp interest"></span>
@@ -172,10 +168,10 @@
             </div>
           </div>
           <div class="bh-matrix-row" data-active="-1">
-            <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><i class="ri-edit-line"></i></button>
+            <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><img class="bhm-edit-icon" src="images/edit.svg" alt="" aria-hidden="true" /></button>
             <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
-              <input type="checkbox" class="bhm-focus-cb" data-focus-key="fence_crossing" data-focus-label="위험 펜스를 넘는 행동" onchange="onFocusToggle()">
-              <span class="bhm-focus-text">위험 펜스 침범</span>
+              <input type="checkbox" class="bhm-focus-cb" data-focus-key="slot_3" data-focus-label="" onchange="onFocusToggle()">
+              <span class="bhm-focus-text">불러오는 중…</span>
             </label>
             <div class="bhm-lamps">
               <span class="bhm-lamp interest"></span>
@@ -185,10 +181,10 @@
             </div>
           </div>
           <div class="bh-matrix-row" data-active="-1">
-            <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><i class="ri-edit-line"></i></button>
+            <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><img class="bhm-edit-icon" src="images/edit.svg" alt="" aria-hidden="true" /></button>
             <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
-              <input type="checkbox" class="bhm-focus-cb" data-focus-key="ladder_alone" data-focus-label="사다리를 단독으로 이용하는 행동" onchange="onFocusToggle()">
-              <span class="bhm-focus-text">사다리 단독 이용</span>
+              <input type="checkbox" class="bhm-focus-cb" data-focus-key="slot_4" data-focus-label="" onchange="onFocusToggle()">
+              <span class="bhm-focus-text">불러오는 중…</span>
             </label>
             <div class="bhm-lamps">
               <span class="bhm-lamp interest"></span>
@@ -198,10 +194,10 @@
             </div>
           </div>
           <div class="bh-matrix-row" data-active="-1">
-            <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><i class="ri-edit-line"></i></button>
+            <button type="button" class="icon-btn-ghost bhm-edit" title="수정"><img class="bhm-edit-icon" src="images/edit.svg" alt="" aria-hidden="true" /></button>
             <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
-              <input type="checkbox" class="bhm-focus-cb" data-focus-key="safety_vest" data-focus-label="안전 고리를 착용하지 않은 행동" onchange="onFocusToggle()">
-              <span class="bhm-focus-text">안전 조끼 미착용</span>
+              <input type="checkbox" class="bhm-focus-cb" data-focus-key="slot_5" data-focus-label="" onchange="onFocusToggle()">
+              <span class="bhm-focus-text">불러오는 중…</span>
             </label>
             <div class="bhm-lamps">
               <span class="bhm-lamp interest"></span>
@@ -394,7 +390,7 @@
     <div class="cctv-head">
       <div class="cctv-head-left">
         <div class="cctv-head-title">실시간 CCTV</div>
-        <div class="cctv-head-sub" id="cctvHeadSub">정밀가공 공정 · PRC-19</div>
+        <div class="cctv-head-sub" id="cctvHeadSub">불러오는 중…</div>
       </div>
     </div>
     <div class="cctv-body">
@@ -510,11 +506,15 @@
           <div class="modal-head-sub">VLM이 입력을 분석해 만든 새 감시 항목입니다. 승인해야 적용됩니다.</div>
         </div>
       </div>
-      <button class="modal-close" onclick="closeModal('ruleApproveOverlay')">
+      <button class="modal-close" id="ruleCloseBtn" type="button" aria-label="감시 항목 변경 창 닫기">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
     <div class="modal-body">
+      <div class="rule-busy-state" id="ruleBusyState" hidden aria-live="polite">
+        <span class="rule-busy-spinner" aria-hidden="true"></span>
+        <span id="ruleBusyText">감시 항목을 처리하는 중입니다…</span>
+      </div>
       <div class="rule-approve">
         <div class="rule-approve-names">
           <div class="rule-old"><span class="rule-tag">현재</span><span id="ruleOldName">—</span></div>

@@ -118,6 +118,10 @@ def get_repo() -> KioskRepository:
     return get_repository()
 
 
+def get_vlm_client() -> VlmClient:
+    return _vlm_client()
+
+
 def get_space_service() -> SpaceService:
     return SpaceService(get_repository())
 
@@ -155,8 +159,8 @@ def _threshold_store() -> LightThresholdStore:
 
 
 @lru_cache
-def _behavior_cooldown() -> dict[tuple[str, str], float]:
-    """행동별 쿨다운 상태를 요청 간 공유하기 위한 캐시 dict(프로세스 전역 1개).
+def _behavior_cooldown() -> dict[tuple[str, str, str], float]:
+    """카메라·공정·행동별 쿨다운 상태를 요청 간 공유하는 캐시 dict.
 
     VlmService 는 요청마다 새로 생성되므로 쿨다운 상태를 인스턴스에 두면 매 요청
     초기화된다. 이 싱글턴 dict 를 주입해 디바운스가 실제로 유지되게 한다.
@@ -166,7 +170,7 @@ def _behavior_cooldown() -> dict[tuple[str, str], float]:
 
 @lru_cache
 def _debounce_state() -> dict:
-    """(공정,행동)별 플리커 디바운스 상태(요청 간 공유, 프로세스 전역 1개)."""
+    """(카메라,공정,행동)별 플리커 디바운스 상태(요청 간 공유, 프로세스 전역 1개)."""
     return {}
 
 
