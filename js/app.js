@@ -1,15 +1,16 @@
-// Kiosk scale fit
+// Kiosk scale fit (가로형 1920px 기준 디자인 — 화면이 더 좁으면 축소)
+const KIOSK_BASE_WIDTH = 1920;
 function fitKiosk() {
   const kiosk = document.querySelector('.kiosk');
   if (!kiosk) return;
   const vw = window.innerWidth;
-  if (vw < 1080) {
-    const scale = vw / 1080;
+  if (vw < KIOSK_BASE_WIDTH) {
+    const scale = vw / KIOSK_BASE_WIDTH;
     kiosk.style.transform = `scale(${scale})`;
     kiosk.style.transformOrigin = 'top left';
     kiosk.style.marginLeft = '0';
     kiosk.style.marginRight = '0';
-    document.body.style.height = Math.ceil(1920 * scale) + 'px';
+    document.body.style.height = Math.ceil(kiosk.offsetHeight * scale) + 'px';
   } else {
     kiosk.style.transform = '';
     kiosk.style.transformOrigin = '';
@@ -47,16 +48,6 @@ function tick() {
   if (pt) pt.textContent = dateDash + ' ' + hm;
 }
 setInterval(tick, 1000); tick();
-
-// CCTV modal control (더미 버전 — 실서버 스트림/프롬프트 연동은 backend.js 가 덮어씀)
-function closeCCTV() {
-  document.querySelectorAll('.cctv-btn-item').forEach(b => b.classList.remove('monitoring'));
-  document.getElementById('cctvOverlay').classList.remove('open');
-}
-// Close when clicking the dimmed backdrop
-document.getElementById('cctvOverlay').addEventListener('click', e => {
-  if (e.target.id === 'cctvOverlay') closeCCTV();
-});
 
 // ===== NOTICE rolling messages (5s) =====
 const noticeEls = Array.from(document.querySelectorAll('.ticker-msg'));
@@ -118,28 +109,10 @@ function syncMonitoringToProc() {
 }
 document.addEventListener('DOMContentLoaded', syncMonitoringToProc);
 
-// 신호등 헤더 CCTV 선택 (1/2) → 해당 CCTV 영상 팝업(강조는 공정 선택을 따름)
+// 신호등 헤더 CCTV 선택 (1/2) → 사업장 현장 영상 현황 카드의 인라인 CCTV-1/2와 상태 공유
 function bhSelectCctv(val, btn) {
-  const map = {
-    '1': 'CAM-1 · 부스 A 정밀가공',
-    '2': 'CAM-2 · 부스 C 절단·용접'
-  };
-  openCCTVFor(map[val] || map['1']);
-}
-
-// ===== 사업장 온습도 현황: 온습도계/CCTV/심박 뷰 전환 =====
-function switchSiteView(view, btn) {
-  document.querySelectorAll('.sv-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.sem-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  const envG = document.getElementById('siteEnvMarkers');
-  const cctvG = document.getElementById('siteCctvMarkers');
-  const hrG = document.getElementById('siteHrMarkers');
-  if (envG) envG.style.display = (view === 'env') ? '' : 'none';
-  if (cctvG) cctvG.style.display = (view === 'cctv') ? '' : 'none';
-  if (hrG) hrG.style.display = (view === 'hr') ? '' : 'none';
-  // CCTV 탭을 벗어나면 이상현상 미니 팝업/스트림 정리.
-  if (view !== 'cctv' && window.hideCctvAlert) window.hideCctvAlert();
+  const tab = document.getElementById('cctvInlineTab-' + val);
+  selectCctv(val, tab);
 }
 
 // ===== Generic modal control =====
@@ -1114,10 +1087,14 @@ function openWatchWorker(name, watchId, proc) {
 }
 
 // ===== 현장사진 / CCTV =====
-// 더미 버전 — 실서버 스트림/프롬프트 연동은 backend.js 의 openCCTVFor 가 덮어씀.
-function openCCTVFor(region) {
-  document.getElementById('cctvHeadSub').textContent = region + ' · 실시간';
-  document.getElementById('cctvOverlay').classList.add('open');
+// 더미 버전 — 실서버 스트림/프롬프트 연동은 backend.js 의 selectCctv 가 덮어씀.
+// CCTV-1(위험행동 분석) / CCTV-2(프롬프트 질의) 인라인 전환.
+function selectCctv(camNum, btn) {
+  document.querySelectorAll('.cctv-inline-tab').forEach(b => b.classList.remove('active'));
+  (btn || document.getElementById('cctvInlineTab-' + camNum))?.classList.add('active');
+  setMonitoringCctv(String(camNum));
+  const bar = document.getElementById('cctvPromptBar');
+  if (bar) bar.style.display = String(camNum) === '2' ? 'flex' : 'none';
 }
 function openSitePhoto(region) {
   document.getElementById('photoSub').textContent = region + ' · 최근 촬영';

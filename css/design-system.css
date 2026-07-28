@@ -34,6 +34,11 @@
   --safety-y: #CA8A04;
   --safety-o: #EA580C;
 
+  /* Dashboard reskin (되고시스템 안전관리 대시보드 참고안) */
+  --panel-navy: #101D3A;
+  --panel-navy-2: #0B1526;
+  --card-radius: 20px;
+
   --r-xs: 2px;
   --r-sm: 4px;
   --r-md: 8px;

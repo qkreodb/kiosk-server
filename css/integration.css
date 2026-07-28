@@ -471,21 +471,23 @@
 
 /* ===== 신호등 카운트 기준치 설정: 상단 버튼 + 패널 ===== */
 .thr-cfg-btn {
-  display: flex; align-items: center; gap: 6px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
   margin-right: 18px;
-  padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.14);   /* 약간 불투명 */
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 999px;
-  color: rgba(255, 255, 255, 0.92);
+  width: 40px; height: 40px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.85);
   font-family: 'Pretendard', sans-serif;
   font-size: 14px; font-weight: 700;
   cursor: pointer;
   backdrop-filter: blur(4px);
   transition: background 0.15s, opacity 0.15s;
 }
-.thr-cfg-btn:hover { background: rgba(255, 255, 255, 0.26); }
-.thr-cfg-btn svg { width: 17px; height: 17px; }
+.thr-cfg-btn:hover { background: rgba(255, 255, 255, 0.22); }
+.thr-cfg-btn svg { width: 19px; height: 19px; }
+.thr-cfg-btn span { display: none; } /* 아이콘 전용 — 라벨 텍스트는 title 툴팁으로만 노출 */
 
 .thr-panel {
   display: none;

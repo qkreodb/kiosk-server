@@ -183,6 +183,9 @@
       setText('envDetailHum', hum.toFixed(1) + ' <small>%</small>', true);
       if (typeof updateFeelsGrade === 'function') updateFeelsGrade(f);
       if (typeof updateEnvStatus === 'function') updateEnvStatus(temp, hum);
+      // 메인화면 "온습도 센서 현황" 요약 카드도 대표 센서 값으로 함께 갱신.
+      setText('envSumFeels', Number.isFinite(f) ? f.toFixed(1) : '--');
+      setText('envSumHum', hum.toFixed(1));
     }
 
     const live = !!sensorName;
@@ -204,6 +207,19 @@
     try { await update(); } catch (_) { /* 모달은 유지 */ }
     startModalPoll('envDetailOverlay', update, pollMs); // shelly 4분 / sonoff 5초
   };
+
+  // 메인화면 "온습도 센서 현황" 요약 카드 — 모달을 열지 않아도 대표 센서(sonoff_1)로 갱신.
+  async function refreshEnvSummary() {
+    try {
+      const reading = await fetchTempHumidByName('sonoff_1');
+      if (!reading) return;
+      const feels = reading.feels_like == null ? NaN : Number(reading.feels_like);
+      const temp = Number(reading.temp), hum = Number(reading.humidity);
+      const f = Number.isFinite(feels) ? feels : feelsLikeC(temp, hum);
+      setText('envSumFeels', Number.isFinite(f) ? f.toFixed(1) : '--');
+      setText('envSumHum', hum.toFixed(1));
+    } catch (_) { /* 오프라인이면 초기 더미값 유지 */ }
+  }
 
   /* 심박 그룹(라이브) — app.js 더미 버전 덮어쓰기 */
   window.openHeartRate = async function (region, count) {
@@ -298,45 +314,28 @@
     return (window.__API_BASE || 'http://localhost:8080')
       + '/cctv/live?cam=' + encodeURIComponent(cam || '1') + '&ts=' + Date.now();
   }
-  // 모달 제목("CAM-2 · …")에서 카메라 번호 추출. 못 찾으면 1(기존 CCTV).
-  function camNumFrom(region) {
-    const m = /CAM-(\d+)/i.exec(String(region || ''));
-    return m ? m[1] : '1';
-  }
-  // 프롬프트 질의(신규 CCTV) 모드로 동작하는 카메라 번호 — 지도 가장 우측 CAM-2.
+  // 프롬프트 질의(신규 CCTV) 모드로 동작하는 카메라 번호 — CCTV-2.
   const PROMPT_CAM_NUM = '2';
-  // 현재 열려 있는 CCTV 모달의 카메라 번호. 탐지 오버레이는 CAM-2가 아닌 모달에서만
-  // 노출한다(분석 대상은 CAM-1이라, CAM-2 모달엔 탐지 결과를 띄우지 않음).
+  // 현재 선택된 인라인 CCTV 패널의 카메라 번호. 탐지 오버레이는 CAM-2가 아닌
+  // CAM-1 선택 시에만 노출한다(분석 대상은 CAM-1이라, CAM-2엔 탐지 결과를 띄우지 않음).
   let currentCctvCam = null;
 
-  /* ----- 이상현상 수신 시 CAM-1 CCTV 미니 팝업 알림 -----
-   * VLM이 실제 이상행동을 카운트(쿨다운 통과)하면 사업장 지도 CCTV 탭의 CAM-1
-   * CCTV 아이콘 주위를 빨갛게 점멸시키고, 옆에 작은 라이브 CCTV 영상을 띄운다.
+  /* ----- 이상현상 수신 시 CCTV-1 탭 강조 알림 -----
+   * VLM이 실제 이상행동을 카운트(쿨다운 통과)하면, 사용자가 지금 CCTV-2를 보고
+   * 있어도 놓치지 않도록 CCTV-1 탭 버튼을 잠시 붉게 펄스시킨다.
    * 팝업은 CCTV 탭(siteCctvMarkers)이 보일 때만 노출되며 클릭 시 전체 모달로 연결.   */
   let cctvAlertTimer = null;
-  const CCTV_ALERT_MS = 8000; // 표시 후 자동 닫힘(새 감지 시 갱신)
+  const CCTV_ALERT_MS = 8000; // 표시 후 자동 해제(새 감지 시 갱신)
   function showCctvAlert() {
-    const ring = document.getElementById('cctvAlertRing');
-    const popup = document.getElementById('cctvAlertPopup');
-    const img = document.getElementById('cctvMiniImg');
-    if (!ring || !popup) return;
-    // CCTV 탭이 보일 때만 의미 있음 — 다른 탭이면 불필요한 MJPEG 스트림/점멸 생략.
-    const markers = document.getElementById('siteCctvMarkers');
-    if (markers && markers.style.display === 'none') return;
-    ring.style.display = '';
-    popup.style.display = '';
-    // CAM-1 미니 화면도 RTSP 라이브(MJPEG) 스트림을 사용한다.
-    if (img && !img.getAttribute('src')) img.src = cctvLiveSrc('1');
+    const tab = document.getElementById('cctvInlineTab-1');
+    if (!tab || currentCctvCam === '1') return; // CCTV-1을 이미 보고 있으면 별도 알림 불필요
+    tab.classList.add('cctv-alert-pulse');
     if (cctvAlertTimer) clearTimeout(cctvAlertTimer);
     cctvAlertTimer = setTimeout(hideCctvAlert, CCTV_ALERT_MS);
   }
   function hideCctvAlert() {
-    const ring = document.getElementById('cctvAlertRing');
-    const popup = document.getElementById('cctvAlertPopup');
-    const img = document.getElementById('cctvMiniImg');
-    if (ring) ring.style.display = 'none';
-    if (popup) popup.style.display = 'none';
-    if (img) img.removeAttribute('src'); // 스트림 중단(자원 절약)
+    const tab = document.getElementById('cctvInlineTab-1');
+    if (tab) tab.classList.remove('cctv-alert-pulse');
     if (cctvAlertTimer) { clearTimeout(cctvAlertTimer); cctvAlertTimer = null; }
   }
   window.showCctvAlert = showCctvAlert;
@@ -458,36 +457,29 @@
     }
   };
 
-  window.closeCCTV = function () {
-    // CAM-1 분석 루프는 메인화면 토글이 제어하므로 모달을 닫아도 멈추지 않는다.
-    document.querySelectorAll('.cctv-btn-item').forEach(b => b.classList.remove('monitoring'));
-    document.getElementById('cctvOverlay').classList.remove('open');
-    const image = document.getElementById('cctvImage');
-    if (image) image.src = ''; // MJPEG 스트림 중단(자원 절약)
-    stopPromptLoop();
-    clearCaption();
-    const vlm = document.getElementById('cctvVlmOverlay');
-    if (vlm) vlm.classList.remove('show');
-  };
-  window.openCCTVFor = function (region) {
-    document.getElementById('cctvHeadSub').textContent = region + ' · 실시간';
-    const cam = camNumFrom(region);
-    currentCctvCam = cam;
+  // CCTV-1(위험행동 분석)/CCTV-2(프롬프트 질의) 인라인 전환.
+  // 이전에는 모달을 열고 닫는 방식이었으나, 지금은 "사업장 현장 영상 현황" 카드에
+  // 상시 렌더된 패널이라 open/close 개념 없이 탭만 바꾼다.
+  window.selectCctv = function (camNum, btn) {
+    camNum = String(camNum || '1');
+    document.querySelectorAll('.cctv-inline-tab').forEach(b => b.classList.remove('active'));
+    (btn || document.getElementById('cctvInlineTab-' + camNum))?.classList.add('active');
+    if (typeof setMonitoringCctv === 'function') setMonitoringCctv(camNum);
+    currentCctvCam = camNum;
     const image = document.getElementById('cctvImage');
     const vlm = document.getElementById('cctvVlmOverlay');
     const bar = document.getElementById('cctvPromptBar');
     if (vlm) vlm.classList.remove('show');
     stopPromptLoop();
     clearCaption();
-    if (image) { image.style.display = 'block'; image.src = cctvLiveSrc(cam); }
-    document.getElementById('cctvOverlay').classList.add('open');
-    if (cam === PROMPT_CAM_NUM) {
-      // 신규 CCTV: 프롬프트 입력 바만 노출 — API 호출은 [분석 시작] 버튼을 눌러야 시작된다.
+    if (image) { image.style.display = 'block'; image.src = cctvLiveSrc(camNum); }
+    if (camNum === PROMPT_CAM_NUM) {
+      // CCTV-2: 프롬프트 입력 바만 노출 — API 호출은 [분석 시작] 버튼을 눌러야 시작된다.
       if (bar) bar.style.display = 'flex';
       setPromptButtonState(false);
     } else {
       if (bar) bar.style.display = 'none';
-      syncCctvAnalysisUi(); // 기존 CCTV: 분석은 메인화면 토글이 제어 — 현재 상태만 반영
+      syncCctvAnalysisUi(); // CCTV-1: 분석은 메인화면 토글이 제어 — 현재 상태만 반영
     }
   };
 
@@ -585,9 +577,10 @@
   // 가장 최근 VLM 분석 결과 — 현장 특이사항 탭의 "VLM 위험행동 감지" 항목 소스.
   let lastVlmDetection = null;
 
+  // 예전엔 CCTV 모달의 열림 여부였지만, 지금은 "사업장 현장 영상 현황" 카드에
+  // 상시 렌더된 인라인 패널이라 항상 true(패널 자체가 DOM에 있는 동안).
   function cctvModalOpen() {
-    const o = document.getElementById('cctvOverlay');
-    return !!(o && o.classList.contains('open'));
+    return !!document.getElementById('cctvVlmOverlay');
   }
   // 탐지 오버레이를 띄워도 되는 상태: CCTV 모달이 열려 있고, 그게 CAM-2(프롬프트
   // 전용)가 아닐 때만. CAM-2 모달에는 분석 결과를 노출하지 않는다.
@@ -1101,9 +1094,16 @@
     document.body.appendChild(badge);
     setConn(false, '연결 중…');
 
+    // 사업장 현장 영상 현황 카드는 상시 렌더되므로 페이지 로드 시 CCTV-1(위험행동 분석)로 시작.
+    selectCctv('1');
+
     // 라이브 센서 폴링(모달·공정 행렬이 읽는 liveSensors 갱신) — 2초 주기
     refreshLiveSensors().catch(() => {});
     setInterval(() => refreshLiveSensors().catch(() => {}), LIVE_POLL_MS);
+
+    // 온습도 센서 현황 요약 카드 — 대표 센서로 초기 1회 + 5초 주기 갱신
+    refreshEnvSummary();
+    setInterval(refreshEnvSummary, TH_POLL_MS.sonoff_1 || 5000);
 
     // 공정 드롭다운을 실제 DB 목록으로 채움(실패해도 하드코딩 옵션 유지)
     try { await populateProcesses(); }

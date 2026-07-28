@@ -92,19 +92,10 @@
 
   <img src="images/man.png" class="kiosk-character" alt="" />
 
-  <!-- ============== MAIN ============== -->
+  <!-- ============== MAIN (가로형 3열: 좌 센서 요약 / 중앙 히어로+영상 / 우 안전시설) ============== -->
   <main class="main">
 
-    <!-- ============== HERO ============== -->
-    <section class="hero-section">
-      <div class="hero-dots">
-        <span class="hero-dot" style="background:#E70000;"></span>
-        <span class="hero-dot" style="background:#FFC200;"></span>
-        <span class="hero-dot" style="background:#009B0A;"></span>
-      </div>
-      <h1 class="hero-title">되고세이퍼로 현장 안전을 확인하세요.</h1>
-      <p class="hero-sub">AI안전보건박람회의 실시간 안전 상태와 현장 환경을 확인할 수 있습니다.</p>
-    </section>
+    <div class="dash-col dash-col-left">
 
     <!-- 불안전행동 감시 신호등 -->
     <section class="behavior-section">
@@ -112,6 +103,8 @@
         <div class="behavior-head">
           <div class="behavior-head-left">
             <span class="behavior-title">불안전행동 감시 신호등</span>
+          </div>
+          <div class="behavior-head-right">
             <div class="bps-wrap" id="bhProcSelect">
               <button class="bps-trigger" id="bhProcTrigger" type="button" onclick="event.stopPropagation();document.getElementById('bhProcSelect').classList.toggle('open');">
                 <span class="bps-label" id="bhProcLabel">정밀가공 · PRC-19</span>
@@ -122,10 +115,6 @@
                 <li class="bps-option" data-value="용접 공정 · PRC-07" data-cctv="2" onclick="bhPickProc(this)">용접 · PRC-07</li>
               </ul>
             </div>
-          </div>
-          <div class="behavior-head-right">
-            <button type="button" class="cctv-btn-item" data-cctv="1" onclick="bhSelectCctv('1', this)">CCTV-1</button>
-            <button type="button" class="cctv-btn-item" data-cctv="2" onclick="bhSelectCctv('2', this)">CCTV-2</button>
             <button type="button" title="위험 탐지 사진" onclick="openDangerFrames()" class="icon-btn-ghost bh-danger-btn"><i class="ri-folder-image-line"></i></button>
             <button type="button" title="초기화" onclick="resetBehavior()" class="icon-btn-ghost bh-reset-btn"><i class="ri-refresh-line"></i></button>
           </div>
@@ -216,12 +205,60 @@
       </div>
     </section>
 
-    <!-- 사업장(현장) 온습도 현황 (전체폭) -->
+    <!-- 온습도 센서 현황 -->
+    <section class="env-summary-section">
+      <button type="button" class="card env-summary-card" onclick="openEnvDetail('TH-01','부스 A · 정밀가공 시연존','sonoff_1')">
+        <div class="env-summary-head">
+          <span class="env-summary-title">온습도 센서 현황</span>
+          <span class="env-summary-badge">정상</span>
+        </div>
+        <div class="env-summary-main">
+          <span class="env-summary-lbl">체감온도</span>
+          <span class="env-summary-val"><span id="envSumFeels">27.2</span><small>℃</small></span>
+        </div>
+        <div class="env-summary-grid">
+          <div class="env-summary-mini"><span class="esm-lbl">습도</span><span class="esm-val"><span id="envSumHum">55.0</span>%</span></div>
+          <div class="env-summary-mini"><span class="esm-lbl">소음 레벨</span><span class="esm-val">76dB</span></div>
+          <div class="env-summary-mini"><span class="esm-lbl">미세먼지 PM10</span><span class="esm-val">42㎍ (좋음 ≤80㎍)</span></div>
+        </div>
+      </button>
+    </section>
+
+    <!-- 작업자 심박 -->
+    <section class="hr-summary-section">
+      <button type="button" class="card hr-summary-card" onclick="openHeartRate('현장 전체', 3)">
+        <div class="hr-summary-head">
+          <span class="hr-summary-title">작업자 심박 모니터링</span>
+          <span class="hr-summary-badge">3명 · Galaxy Watch</span>
+        </div>
+        <div class="hr-summary-body">
+          <svg class="hr-summary-ico" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 5 4-12 2 7h6"/></svg>
+          <span class="hr-summary-txt">실시간 워치 심박 확인하기</span>
+        </div>
+      </button>
+    </section>
+
+    </div><!-- /dash-col-left -->
+
+    <div class="dash-col dash-col-center">
+
+    <!-- ============== HERO ============== -->
+    <section class="hero-section">
+      <div class="hero-dots">
+        <span class="hero-dot" style="background:#E70000;"></span>
+        <span class="hero-dot" style="background:#FFC200;"></span>
+        <span class="hero-dot" style="background:#009B0A;"></span>
+      </div>
+      <h1 class="hero-title">되고세이퍼로 현장 안전을 확인하세요.</h1>
+      <p class="hero-sub">AI안전보건박람회의 실시간 안전 상태와 현장 환경을 확인할 수 있습니다.</p>
+    </section>
+
+    <!-- 사업장 현장 영상 현황 (CCTV-1/CCTV-2 인라인) -->
     <section class="site-env-section">
       <div class="card site-env-card">
         <div class="behavior-head">
           <div class="behavior-head-left behavior-head-left--baseline">
-            <span class="behavior-title">사업장 · 현장 온습도 현황</span>
+            <span class="behavior-title">사업장 영상 현황</span>
           </div>
           <div class="behavior-head-right">
             <span class="vlm-toggle-cap">위험행동 분석</span>
@@ -234,113 +271,44 @@
         </div>
 
         <div class="site-env-body">
-        <div class="site-blueprint">
-          <div class="se-matrix-head">
-            <button class="sem-tab active" data-se="temp" onclick="switchSiteView('env', this)">온습도계</button>
-            <button class="sem-tab" data-se="humi" onclick="switchSiteView('cctv', this)">CCTV</button>
-            <button class="sem-tab" data-se="stat" onclick="switchSiteView('hr', this)">심박</button>
+          <div class="cctv-inline-tabs">
+            <button type="button" class="cctv-inline-tab active cctv-btn-item" id="cctvInlineTab-1" data-cctv="1" onclick="selectCctv('1', this)">CCTV-1</button>
+            <button type="button" class="cctv-inline-tab cctv-btn-item" id="cctvInlineTab-2" data-cctv="2" onclick="selectCctv('2', this)">CCTV-2</button>
           </div>
-          <svg viewBox="0 0 900 540" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <filter id="label-shadow" x="-10%" y="-20%" width="120%" height="160%">
-                <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="rgba(0,0,0,0.25)"/>
-              </filter>
-            </defs>
 
-            <!-- 현재 위치 (비상대피로와 동일) -->
-            <g>
-              <circle cx="170" cy="440" r="13" fill="#ffffff" opacity="0.2">
-                <animate attributeName="r" values="10;20;10" dur="2s" repeatCount="indefinite"/>
-                <animate attributeName="opacity" values="0.4;0;0.4" dur="2s" repeatCount="indefinite"/>
-              </circle>
-              <circle cx="170" cy="440" r="8" fill="#ffffff"/>
-              <text x="170" y="475" text-anchor="middle" fill="#ffffff" font-family="Pretendard, sans-serif" font-size="14" font-weight="400">현재 위치</text>
-            </g>
-
-            <!-- 온습도계 뷰 (각 구역 벽면에 분산 배치) -->
-            <g id="siteEnvMarkers">
-              <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-01','부스 A · 정밀가공 시연존','sonoff_1')">
-                <circle cx="175" cy="320" r="22" fill="#FF9000"><animate attributeName="opacity" values="0.5;0;0.5" dur="1.6s" repeatCount="indefinite"/></circle>
-                <circle cx="175" cy="320" r="18" fill="#FF9000" fill-opacity="0.18"/>
-                <image x="161" y="306" width="28" height="28" href="images/icon_Thermometer.svg"/>
-              </g>
-              <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-02','부스 C · 절단·용접 시연존')">
-                <circle cx="775" cy="330" r="22" fill="#FF9000"><animate attributeName="opacity" values="0.5;0;0.5" dur="1.6s" repeatCount="indefinite"/></circle>
-                <circle cx="775" cy="330" r="18" fill="#FF9000" fill-opacity="0.18"/>
-                <image x="761" y="316" width="28" height="28" href="images/icon_Thermometer.svg"/>
-              </g>
-              <g class="ai-marker" style="cursor:pointer;" onclick="openEnvDetail('TH-03','중앙 전시홀')">
-                <circle cx="380" cy="360" r="22" fill="#FF9000"><animate attributeName="opacity" values="0.5;0;0.5" dur="1.6s" repeatCount="indefinite"/></circle>
-                <circle cx="380" cy="360" r="18" fill="#FF9000" fill-opacity="0.18"/>
-                <image x="366" y="346" width="28" height="28" href="images/icon_Thermometer.svg"/>
-              </g>
-            </g>
-
-            <!-- CCTV 뷰 (천장 모서리/요충지에 분산, 초기 숨김) -->
-            <g id="siteCctvMarkers" style="display:none;">
-              <g class="ai-marker" style="cursor:pointer;" onclick="openCCTVFor('CAM-1 · 부스 A 정밀가공')">
-                <circle cx="150" cy="185" r="22" fill="#6628E1"><animate attributeName="opacity" values="0.5;0;0.5" dur="1.6s" repeatCount="indefinite"/></circle>
-                <circle cx="150" cy="185" r="18" fill="#6628E1" fill-opacity="0.18"/>
-                <image x="136" y="171" width="28" height="28" href="images/icon_cctv.svg"/>
-              </g>
-              <g class="ai-marker" style="cursor:pointer;" onclick="openCCTVFor('CAM-2 · 부스 C 절단·용접')">
-                <circle cx="790" cy="185" r="22" fill="#6628E1"><animate attributeName="opacity" values="0.5;0;0.5" dur="1.6s" repeatCount="indefinite"/></circle>
-                <circle cx="790" cy="185" r="18" fill="#6628E1" fill-opacity="0.18"/>
-                <image x="776" y="171" width="28" height="28" href="images/icon_cctv.svg"/>
-              </g>
-              <!-- 이상현상 수신 시 CAM-1 주위 빨간 점멸 링(기본 숨김) -->
-              <circle id="cctvAlertRing" cx="150" cy="185" r="26" fill="none" stroke="#FF2B33" stroke-width="3" style="display:none;">
-                <animate attributeName="opacity" values="1;0.2;1" dur="0.8s" repeatCount="indefinite"/>
-                <animate attributeName="r" values="24;32;24" dur="0.8s" repeatCount="indefinite"/>
-              </circle>
-              <!-- 이상현상 수신 시 CAM-1 CCTV 미니 팝업(기본 숨김). 클릭 시 전체 CCTV 모달. -->
-              <foreignObject id="cctvAlertPopup" x="184" y="68" width="244" height="192" style="display:none;overflow:visible;">
-                <div xmlns="http://www.w3.org/1999/xhtml" class="cctv-mini" onclick="hideCctvAlert();openCCTVFor('CAM-1 · 부스 A 정밀가공')">
-                  <div class="cctv-mini-head"><span class="cctv-mini-dot"></span>이상현상 감지 · CAM-1 부스 A 정밀가공</div>
-                  <div class="cctv-mini-screen">
-                    <img id="cctvMiniImg" class="cctv-mini-img" alt="CCTV" />
-                    <span class="cctv-mini-rec">● LIVE</span>
-                  </div>
-                  <div class="cctv-mini-foot">클릭하여 전체 화면 보기</div>
-                </div>
-              </foreignObject>
-            </g>
-
-            <!-- 심박 뷰 (작업자 위치 분산, 초기 숨김) -->
-            <g id="siteHrMarkers" style="display:none;">
-              <g class="ai-marker" style="cursor:pointer;" onclick="openWatchWorker('이*학','WATCH-01','부스 A · 정밀가공 시연존')">
-                <circle cx="180" cy="330" r="22" fill="#F67676"><animate attributeName="opacity" values="0.5;0;0.5" dur="1.6s" repeatCount="indefinite"/></circle>
-                <circle cx="180" cy="330" r="18" fill="#F67676" fill-opacity="0.18"/>
-                <image x="166" y="316" width="28" height="28" href="images/icon_heart.svg"/>
-              </g>
-              <g class="ai-marker" style="cursor:pointer;" onclick="openWatchWorker('전*조','WATCH-02','부스 C · 절단·용접 시연존')">
-                <circle cx="780" cy="315" r="22" fill="#F67676"><animate attributeName="opacity" values="0.5;0;0.5" dur="1.6s" repeatCount="indefinite"/></circle>
-                <circle cx="780" cy="315" r="18" fill="#F67676" fill-opacity="0.18"/>
-                <image x="766" y="301" width="28" height="28" href="images/icon_heart.svg"/>
-              </g>
-              <g class="ai-marker" style="cursor:pointer;" onclick="openWatchWorker('김*수','WATCH-03','중앙 전시홀')">
-                <circle cx="500" cy="355" r="22" fill="#F67676"><animate attributeName="opacity" values="0.5;0;0.5" dur="1.6s" repeatCount="indefinite"/></circle>
-                <circle cx="500" cy="355" r="18" fill="#F67676" fill-opacity="0.18"/>
-                <image x="486" y="341" width="28" height="28" href="images/icon_heart.svg"/>
-              </g>
-            </g>
-
-            <!-- 범례 -->
-            <foreignObject x="0" y="490" width="888" height="32">
-              <div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;justify-content:flex-end;align-items:center;height:32px;">
-                <div style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.15);border:none;border-radius:2px;padding:0 12px;height:28px;font-family:Pretendard,sans-serif;font-size:12px;font-weight:400;color:rgba(255,255,255,0.85);">
-                  <span style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#FF9000;flex-shrink:0;"></span>온습도계</span>
-                  <span style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#6628E1;flex-shrink:0;"></span>CCTV</span>
-                  <span style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#BE2929;flex-shrink:0;"></span>심박(작업자)</span>
-                </div>
-              </div>
-            </foreignObject>
-
-          </svg>
-        </div><!-- /site-blueprint -->
+          <div class="cctv-screen">
+            <div class="cctv-rec">REC ● LIVE</div>
+            <div class="cctv-timestamp" id="cctvTime">2026-05-19 15:22:48</div>
+            <!-- VLM 분석 결과 오버레이 (CCTV-1 전용) -->
+            <div class="cctv-vlm-overlay" id="cctvVlmOverlay">
+              <div class="cctv-vlm-row"><span class="cctv-vlm-label" style="color:var(--cyan);">탐지</span><span class="cctv-vlm-val" id="vlmDetection">—</span></div>
+            </div>
+            <!-- Fallback (영상 로드 전/실패 시 표시) -->
+            <div class="cctv-fallback">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+              </svg>
+              <div class="cctv-fallback-txt">영상 신호 연결 중...</div>
+            </div>
+            <!-- IP 카메라 RTSP→MJPEG 라이브 스트림 -->
+            <img id="cctvImage" class="cctv-video cctv-image" alt="IP camera live stream" />
+            <!-- VLM 프롬프트 답변 자막 (화면 내부 하단, 반투명 배경 + 타자 효과) -->
+            <div class="cctv-caption" id="cctvCaption"><span class="cctv-caption-text" id="cctvCaptionText"></span></div>
+          </div>
+          <!-- CCTV-2 전용: 사용자 프롬프트 입력 바 -->
+          <form class="cctv-prompt-bar" id="cctvPromptBar" onsubmit="sendCctvPrompt(event)">
+            <input type="text" class="cctv-prompt-input" id="cctvPromptInput"
+                   value="지금 CCTV 장면에서 무슨 일이 일어나고 있는지 한 문장으로 설명해줘."
+                   placeholder="VLM에게 물어볼 내용을 입력하세요" autocomplete="off" />
+            <button type="submit" class="cctv-prompt-send" id="cctvPromptSendBtn">분석 시작</button>
+          </form>
         </div><!-- /site-env-body -->
       </div><!-- /site-env-card -->
     </section>
+
+    </div><!-- /dash-col-center -->
+
+    <div class="dash-col dash-col-right">
 
     <!-- 안전시설 위치 메뉴 (4개) -->
     <nav class="facility-menu">
@@ -370,6 +338,8 @@
       <button class="facility-btn-sq sq-teal" onclick="openPolicy('law')"><span class="facility-label">산업안전보건<br>법령요지</span></button>
     </nav>
 
+    </div><!-- /dash-col-right -->
+
   </main>
 
   <!-- ============== FOOTER ============== -->
@@ -381,53 +351,6 @@
       <span class="footer-brand">되고시스템 <em>DUEGOSYSTEM</em></span>
     </div>
   </footer>
-
-<!-- ============== CCTV MODAL ============== -->
-<div class="cctv-overlay" id="cctvOverlay">
-  <div class="cctv-modal-wrap">
-    <button class="cctv-close" onclick="closeCCTV()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-      </svg>
-    </button>
-    <div class="cctv-modal">
-    <div class="cctv-head">
-      <div class="cctv-head-left">
-        <div class="cctv-head-title">실시간 CCTV</div>
-        <div class="cctv-head-sub" id="cctvHeadSub">정밀가공 공정 · PRC-19</div>
-      </div>
-    </div>
-    <div class="cctv-body">
-      <div class="cctv-screen">
-        <div class="cctv-rec">REC ● LIVE</div>
-        <div class="cctv-timestamp" id="cctvTime">2026-05-19 15:22:48</div>
-        <!-- VLM 분석 결과 오버레이 (CCTV 화면 위 반투명) -->
-        <div class="cctv-vlm-overlay" id="cctvVlmOverlay">
-          <div class="cctv-vlm-row"><span class="cctv-vlm-label" style="color:var(--cyan);">탐지</span><span class="cctv-vlm-val" id="vlmDetection">—</span></div>
-        </div>
-        <!-- Fallback (영상 로드 전/실패 시 표시) -->
-        <div class="cctv-fallback">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/>
-          </svg>
-          <div class="cctv-fallback-txt">영상 신호 연결 중...</div>
-        </div>
-        <!-- IP 카메라 RTSP→MJPEG 라이브 스트림 -->
-        <img id="cctvImage" class="cctv-video cctv-image" alt="IP camera live stream" />
-        <!-- VLM 프롬프트 답변 자막 (화면 내부 하단, 반투명 배경 + 타자 효과) -->
-        <div class="cctv-caption" id="cctvCaption"><span class="cctv-caption-text" id="cctvCaptionText"></span></div>
-      </div>
-      <!-- CAM-2(신규 CCTV) 전용: 사용자 프롬프트 입력 바 -->
-      <form class="cctv-prompt-bar" id="cctvPromptBar" onsubmit="sendCctvPrompt(event)">
-        <input type="text" class="cctv-prompt-input" id="cctvPromptInput"
-               value="지금 CCTV 장면에서 무슨 일이 일어나고 있는지 한 문장으로 설명해줘."
-               placeholder="VLM에게 물어볼 내용을 입력하세요" autocomplete="off" />
-        <button type="submit" class="cctv-prompt-send" id="cctvPromptSendBtn">분석 시작</button>
-      </form>
-    </div>
-  </div>
-  </div>
-</div>
 
 <!-- ============== 위험 탐지 사진 갤러리 MODAL ============== -->
 <div class="modal-overlay" id="dangerOverlay" style="z-index:1002;">
