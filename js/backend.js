@@ -612,6 +612,7 @@
   // 편집은 분석 토글 OFF일 때만 허용한다(QWEN이 GPU를 쓰므로 분석 루프와 경합 방지).
   let ruleDraftSlot = null; // 승인 대기 중인 슬롯
   let ruleRequestBusy = false; // 초안 생성 또는 적용 요청 진행 중
+  let ruleHydrationTimer = null; // VLM 엔진 기동 중 감시항목 재조회 타이머
 
   function rowOfEditBtn(btn) { return btn.closest('.bh-matrix-row'); }
 
@@ -624,9 +625,11 @@
       data = await resp.json();
     } catch (e) {
       document.querySelectorAll(".bhm-focus-text").forEach((el) => {
-        el.textContent = "감시항목 불러오기 실패";
+        // VLM 엔진은 기동에 수 분이 걸릴 수 있다. 실패를 최종 상태로 고정하지 않고
+        // 아래 재시도 타이머가 준비 완료 후 실제 항목명으로 교체한다.
+        el.textContent = "감시항목 서버 연결 대기 중…";
       });
-      return;
+      return false;
     }
     (data.rules || []).forEach((r) => {
       const cb = document.querySelector('.bhm-focus-cb[data-focus-key="' + r.key + '"]');
@@ -636,8 +639,23 @@
       if (text) text.textContent = r.display_name;
       cb.dataset.focusLabel = r.display_name;
     });
+    return true;
   }
   window.hydrateRules = hydrateRules;
+
+  function startRuleHydrationRetry() {
+    const refresh = async () => {
+      const ready = await hydrateRules();
+      if (ready && ruleHydrationTimer !== null) {
+        clearInterval(ruleHydrationTimer);
+        ruleHydrationTimer = null;
+      }
+    };
+    refresh().catch(() => {});
+    if (ruleHydrationTimer === null) {
+      ruleHydrationTimer = setInterval(() => { refresh().catch(() => {}); }, 2000);
+    }
+  }
 
   // 인라인 편집 시작: .bhm-focus-text 를 입력창으로 교체.
   function startRuleEdit(row) {
@@ -796,6 +814,48 @@
     }
   }
 
+  async function applyExpertSafetyPreset() {
+    if (ruleRequestBusy || ruleDraftSlot) {
+      if (window.showToast) showToast("감시 항목을 처리하는 중입니다. 잠시 기다려 주세요", "info");
+      return;
+    }
+    if (vlmLoop.enabled) {
+      if (window.showToast) showToast("분석을 끄고(OFF) 시연 프리셋을 적용하세요", "warn");
+      return;
+    }
+    const message = [
+      "시연 5종 프리셋을 적용할까요?",
+      "안전모 미착용, 쓰러진 사람, 라바콘 접촉, 안전고리 미사용, 안전조끼 미착용으로 바뀝니다.",
+      "현재 감시항목 사용자 설정과 해당 항목의 누적 카운트가 초기화됩니다.",
+    ].join("\n");
+    if (!window.confirm(message)) return;
+
+    const button = document.getElementById("bhExpertPresetBtn");
+    const originalText = button ? button.textContent : "시연 5종 프리셋 적용";
+    ruleRequestBusy = true;
+    if (button) {
+      button.disabled = true;
+      button.textContent = "프리셋 적용 중…";
+    }
+    try {
+      const resp = await fetch(API + "/vlm/rules/preset/expert-safety", { method: "POST" });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        throw new Error((data && (data.detail || data.message)) || ("HTTP " + resp.status));
+      }
+      await hydrateRules();
+      if (window.showToast) showToast("시연 5종 프리셋을 적용했습니다", "ok");
+    } catch (e) {
+      if (window.showToast) showToast("프리셋 적용 실패: " + e.message, "warn");
+    } finally {
+      ruleRequestBusy = false;
+      if (button) {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    }
+  }
+
   function initRuleEditing() {
     document.querySelectorAll('.bhm-edit').forEach((btn) => {
       btn.addEventListener('pointerdown', (e) => {
@@ -826,7 +886,9 @@
     if (ov) ov.addEventListener('click', (e) => {
       if (e.target.id === 'ruleApproveOverlay' && !ruleRequestBusy) discardRule();
     });
-    hydrateRules().catch(() => {});
+    const expertPresetBtn = document.getElementById('bhExpertPresetBtn');
+    if (expertPresetBtn) expertPresetBtn.addEventListener('click', applyExpertSafetyPreset);
+    startRuleHydrationRetry();
   }
   window.initRuleEditing = initRuleEditing;
 

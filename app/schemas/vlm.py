@@ -43,6 +43,16 @@ class VlmPromptRequest(BaseModel):
     prompt: str = Field(min_length=1, examples=["현재 장면에서 위험 요소를 설명해줘"])
 
 
+class TtsDispatch(BaseModel):
+    """Status of the TTS (Piper/Edge -> speaker) branch."""
+
+    status: str = Field(description="synthesized / stubbed / skipped / failed")
+    text: str = Field(description="음성 변환된 텍스트")
+    voice: str
+    audio_path: str | None = Field(default=None, description="생성된 오디오 파일 경로")
+    detail: str | None = None
+
+
 class VlmPromptResponse(BaseModel):
     """VLM /prompt 응답(정규화). ``text`` 가 키오스크 자막 큐로 들어간다."""
 
@@ -52,6 +62,7 @@ class VlmPromptResponse(BaseModel):
     ok: bool = Field(description="VLM 서버 호출 성공 여부")
     text: str = Field(default="", description="VLM 답변 텍스트(자막 표시용)")
     detail: str | None = Field(default=None, description="실패 시 원인")
+    tts: TtsDispatch = Field(description="답변을 읽어준 음성 합성/재생 결과")
 
 
 class BehaviorDelta(BaseModel):
@@ -79,16 +90,6 @@ class WarningLightSignal(BaseModel):
     led: dict | None = Field(
         default=None, description="실물 LED 자동 점등 결과 {level, status}"
     )
-
-
-class TtsDispatch(BaseModel):
-    """Status of the TTS (Edge TTS -> speaker) branch."""
-
-    status: str = Field(description="synthesized / stubbed / skipped / failed")
-    text: str = Field(description="음성 변환된 위험 경고 텍스트")
-    voice: str
-    audio_path: str | None = Field(default=None, description="생성된 오디오 파일 경로")
-    detail: str | None = None
 
 
 class VlmInferResponse(BaseModel):

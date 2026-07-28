@@ -279,6 +279,16 @@ class VlmService:
             self._reset_slot_state(slot)
         return status, data
 
+    async def restore_expert_safety_preset(self) -> tuple[int, dict]:
+        """기업 시연용 전용 5종 preset을 적용하고 모든 슬롯 상태를 비운다."""
+        status, data = await self._vlm.rules_request(
+            "POST", "/rules/preset/expert-safety"
+        )
+        if status == 200:
+            for slot in VLM_ACTION_KEY_MAP:
+                self._reset_slot_state(slot)
+        return status, data
+
     async def infer(
         self,
         camera_id: str,
@@ -477,14 +487,25 @@ class VlmService:
                 path = cam.get("frame_dir") or None
         path = path or self._settings.vlm_frame_dir
 
+        # 재생 세대값을 질의 시작 시점에 캡처 — CCTV 모달 종료(flush_tts) 시 이 요청의
+        # 늦은 TTS 재생은 폐기된다(infer()와 동일 패턴).
+        play_epoch = self._speaker.current_epoch()
+
         result = await self._vlm.prompt(path, prompt)
+        answer_text = str(result.get("text") or "")
+
+        tts_result = await self._tts.synthesize(answer_text)
+        if tts_result.status in {"synthesized", "stubbed"}:
+            self._speaker.play_async(tts_result.audio_path, tts_result.text, epoch=play_epoch)
+
         return VlmPromptResponse(
             camera_id=camera_id,
             path=path,
             prompt=prompt,
             ok=bool(result.get("ok")),
-            text=str(result.get("text") or ""),
+            text=answer_text,
             detail=result.get("detail"),
+            tts=TtsDispatch(**tts_result.model_dump()),
         )
 
     def flush_tts(self) -> None:

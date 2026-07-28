@@ -90,6 +90,14 @@ async def rules_list(service: VlmService = Depends(get_vlm_service)) -> dict:
     return _relay(*(await service.rules_list()))
 
 
+@router.post("/rules/preset/expert-safety", summary="기업 시연용 전용 5종 preset 적용")
+async def expert_safety_preset(
+    service: VlmService = Depends(get_vlm_service),
+) -> dict:
+    """기존 사용자 재배정 항목을 명시적으로 전용 5종 preset으로 교체한다."""
+    return _relay(*(await service.restore_expert_safety_preset()))
+
+
 @router.post("/rules/{slot}/draft", summary="자연어 감시 항목 초안 컴파일(미적용)")
 async def rule_draft(
     slot: str, body: RuleDraftRequest, service: VlmService = Depends(get_vlm_service)

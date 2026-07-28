@@ -47,6 +47,7 @@ class TtsService:
         self._piper_config = (
             Path(settings.piper_config_path) if settings.piper_config_path else None
         )
+        self._piper_length_scale = settings.piper_length_scale
 
     async def synthesize(self, text: str) -> TtsResult:
         text = (text or "").strip()
@@ -78,7 +79,8 @@ class TtsService:
         self._out_dir.mkdir(parents=True, exist_ok=True)
         out_path = self._out_dir / f"warning_{int(time.time() * 1000)}.wav"
         cmd = [self._piper_binary, "--model", str(self._piper_model),
-               "--output_file", str(out_path)]
+               "--output_file", str(out_path),
+               "--length-scale", str(self._piper_length_scale)]
         if self._piper_config:
             cmd += ["--config", str(self._piper_config)]
 

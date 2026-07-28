@@ -101,9 +101,9 @@ class Settings(BaseSettings):
     watch_region: str = "고양시사업장"
 
     # --- TTS ---
-    # 합성 엔진 선택: "edge"(온라인, MS Azure) | "piper"(오프라인/폐쇄망).
-    # 현장 인터넷이 보장되어 기본값은 edge(한국어 품질 우수). 폐쇄망이면 piper 로.
-    tts_engine: str = "edge"
+    # 합성 엔진 선택: "piper"(오프라인/폐쇄망) | "edge"(온라인, MS Azure).
+    # 폐쇄망 현장이 기본 전제이므로 기본값은 piper. 인터넷이 보장된 현장이면 edge로.
+    tts_engine: str = "piper"
     tts_output_dir: Path = Path("./tts_out")
     tts_enabled: bool = True
     # Optional ALSA device for physical speaker output, e.g. "plughw:J7".
@@ -118,12 +118,14 @@ class Settings(BaseSettings):
     #   - piper_binary    : PATH 의 piper 실행파일(또는 절대경로)
     #   - piper_model_path: ko_KR 음성 모델(.onnx) 경로
     #   - piper_config_path: 생략 시 모델 옆의 같은 이름 .json 을 자동 사용
-    #   ※ Piper 공식 카탈로그엔 한국어 음성이 없다. 커뮤니티 KSS 모델을 사용:
-    #     https://huggingface.co/neurlang/piper-onnx-kss-korean
-    #     (KSS 데이터셋 기반 · 단일 화자 · 데이터셋 라이선스 CC BY-NC-SA 4.0 — 비상업)
+    #   공식 rhasspy/piper-voices 카탈로그의 ko_KR-kss-medium 사용(espeak-ng 내장
+    #   phonemizer로 phonemize → 완전 오프라인). KSS 데이터셋 기반 · 단일 화자.
+    #     https://huggingface.co/rhasspy/piper-voices/tree/main/ko/ko_KR/kss/medium
     piper_binary: str = "piper"
-    piper_model_path: Path = Path("./voices/piper-kss-korean.onnx")
+    piper_model_path: Path = Path("./voices/ko_KR-kss-medium.onnx")
     piper_config_path: Path | None = None
+    # 발화 속도. 1.0=기본, 값이 작을수록 빠르게, 클수록 느리게 말한다(0.8=20% 빠름).
+    piper_length_scale: float = 1.0
 
     # --- Warning light (경광등) thresholds ---
     # 탐지된 불안전행동 카운트가 각 임계값 이상이면 해당 단계로 점등한다.
