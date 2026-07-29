@@ -18,7 +18,7 @@ class DangerFrame(BaseModel):
         description="위반 키 목록", examples=[["slot_1", "slot_4"]]
     )
     violation_labels: list[str] = Field(
-        description="위반 키의 한글 라벨", examples=[["감시항목 1", "감시항목 4"]]
+        description="위반 키의 한글 라벨", examples=[["안전모 미착용", "쓰러진 사람"]]
     )
     captured_at: str | None = Field(
         default=None, description="촬영 시각(표시용)", examples=["2026-07-02 14:30:05"]

@@ -11,8 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from app.api.deps import get_danger_service, get_vlm_client
-from app.integrations.vlm_client import VlmClient
+from app.api.deps import get_danger_service
 from app.schemas.danger import DangerFramesResponse
 from app.services.danger_service import DangerFrameService
 
@@ -27,21 +26,10 @@ class DangerClearResponse(BaseModel):
 @router.get("", response_model=DangerFramesResponse, summary="위험 탐지 사진 목록")
 async def list_frames(
     service: DangerFrameService = Depends(get_danger_service),
-    vlm: VlmClient = Depends(get_vlm_client),
 ) -> DangerFramesResponse:
-    # 스냅샷 파일명은 안정적인 slot 키를 유지하므로, 표시명은 현재 VLM 규칙에서
-    # 읽는다. VLM 장애 시 DangerFrameService가 기존 내장 라벨로 폴백한다.
-    rule_labels: dict[str, str] = {}
-    status, data = await vlm.rules_request("GET", "/rules")
-    if 200 <= status < 300 and isinstance(data, dict):
-        for rule in data.get("rules", []):
-            if not isinstance(rule, dict):
-                continue
-            key = str(rule.get("key", "")).strip()
-            display_name = str(rule.get("display_name", "")).strip()
-            if key and display_name:
-                rule_labels[key] = display_name
-    frames = service.list_frames(rule_labels)
+    # 시연 감시항목은 고정되어 있으므로 VLM에 이름을 재조회하지 않는다. VLM이 꺼져도
+    # 저장된 위험 사진은 즉시 실제 감시항목명으로 표시된다.
+    frames = service.list_frames()
     return DangerFramesResponse(dir=service.dir_str, count=len(frames), frames=frames)
 
 

@@ -2591,7 +2591,8 @@
   text-align: center;
 }
 .bhm-lamps-head span { font-size: var(--fs-base); font-weight: 700; color: var(--t-3); }
-.bh-matrix-row { padding: 4px 28px; }
+/* 시연에서는 감시항목 편집을 제공하지 않아 행에 편집 버튼 열이 없다. */
+.bh-matrix-row { grid-template-columns: 1fr auto; padding: 4px 28px; }
 .bh-matrix-row:first-child { padding-top: 24px; }
 .bh-matrix-row:last-child { padding-bottom: 24px; }
 .bh-legend {

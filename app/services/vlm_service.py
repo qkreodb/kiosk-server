@@ -463,15 +463,18 @@ class VlmService:
             led=led_dispatch,
         )
 
-        # 5) Combine.
+        # 5) Combine. UI에는 원시 VLM 문구가 아니라 안정화된 결과만 보낸다.
+        # 원시 문구는 result/checks 불일치, 디바운스 대기, unknown 상태에서도 "미착용"을
+        # 남길 수 있어 실제 행동 상태와 달라진다. labels는 바로 위 _stabilize()의 결과다.
+        stable_detection = ", ".join(labels)
         return VlmInferResponse(
             camera_id=camera_id,
             process_code=code,
             source=vlm.source,
-            detection=vlm.detection,
+            detection=stable_detection,
             detection_labels=labels,
             scene_description=vlm.scene_description,
-            warning_text=vlm.warning_text,
+            warning_text=tts_text,
             behaviors=deltas,
             warning_light=warning_light,
             tts=tts,

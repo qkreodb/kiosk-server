@@ -56,25 +56,25 @@ class BehaviorCategory:
 BEHAVIOR_CATEGORIES: tuple[BehaviorCategory, ...] = (
     BehaviorCategory(
         id=UnsafeBehavior.SLOT_1,
-        name="감시항목 1",
+        name="안전모 미착용",
         base_grade=BehaviorGrade.DANGER,
         keywords=("안전모", "헬멧", "모자", "helmet"),
     ),
     BehaviorCategory(
         id=UnsafeBehavior.SLOT_2,
-        name="감시항목 2",
+        name="라바콘 접촉",
         base_grade=BehaviorGrade.CAUTION,
         keywords=("라바콘", "라바", "콘", "접촉", "cone"),
     ),
     BehaviorCategory(
         id=UnsafeBehavior.SLOT_3,
-        name="감시항목 3",
+        name="안전하네스 미착용",
         base_grade=BehaviorGrade.DANGER,
         keywords=("안전하네스", "하네스", "안전대", "harness"),
     ),
     BehaviorCategory(
         id=UnsafeBehavior.SLOT_4,
-        name="감시항목 4",
+        name="쓰러진 사람",
         base_grade=BehaviorGrade.DANGER,
         keywords=("쓰러진", "넘어짐", "낙상", "fallen", "collapsed"),
     ),
@@ -103,10 +103,10 @@ VLM_ACTION_KEY_MAP: dict[str, UnsafeBehavior] = {
 # 키오스크가 `/analyze` 요청 시 함께 보내는 detect_actions(키+라벨). 키오스크가
 # 매핑의 단일 소유자가 되도록 명시적으로 전달한다(VLM 서버 기본값과 동일).
 VLM_DETECT_ACTIONS: list[dict[str, str]] = [
-    {"key": "slot_1", "label": "감시항목 1"},
-    {"key": "slot_2", "label": "감시항목 2"},
-    {"key": "slot_3", "label": "감시항목 3"},
-    {"key": "slot_4", "label": "감시항목 4"},
+    {"key": "slot_1", "label": "안전모 미착용"},
+    {"key": "slot_2", "label": "라바콘 접촉"},
+    {"key": "slot_3", "label": "안전하네스 미착용"},
+    {"key": "slot_4", "label": "쓰러진 사람"},
 ]
 
 

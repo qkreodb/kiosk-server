@@ -22,7 +22,7 @@ class BehaviorCount(BaseModel):
     """One unsafe-behavior category and its accumulated count."""
 
     id: str = Field(examples=["slot_1"])
-    name: str = Field(examples=["감시항목 1"])
+    name: str = Field(examples=["안전모 미착용"])
     grade: str = Field(description="정상 / 주의 / 위험", examples=["위험"])
     count: int = Field(description="누적 감지 횟수", examples=[3])
 

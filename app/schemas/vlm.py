@@ -108,7 +108,7 @@ class BehaviorDelta(BaseModel):
     """Result of parsing one detected behavior into a category + DB increment."""
 
     id: str = Field(examples=["slot_1"])
-    name: str = Field(examples=["감시항목 1"])
+    name: str = Field(examples=["안전모 미착용"])
     grade: str = Field(examples=["위험"])
     matched_label: str = Field(description="이 카테고리에 매칭된 원본 탐지 라벨")
     increment: int = Field(description="이번 추론으로 더해진 횟수", examples=[1])
