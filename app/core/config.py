@@ -163,7 +163,7 @@ class Settings(BaseSettings):
     # 플리커(왔다갔다) 억제: 같은 판정이 이 횟수만큼 '연속'돼야 위반 상태를 켜거나 끈다
     # (켜짐/꺼짐 대칭). 한두 프레임 튀는 노이즈를 흡수하고 진짜 변화만 반영한다. 대가로
     # 경보가 (횟수-1)×감지사이클 만큼 늦어진다. 1이면 비활성(매 프레임 즉시 반영).
-    behavior_debounce_frames: int = Field(default=2, ge=1)
+    behavior_debounce_frames: int = Field(default=1, ge=1)
 
     # --- VLM 서버 측 분석 스케줄러 (브라우저 없이 다중 카메라 순회 분석) ---
     # 한 사이클(모든 카메라 순차 분석) 이후 다음 사이클까지 대기(초).

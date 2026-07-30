@@ -140,6 +140,17 @@ class VlmInferResponse(BaseModel):
 
     detection: str = Field(description="감지된 행동 라벨 요약", examples=["안전모 미착용, 사다리 단독 이용"])
     detection_labels: list[str] = Field(description="감지된 행동 라벨 목록")
+    uncertain_labels: list[str] = Field(
+        default_factory=list,
+        description="이번 사이클에 판정 보류된 행동 라벨 목록(안전/미감지로 취급하지 않음)",
+    )
+    cycle_decision: str = Field(
+        default="unclear",
+        description="이번 VLM 응답의 확정 상태: detected / not_detected / unclear / not_requested",
+    )
+    cycle_detection: str = Field(
+        default="", description="이번 응답에서 명확히 탐지된 행동 라벨 요약"
+    )
     scene_description: str = Field(default="", description="VLM 장면 설명 원문(vlm_description)")
     warning_text: str = Field(examples=["안전모를 착용하고 단독 사다리 작업을 중지하세요"])
 

@@ -364,6 +364,32 @@ class VlmService:
             for key in vlm.unknown_action_keys
             if key in VLM_ACTION_KEY_MAP
         }
+        uncertain_labels = [
+            label
+            for cat_id, label in categories_from_action_keys(
+                vlm.unknown_action_keys, vlm.rule_labels
+            )
+            if cat_id in selected_ids
+        ]
+        # UI용 이번 응답의 확정 판정은 안정화 상태와 분리한다. unknown일 때 이전
+        # 안정 탐지를 재표시하지 않도록, 명확한 이번-cycle evidence만 전달한다.
+        cycle_matches = [
+            (cat_id, label)
+            for cat_id, label in matches
+            if cat_id in selected_ids and cat_id not in unknown_ids
+        ]
+        if labels == []:
+            cycle_decision = "not_requested"
+            cycle_detection = ""
+        elif cycle_matches:
+            cycle_decision = "detected"
+            cycle_detection = ", ".join(label for _, label in cycle_matches)
+        elif unknown_ids:
+            cycle_decision = "unclear"
+            cycle_detection = ""
+        else:
+            cycle_decision = "not_detected"
+            cycle_detection = ""
         analyzed_ids -= unknown_ids
         matches = self._stabilize(camera_id, code, matches, analyzed_ids, vlm.rule_labels)
         if labels is not None:
@@ -473,6 +499,9 @@ class VlmService:
             source=vlm.source,
             detection=stable_detection,
             detection_labels=labels,
+            uncertain_labels=uncertain_labels,
+            cycle_decision=cycle_decision,
+            cycle_detection=cycle_detection,
             scene_description=vlm.scene_description,
             warning_text=tts_text,
             behaviors=deltas,

@@ -634,8 +634,29 @@
     return cctvModalOpen() && currentCctvCam !== PROMPT_CAM_NUM;
   }
 
+  let vlmResultDisplayTimer = null;
   function renderVlmResult(d) {
-    document.getElementById('vlmDetection').textContent = d.detection || '— (위험행동 미감지)';
+    // 좌측 하단은 이번 VLM 응답의 확정 결과만 1초 노출한다. 내부 안정 상태나
+    // 판정 보류는 이 UI에 재사용하지 않으므로 이전 탐지가 화면에 남지 않는다.
+    if (vlmResultDisplayTimer) clearTimeout(vlmResultDisplayTimer);
+    const status = document.getElementById('vlmDetection');
+    const title = document.getElementById('vlmDetectionLabel');
+    const decision = d.cycle_decision;
+    if (decision !== 'detected' && decision !== 'not_detected') {
+      vlmResultDisplayTimer = null;
+      title.textContent = '';
+      status.textContent = '';
+      return;
+    }
+    title.textContent = '탐지';
+    status.textContent = decision === 'detected'
+      ? (d.cycle_detection || d.detection || '')
+      : '— (위험행동 미감지)';
+    vlmResultDisplayTimer = setTimeout(() => {
+      title.textContent = '';
+      status.textContent = '';
+      vlmResultDisplayTimer = null;
+    }, 1000);
   }
 
   // 불안전행동 감시 신호등에서 체크된 항목의 라벨 키 목록.
@@ -951,7 +972,7 @@
     // 이상현상(쿨다운 통과한 실제 카운트 발생) 시 중앙 CCTV 아이콘에 미니 팝업 알림.
     if (d.behaviors && d.behaviors.length) showCctvAlert();
     // 결과 오버레이는 CAM-1 모달이 열려 있을 때만 노출(CAM-2 모달엔 안 띄움).
-    // 텍스트는 다음 응답이 도착할 때까지 그대로 유지되고, 도착 시 이 줄에서 교체된다.
+    // 확정 탐지·미감지는 renderVlmResult()에서 1초만 표시하고 자동으로 비운다.
     if (analysisModalOpen()) document.getElementById('cctvVlmOverlay').classList.add('show');
     hydrateMatrix(processCode).catch(() => {}); // 메인화면 신호등 행렬은 항상 갱신
   }
@@ -964,7 +985,7 @@
       // 직전 분석 결과는 다음 응답이 도착할 때까지 그대로 유지한다.
       // (아직 한 번도 결과가 없을 때만 안내 문구를 보여준다)
       const cur = det.textContent.trim();
-      if (!cur || cur === '—') det.textContent = '분석 요청 중…';
+      if (!cur || cur === '—') det.textContent = '';
       document.getElementById('cctvVlmOverlay').classList.add('show');
     }
     (async function loop() {
@@ -977,7 +998,8 @@
           if (vlmLoop.token !== myToken || !vlmLoop.enabled) break;
           console.error('[VLM 분석] 실패:', e);
           if (analysisModalOpen()) {
-            document.getElementById('vlmDetection').textContent = '분석 실패: ' + e.message;
+            document.getElementById('vlmDetectionLabel').textContent = '';
+            document.getElementById('vlmDetection').textContent = '';
             document.getElementById('cctvVlmOverlay').classList.add('show');
           }
           await sleep(VLM_ERROR_BACKOFF_MS); // 오류 백오프 후 재시도
@@ -1026,7 +1048,7 @@
     const ov = document.getElementById('cctvVlmOverlay');
     if (vlmLoop.enabled) {
       const det = document.getElementById('vlmDetection');
-      if (det) { const cur = det.textContent.trim(); if (!cur || cur === '—') det.textContent = '분석 요청 중…'; }
+      if (det) { const cur = det.textContent.trim(); if (!cur || cur === '—') det.textContent = ''; }
       if (ov) ov.classList.add('show');
     } else {
       if (ov) ov.classList.remove('show');
