@@ -518,6 +518,8 @@
     if (image) { image.style.display = 'block'; image.src = cctvLiveSrc(cam); }
     document.getElementById('cctvOverlay').classList.add('open');
     if (cam === PROMPT_CAM_NUM) {
+      // CAM-2 is prompt/vehicle-only, so stop CAM-1 safety analysis when opened.
+      setVlmEnabled(false);
       // 신규 CCTV: 프롬프트 입력 바만 노출 — API 호출은 [분석 시작] 버튼을 눌러야 시작된다.
       if (bar) bar.style.display = 'flex';
       // 중앙 CCTV는 질문이 "차량번호 + 안전모"로 고정이라 입력창을 숨기고 버튼만 남긴다.
@@ -636,27 +638,28 @@
 
   let vlmResultDisplayTimer = null;
   function renderVlmResult(d) {
-    // 좌측 하단은 이번 VLM 응답의 확정 결과만 1초 노출한다. 내부 안정 상태나
-    // 판정 보류는 이 UI에 재사용하지 않으므로 이전 탐지가 화면에 남지 않는다.
+    // 좌측 하단은 이번 VLM 응답이 탐지일 때만 1초 노출한다. 미감지·판정 보류는
+    // 빈 오버레이로도 남기지 않고 즉시 숨긴다.
     if (vlmResultDisplayTimer) clearTimeout(vlmResultDisplayTimer);
     const status = document.getElementById('vlmDetection');
     const title = document.getElementById('vlmDetectionLabel');
     const decision = d.cycle_decision;
-    if (decision !== 'detected' && decision !== 'not_detected') {
+    if (decision !== 'detected') {
       vlmResultDisplayTimer = null;
       title.textContent = '';
       status.textContent = '';
-      return;
+      return false;
     }
     title.textContent = '탐지';
-    status.textContent = decision === 'detected'
-      ? (d.cycle_detection || d.detection || '')
-      : '— (위험행동 미감지)';
+    status.textContent = d.cycle_detection || d.detection || '';
     vlmResultDisplayTimer = setTimeout(() => {
       title.textContent = '';
       status.textContent = '';
+      const overlay = document.getElementById('cctvVlmOverlay');
+      if (overlay) overlay.classList.remove('show');
       vlmResultDisplayTimer = null;
     }, 1000);
+    return true;
   }
 
   // 불안전행동 감시 신호등에서 체크된 항목의 라벨 키 목록.
@@ -968,12 +971,14 @@
     const d = await resp.json();
     if (vlmLoop.token !== token || !vlmLoop.enabled) return; // 응답 도착 시 이미 중단/전환됨
     lastVlmDetection = d;
-    renderVlmResult(d);
+    const hasVisibleResult = renderVlmResult(d);
     // 이상현상(쿨다운 통과한 실제 카운트 발생) 시 중앙 CCTV 아이콘에 미니 팝업 알림.
     if (d.behaviors && d.behaviors.length) showCctvAlert();
     // 결과 오버레이는 CAM-1 모달이 열려 있을 때만 노출(CAM-2 모달엔 안 띄움).
-    // 확정 탐지·미감지는 renderVlmResult()에서 1초만 표시하고 자동으로 비운다.
-    if (analysisModalOpen()) document.getElementById('cctvVlmOverlay').classList.add('show');
+    // 탐지 결과가 있을 때만 오버레이를 표시한다. 미감지·보류는 빈 오버레이도 숨긴다.
+    if (analysisModalOpen()) {
+      document.getElementById('cctvVlmOverlay').classList.toggle('show', hasVisibleResult);
+    }
     hydrateMatrix(processCode).catch(() => {}); // 메인화면 신호등 행렬은 항상 갱신
   }
 
@@ -986,7 +991,7 @@
       // (아직 한 번도 결과가 없을 때만 안내 문구를 보여준다)
       const cur = det.textContent.trim();
       if (!cur || cur === '—') det.textContent = '';
-      document.getElementById('cctvVlmOverlay').classList.add('show');
+      document.getElementById('cctvVlmOverlay').classList.toggle('show', !!(det && det.textContent.trim()));
     }
     (async function loop() {
       while (vlmLoop.token === myToken && vlmLoop.enabled) {
@@ -1000,7 +1005,7 @@
           if (analysisModalOpen()) {
             document.getElementById('vlmDetectionLabel').textContent = '';
             document.getElementById('vlmDetection').textContent = '';
-            document.getElementById('cctvVlmOverlay').classList.add('show');
+            document.getElementById('cctvVlmOverlay').classList.remove('show');
           }
           await sleep(VLM_ERROR_BACKOFF_MS); // 오류 백오프 후 재시도
         }
@@ -1049,7 +1054,7 @@
     if (vlmLoop.enabled) {
       const det = document.getElementById('vlmDetection');
       if (det) { const cur = det.textContent.trim(); if (!cur || cur === '—') det.textContent = ''; }
-      if (ov) ov.classList.add('show');
+      if (ov) ov.classList.toggle('show', !!(det && det.textContent.trim()));
     } else {
       if (ov) ov.classList.remove('show');
     }
