@@ -13,17 +13,24 @@ VLM 서버가 위험행동 감지 시 저장한 스냅샷 폴더를 읽어, 파�
 from __future__ import annotations
 
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import quote
 
 from app.core.config import Settings
 from app.core.logging import get_logger
 from app.domain.constants import CATEGORY_BY_ID, VLM_ACTION_KEY_MAP
+from app.integrations.mqtt_publisher import MqttPublisher
 from app.schemas.danger import DangerFrame
 
 logger = get_logger(__name__)
 
 _IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"}
+
+# 폰 앱은 duego/alert 로 받은 알림(사진 포함)을 로컬에 쌓아 두는데, 서버가
+# /danger-frames 를 비우면 그 사진들이 사라져 "열람 불가 알림"만 남는다.
+# 신호등 [초기화]와 함께 이 토픽을 발행해 앱도 같은 시점에 알림 목록을 비우게 한다.
+ALERT_RESET_TOPIC = "duego/alert/reset"
 
 # 파일명 파서: ``{공정}_{위반(-위반)*}_{YYYYMMDD}_{HHMMSS}``.
 # 위반 키는 그 자체에 ``_`` 를 포함하므로(예: slot_1) 알려진 키 집합으로만 매칭하고,
@@ -44,8 +51,9 @@ def _labels_for(keys: list[str]) -> list[str]:
 
 
 class DangerFrameService:
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, mqtt: MqttPublisher | None = None) -> None:
         self._dir = Path(settings.danger_frames_dir)
+        self._mqtt = mqtt
 
     @property
     def dir_str(self) -> str:
@@ -114,16 +122,24 @@ class DangerFrameService:
         """폴더의 이미지 파일을 모두 삭제하고 삭제한 개수를 반환. 폴더 없으면 0.
 
         신호등 [초기화] 와 연동 — 카운트 리셋과 함께 누적된 위험 스냅샷도 비운다.
-        이미지 확장자만 지우므로 폴더 내 다른 파일은 건드리지 않는다.
+        이미지 확장자만 지우므로 폴더 내 다른 파일은 건드리지 않는다. 폴더가 아예
+        없어 지울 사진이 0장이어도, 폰 앱은 여전히 예전 duego/alert 알림을 들고
+        있을 수 있으므로 리셋 발행은 항상 시도한다.
         """
-        if not self._dir.is_dir():
-            return 0
         deleted = 0
-        for p in self._dir.iterdir():
-            if p.is_file() and p.suffix.lower() in _IMAGE_EXTS:
-                try:
-                    p.unlink()
-                    deleted += 1
-                except OSError as exc:
-                    logger.warning("[danger] 파일 삭제 실패 %s: %s", p, exc)
+        if self._dir.is_dir():
+            for p in self._dir.iterdir():
+                if p.is_file() and p.suffix.lower() in _IMAGE_EXTS:
+                    try:
+                        p.unlink()
+                        deleted += 1
+                    except OSError as exc:
+                        logger.warning("[danger] 파일 삭제 실패 %s: %s", p, exc)
+        if self._mqtt is not None:
+            self._mqtt.publish(
+                ALERT_RESET_TOPIC,
+                {"reset_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")},
+                qos=1,
+                retain=False,
+            )
         return deleted

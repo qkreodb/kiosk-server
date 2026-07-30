@@ -351,12 +351,14 @@
    * 한 글자씩 쓴다. 한 메시지를 다 쓰면 큐에서 "가장 최근" 메시지만 꺼내 출력하고
    * 그 사이 쌓인 오래된 메시지는 버린다 — 응답이 타자 속도보다 빨라도 자막이
    * 뒤처지지(지연 누적) 않게 하기 위해서다.                              */
-  const CAPTION_CHAR_MS = 45;    // 글자당 타자 간격
-  const CAPTION_HOLD_MS = 1500;  // 다 쓴 자막을 다음 메시지 전까지 잠깐 유지
+  const CAPTION_CHAR_MS = 20;    // 글자당 타자 간격
+  const CAPTION_HOLD_MS = 500;  // 다 쓴 자막을 다음 메시지 전까지 잠깐 유지
   const captionQueue = [];
   let captionTyping = false;
+  let captionRunToken = 0;
 
   function clearCaption() {
+    captionRunToken++;
     captionQueue.length = 0;
     const box = document.getElementById('cctvCaption');
     const span = document.getElementById('cctvCaptionText');
@@ -374,6 +376,7 @@
     const span = document.getElementById('cctvCaptionText');
     if (!box || !span) return;
     captionTyping = true;
+    const myRunToken = captionRunToken;
     try {
       while (captionQueue.length) {
         const text = captionQueue[captionQueue.length - 1]; // 최신 메시지만
@@ -382,14 +385,16 @@
         for (let i = 1; i <= text.length; i++) {
           span.textContent = text.slice(0, i);
           await sleep(CAPTION_CHAR_MS);
-          if (!cctvModalOpen()) return; // 모달 닫힘 → 즉시 중단(clearCaption이 정리)
+          if (myRunToken !== captionRunToken || !cctvModalOpen()) return; // 중지/모달 닫힘 → 즉시 중단
         }
         box.classList.remove('typing');
         if (captionQueue.length) continue; // 새 메시지 이미 도착 → 바로 이어서
         await sleep(CAPTION_HOLD_MS);
+        if (myRunToken !== captionRunToken || !cctvModalOpen()) return;
       }
     } finally {
       captionTyping = false;
+      if (captionQueue.length) drainCaptionQueue();
     }
   }
 
@@ -398,6 +403,7 @@
    * 응답 텍스트를 자막 큐에 넣고 곧바로 다음 질의(응답 도착 주도). 프롬프트는
    * 매 요청 시점에 입력창을 읽으므로 사용자가 수정하면 다음 질의부터 반영된다.
    * [중지] 버튼(같은 버튼 토글)을 누르면 루프를 멈추고 다시 [분석 시작]으로 되돌아간다. */
+  const PROMPT_INITIAL_DELAY_MS = 0;
   const PROMPT_INTERVAL_MS = 0;        // 성공 응답 직후 다음 질의 시작
   const PROMPT_ERROR_BACKOFF_MS = 2000; // 오류 시 재시도 전 대기
   const DEFAULT_PROMPT = '지금 CCTV 장면에서 무슨 일이 일어나고 있는지 한 문장으로 설명해줘.';
@@ -417,9 +423,15 @@
   // [분석 시작]/[중지] 버튼 라벨·스타일을 루프 상태와 동기화.
   function setPromptButtonState(active) {
     const btn = document.getElementById('cctvPromptSendBtn');
-    if (!btn) return;
-    btn.textContent = active ? '중지' : '분석 시작';
-    btn.classList.toggle('active', active);
+    const input = document.getElementById('cctvPromptInput');
+    if (btn) {
+      btn.textContent = active ? '중지' : '분석 시작';
+      btn.classList.toggle('active', active);
+    }
+    if (input) {
+      input.disabled = active;
+      input.setAttribute('aria-disabled', active ? 'true' : 'false');
+    }
   }
   /* ----- 중앙 CCTV: 차량번호 + 안전모 점검 -----
    * 같은 [분석 시작] 버튼이지만 중앙 아이콘('center')으로 연 모달에서는 자유
@@ -463,6 +475,10 @@
     // 어떤 아이콘으로 열었는지는 루프 시작 시점에 고정한다(도중 변경 방지).
     const vehicleMode = currentCctvVariant === 'center';
     (async function loop() {
+      if (!vehicleMode) {
+        await sleep(PROMPT_INITIAL_DELAY_MS);
+        if (!promptLoopAlive(myToken)) return;
+      }
       while (promptLoopAlive(myToken)) {
         try {
           const d = vehicleMode ? await runVehicleSafetyOnce() : await runPromptOnce();
@@ -481,6 +497,7 @@
   function stopPromptLoop() {
     promptLoop.active = false;
     promptLoop.token++;
+    clearCaption();
     setPromptButtonState(false);
   }
   // 입력 바 [분석 시작]/[중지] 토글(Enter 키 제출도 동일하게 처리) —

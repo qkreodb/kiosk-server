@@ -144,7 +144,7 @@ def get_cctv_service() -> CctvService:
 
 
 def get_danger_service() -> DangerFrameService:
-    return DangerFrameService(get_settings())
+    return DangerFrameService(get_settings(), _mqtt_publisher())
 
 
 @lru_cache
