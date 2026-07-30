@@ -155,6 +155,18 @@
           </div>
           <div class="bh-matrix-row" data-active="-1">
             <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
+              <input type="checkbox" class="bhm-focus-cb" data-focus-key="slot_4" data-focus-label="" onchange="onFocusToggle()">
+              <span class="bhm-focus-text">불러오는 중…</span>
+            </label>
+            <div class="bhm-lamps">
+              <span class="bhm-lamp interest"></span>
+              <span class="bhm-lamp caution"></span>
+              <span class="bhm-lamp warning"></span>
+              <span class="bhm-lamp danger"></span>
+            </div>
+          </div>
+          <div class="bh-matrix-row" data-active="-1">
+            <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
               <input type="checkbox" class="bhm-focus-cb" data-focus-key="slot_2" data-focus-label="" onchange="onFocusToggle()">
               <span class="bhm-focus-text">불러오는 중…</span>
             </label>
@@ -168,18 +180,6 @@
           <div class="bh-matrix-row" data-active="-1">
             <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
               <input type="checkbox" class="bhm-focus-cb" data-focus-key="slot_3" data-focus-label="" onchange="onFocusToggle()">
-              <span class="bhm-focus-text">불러오는 중…</span>
-            </label>
-            <div class="bhm-lamps">
-              <span class="bhm-lamp interest"></span>
-              <span class="bhm-lamp caution"></span>
-              <span class="bhm-lamp warning"></span>
-              <span class="bhm-lamp danger"></span>
-            </div>
-          </div>
-          <div class="bh-matrix-row" data-active="-1">
-            <label class="bhm-name bhm-focus" title="감시 대상으로 선택">
-              <input type="checkbox" class="bhm-focus-cb" data-focus-key="slot_4" data-focus-label="" onchange="onFocusToggle()">
               <span class="bhm-focus-text">불러오는 중…</span>
             </label>
             <div class="bhm-lamps">
@@ -388,7 +388,7 @@
         <div class="cctv-timestamp" id="cctvTime">2026-05-19 15:22:48</div>
         <!-- VLM 분석 결과 오버레이 (CCTV 화면 위 반투명) -->
         <div class="cctv-vlm-overlay" id="cctvVlmOverlay">
-          <div class="cctv-vlm-row"><span class="cctv-vlm-label" id="vlmDetectionLabel" style="color:var(--cyan);"></span><span class="cctv-vlm-val" id="vlmDetection"></span></div>
+          <div class="cctv-vlm-row"><span class="cctv-vlm-label" id="vlmDetectionLabel"></span><span class="cctv-vlm-val" id="vlmDetection"></span></div>
         </div>
         <!-- Fallback (영상 로드 전/실패 시 표시) -->
         <div class="cctv-fallback">

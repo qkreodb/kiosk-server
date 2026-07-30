@@ -438,17 +438,15 @@
    * 프롬프트 대신 POST /vlm/vehicle-safety 를 반복 호출한다. 경고 음성은 서버가
    * 재생하므로 프론트는 이번 사이클 결과를 자막으로만 보여준다. */
   const VEHICLE_REASON_CAPTION = {
-    no_person: '사람이 감지되지 않았습니다.',
-    person_unclear: '사람 여부를 판정하지 못했습니다.',
     helmet_ok: '안전모 착용이 확인되었습니다.',
-    helmet_unclear: '안전모 착용 여부를 판정하지 못했습니다.',
-    plate_unclear: '차량번호를 읽지 못했습니다 · 다음 분석으로 넘어갑니다.',
-    vlm_error: '분석 서버에 연결하지 못했습니다.',
   };
   function vehicleCaption(d) {
-    // 경고가 나온 사이클은 실제 발화 문구를 그대로 자막으로 쓴다.
+    // 경고가 나온 사이클은 실제 발화 문구를 자막으로 쓰고, 착용 확인 사이클은
+    // 고정 문구를 쓴다. 그 외(사람 없음/판정 불가/번호판 불확실 등)는 매 사이클
+    // 계속 바뀌는 안내문으로 화면이 정신없어지므로 자막을 건드리지 않는다 —
+    // enqueueCaption이 빈 문자열은 무시하므로 직전 자막이 그대로 유지된다.
     if (d && d.text) return d.text;
-    return (d && VEHICLE_REASON_CAPTION[d.reason]) || '분석 중…';
+    return (d && VEHICLE_REASON_CAPTION[d.reason]) || '';
   }
   async function runVehicleSafetyOnce() {
     const resp = await fetch(API + '/vlm/vehicle-safety', {
@@ -655,25 +653,30 @@
 
   let vlmResultDisplayTimer = null;
   function renderVlmResult(d) {
-    // 좌측 하단은 이번 VLM 응답이 탐지일 때만 1초 노출한다. 미감지·판정 보류는
-    // 빈 오버레이로도 남기지 않고 즉시 숨긴다.
+    // 탐지와 미감지는 좌측 하단에 1초 표시하고, 판정 보류는 표시하지 않는다.
     if (vlmResultDisplayTimer) clearTimeout(vlmResultDisplayTimer);
-    const status = document.getElementById('vlmDetection');
-    const title = document.getElementById('vlmDetectionLabel');
+    const status = document.getElementById("vlmDetection");
+    const title = document.getElementById("vlmDetectionLabel");
+    const overlay = document.getElementById("cctvVlmOverlay");
     const decision = d.cycle_decision;
-    if (decision !== 'detected') {
+    if (decision !== "detected" && decision !== "not_detected") {
       vlmResultDisplayTimer = null;
-      title.textContent = '';
-      status.textContent = '';
+      title.textContent = "";
+      status.textContent = "";
+      if (overlay) overlay.classList.remove("detected", "not-detected", "show");
       return false;
     }
-    title.textContent = '탐지';
-    status.textContent = d.cycle_detection || d.detection || '';
+    const isDetected = decision === "detected";
+    title.textContent = isDetected ? "탐지" : "미감지";
+    status.textContent = isDetected ? (d.cycle_detection || d.detection || "") : "";
+    if (overlay) {
+      overlay.classList.remove("detected", "not-detected");
+      overlay.classList.add(isDetected ? "detected" : "not-detected");
+    }
     vlmResultDisplayTimer = setTimeout(() => {
-      title.textContent = '';
-      status.textContent = '';
-      const overlay = document.getElementById('cctvVlmOverlay');
-      if (overlay) overlay.classList.remove('show');
+      title.textContent = "";
+      status.textContent = "";
+      if (overlay) overlay.classList.remove("detected", "not-detected", "show");
       vlmResultDisplayTimer = null;
     }, 1000);
     return true;
@@ -906,7 +909,7 @@
     }
     const message = [
       "시연 4종 프리셋을 적용할까요?",
-      "안전모 미착용, 라바콘 접촉, 안전하네스 미착용, 쓰러진 사람으로 바뀝니다.",
+      "안전모 미착용, 쓰러진 사람, 라바콘 접촉, 안전하네스 미착용으로 바뀝니다.",
       "현재 감시항목 사용자 설정과 해당 항목의 누적 카운트가 초기화됩니다.",
     ].join("\n");
     if (!window.confirm(message)) return;

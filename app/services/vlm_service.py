@@ -249,6 +249,26 @@ class VlmService:
                 stable.append((cid, _name(cid)))
         return stable
 
+    def _force_clear_stable(
+        self,
+        camera_id: str,
+        code: str,
+        analyzed_ids: set[UnsafeBehavior],
+    ) -> None:
+        """사람 없음 게이트가 확정된 슬롯의 안정 danger 상태를 즉시 끈다.
+
+        사람 없음은 안전 라벨의 일반적인 ``not_detected`` 결과가 아니라 상위
+        게이트의 확정 결과다. 따라서 디바운스 프레임 수나 이전 하네스 상태가
+        남아 있더라도 현재 경고에 다시 포함되면 안 된다. VLM 장애/unclear에는
+        이 함수를 호출하지 않아 기존의 보수적인 상태 보존 정책을 유지한다.
+        """
+        for cat_id in analyzed_ids:
+            key = (camera_id, code, cat_id.value)
+            entry = self._debounce_state.get(key)
+            if entry is not None:
+                entry["state"] = False
+                entry["streak"] = 0
+
     # ── 감시 항목(RuleSpec) 프록시 + 슬롯 상태 리셋 ──────────────────────────
     async def rules_list(self) -> tuple[int, dict]:
         return await self._vlm.rules_request("GET", "/rules")
@@ -333,9 +353,12 @@ class VlmService:
 
         # 2) 탐지된 불안전행동 매핑 (TTS 발동 여부 판단에도 사용).
         #    구조화된 action 키가 있으면 직접 매핑, 없으면 자유텍스트 키워드 폴백.
-        if labels == []:
+        person_absent = vlm.person_present is False
+        if labels == [] or person_absent:
             # 감시 라벨을 하나도 선택하지 않은 요청은 서버 응답과 무관하게
-            # 불안전행동을 반영하지 않는다.
+            # 불안전행동을 반영하지 않는다. YOLOX가 사람 없음을 확정한 경우도
+            # VLM의 오래된/불일치 action payload가 있더라도 절대 위험으로 전파하지
+            # 않는다.
             matches = []
         elif vlm.action_keys:
             matches = categories_from_action_keys(vlm.action_keys, vlm.rule_labels)
@@ -359,7 +382,7 @@ class VlmService:
             analyzed_ids = set(selected_ids)
         # unknown은 정상(false)이 아니다. 이 사이클의 상태 전환/해제 근거에서
         # 제외해 _stabilize()가 기존 상태를 유지하도록 한다.
-        unknown_ids = {
+        unknown_ids = set() if person_absent else {
             VLM_ACTION_KEY_MAP[key]
             for key in vlm.unknown_action_keys
             if key in VLM_ACTION_KEY_MAP
@@ -391,7 +414,11 @@ class VlmService:
             cycle_decision = "not_detected"
             cycle_detection = ""
         analyzed_ids -= unknown_ids
-        matches = self._stabilize(camera_id, code, matches, analyzed_ids, vlm.rule_labels)
+        if person_absent:
+            self._force_clear_stable(camera_id, code, analyzed_ids)
+            matches = []
+        else:
+            matches = self._stabilize(camera_id, code, matches, analyzed_ids, vlm.rule_labels)
         if labels is not None:
             # _stabilize()는 미분석 슬롯의 기존 안정 상태를 보존한다. 하지만
             # 체크박스로 분석 범위를 제한한 요청에서는 그 상태를 현재 연계에

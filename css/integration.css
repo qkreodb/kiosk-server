@@ -426,6 +426,9 @@
 }
 .cctv-vlm-label { font-weight: 700; white-space: nowrap; }
 .cctv-vlm-val { color: #E5EDF7; }
+.cctv-vlm-overlay.detected .cctv-vlm-label { color: var(--cyan); }
+.cctv-vlm-overlay.not-detected .cctv-vlm-label,
+.cctv-vlm-overlay.not-detected .cctv-vlm-val { color: #9AA4B2; }
 
 /* ===== CCTV: VLM 프롬프트 답변 자막 (화면 내부 하단, 반투명) ===== */
 .cctv-caption {

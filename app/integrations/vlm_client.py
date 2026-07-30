@@ -53,6 +53,10 @@ KEY_DESCRIPTION = "description"
 class VlmResult(BaseModel):
     """Normalized VLM result consumed by the pipeline."""
 
+    person_present: bool | None = Field(
+        default=None,
+        description="YOLOX 사람 게이트의 확정 결과; False는 사람 없음",
+    )
     action_keys: list[str] = Field(
         default_factory=list, description="감지된 action 키 (예: slot_1)"
     )
@@ -267,6 +271,9 @@ class VlmClient:
     def _normalize(cls, data: dict, source: str) -> VlmResult:
         if not isinstance(data, dict):
             data = {}
+        person_present = data.get("person_present")
+        if not isinstance(person_present, bool):
+            person_present = None
         action_keys = cls._extract_action_keys(data)
         unknown_action_keys = cls._extract_unknown_action_keys(data)
         rule_labels = cls._extract_rule_labels(data)
@@ -280,6 +287,7 @@ class VlmClient:
             for k in action_keys
         ]
         return VlmResult(
+            person_present=person_present,
             action_keys=action_keys,
             unknown_action_keys=unknown_action_keys,
             rule_labels=rule_labels,
