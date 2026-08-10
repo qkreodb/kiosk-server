@@ -129,7 +129,7 @@ class VlmService:
         self._debounce_state: dict = debounce_state if debounce_state is not None else {}
         # 행동별 독립 쿨다운 타이머. (camera_id, process_code, category_id)
         # -> 만료 monotonic 시각. 카메라가 다른 카메라의 경고를 간섭하지 않는다.
-        # 5가지 불안전행동 각각이 상호 간섭 없이 독립적으로 디바운싱된다(동시에 여러
+        # 4가지 불안전행동 각각이 상호 간섭 없이 독립적으로 디바운싱된다(동시에 여러
         # 행동이 감지돼도 각자의 만료 시각만 본다). 타임스탬프 기반이라 해제할 타이머
         # 핸들이 없어 자원 누수가 없고, 키는 카메라·공정당 행동 수만큼만 유지된다.
         #

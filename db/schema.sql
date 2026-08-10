@@ -49,7 +49,8 @@ CREATE TABLE unstable_behavior (
   slot_1_count     INT NOT NULL DEFAULT 0,  -- slot_1     안전모 미착용
   slot_2_count     INT NOT NULL DEFAULT 0,  -- slot_2     라바콘 접촉
   slot_3_count     INT NOT NULL DEFAULT 0,  -- slot_3     안전하네스 미착용
-  slot_4_count     INT NOT NULL DEFAULT 0   -- slot_4     쓰러진 사람
+  slot_4_count     INT NOT NULL DEFAULT 0,  -- slot_4     쓰러진 사람
+  slot_5_count     INT NOT NULL DEFAULT 0   -- legacy column; 안전고리 감시는 비활성
 );
 
 -- Central mapping table: each process points to one of each related row.

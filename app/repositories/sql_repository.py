@@ -1,6 +1,6 @@
 """MySQL-backed implementation of :class:`KioskRepository` (the real Shared DB).
 
-Talks to the confirmed 5-table schema on the Jetson via PyMySQL + raw SQL:
+Talks to the shared database schema on the Jetson via PyMySQL + raw SQL:
 
     process(process_id PK, process_name, behavior_id FK, th_sensor_name,
             hb_sensor_id FK, cctv_id FK)        -- central mapping table
@@ -8,7 +8,7 @@ Talks to the confirmed 5-table schema on the Jetson via PyMySQL + raw SQL:
     heartbeat_sensor(sensor_id PK, heart_rate, measured_at)
     cctv_info(cctv_id PK, rtsp_url)
     unstable_behavior(behavior_id PK, slot_1_count, slot_2_count,
-                      slot_3_count, slot_4_count)
+                      slot_3_count, slot_4_count (legacy slot_5_count may remain)
 
 Design notes:
   * The DB has no string "code" column, so the API process ``code`` is

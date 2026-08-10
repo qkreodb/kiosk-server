@@ -265,10 +265,11 @@
                 <circle cx="790" cy="185" r="18" fill="#6628E1" fill-opacity="0.18"/>
                 <image x="776" y="171" width="28" height="28" href="images/icon_cctv.svg"/>
               </g>
-              <!-- 중앙 전시홀 CCTV — 모달은 CAM-2와 같은 화면이지만 variant 'center' 로
-                   구분되어, [분석 시작] 시 자유 프롬프트 대신 차량번호+안전모 점검
-                   (POST /vlm/vehicle-safety)을 반복 호출한다. -->
-              <g class="ai-marker" style="cursor:pointer;" onclick="openCCTVFor('CAM-2 · 중앙 전시홀', 'center')">
+              <!-- 중앙 전시홀 CCTV — variant 'center' 로 구분되어, [분석 시작] 시
+                   자유 프롬프트 대신 차량번호+안전모 점검(POST /vlm/vehicle-safety)을
+                   반복 호출한다. 전원선 제약으로 이 자리의 실 카메라는 CAM-3
+                   (172.16.0.20, cctv_id=3, 2026-08-03 등록)로 교체됨. -->
+              <g class="ai-marker" style="cursor:pointer;" onclick="openCCTVFor('CAM-3 · 중앙 전시홀', 'center')">
                 <circle cx="470" cy="185" r="22" fill="#6628E1"><animate attributeName="opacity" values="0.5;0;0.5" dur="1.6s" repeatCount="indefinite"/></circle>
                 <circle cx="470" cy="185" r="18" fill="#6628E1" fill-opacity="0.18"/>
                 <image x="456" y="171" width="28" height="28" href="images/icon_cctv.svg"/>

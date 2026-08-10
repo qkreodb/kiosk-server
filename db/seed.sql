@@ -34,13 +34,15 @@ INSERT INTO cctv_info (cctv_id, rtsp_url, frame_dir) VALUES
 
 -- unsafe-behavior counters.
 -- columns: slot_1_count=slot_1, slot_2_count=slot_2,
---          slot_3_count=slot_3, slot_4_count=slot_4
-INSERT INTO unstable_behavior (behavior_id, slot_1_count, slot_2_count, slot_3_count, slot_4_count) VALUES
-  (1, 3, 1, 0, 0),
-  (2, 1, 0, 1, 2),
-  (3, 0, 2, 0, 0),
-  (4, 0, 1, 0, 1),
-  (5, 2, 0, 3, 0);
+--          slot_3_count=slot_3, slot_4_count=slot_4; legacy slot_5_count is retained at zero
+INSERT INTO unstable_behavior
+  (behavior_id, slot_1_count, slot_2_count, slot_3_count, slot_4_count, slot_5_count)
+VALUES
+  (1, 3, 1, 0, 0, 0),
+  (2, 1, 0, 1, 2, 0),
+  (3, 0, 2, 0, 0, 0),
+  (4, 0, 1, 0, 1, 0),
+  (5, 2, 0, 3, 0, 0);
 
 -- processes (central mapping). th_sensor_name 은 sensor_name(문자열)으로 직접 매핑.
 INSERT INTO process (process_id, process_name, behavior_id, th_sensor_name, hb_sensor_id, cctv_id) VALUES

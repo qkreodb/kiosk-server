@@ -155,7 +155,7 @@ class Settings(BaseSettings):
 
     # --- 불안전행동 디바운스(쿨다운) ---
     # VLM 분석이 루프로 반복되며 같은 행동이 연속 감지될 때 TTS 중첩·DB 카운트
-    # 급증을 막는다. 5가지 행동 각각에 대해 완전히 독립적으로 적용되는 쿨다운(초):
+    # 급증을 막는다. 4가지 행동 각각에 대해 완전히 독립적으로 적용되는 쿨다운(초):
     # 한 행동이 카운트되면 이 시간 동안 같은 행동의 재카운트·TTS·경광등을 무시하고,
     # 만료 후 재감지되면 다시 카운트한다(vlm_service.infer 참고).
     behavior_cooldown_seconds: float = Field(default=3.0, ge=0)

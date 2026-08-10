@@ -303,8 +303,12 @@
     const m = /CAM-(\d+)/i.exec(String(region || ''));
     return m ? m[1] : '1';
   }
-  // 프롬프트 질의(신규 CCTV) 모드로 동작하는 카메라 번호 — 지도 가장 우측 CAM-2.
-  const PROMPT_CAM_NUM = '2';
+  // 프롬프트 질의(신규 CCTV) 모드로 동작하는 카메라 번호 — 중앙 전시홀(가운데) 마커.
+  // 전원선 제약으로 이 자리의 실 카메라가 CAM-2 → CAM-3(172.16.0.20)로 교체됨
+  // (2026-08-03). kiosk.html의 openCCTVFor('CAM-3 · 중앙 전시홀', 'center') 와
+  // 반드시 같이 맞춰야 한다 — 하나만 바꾸면 화면(cam)과 분석 호출(camera_id)이
+  // 서로 다른 카메라를 가리키게 된다.
+  const PROMPT_CAM_NUM = '3';
   // 현재 열려 있는 CCTV 모달의 카메라 번호. 탐지 오버레이는 CAM-2가 아닌 모달에서만
   // 노출한다(분석 대상은 CAM-1이라, CAM-2 모달엔 탐지 결과를 띄우지 않음).
   let currentCctvCam = null;
