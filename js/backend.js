@@ -303,12 +303,12 @@
     const m = /CAM-(\d+)/i.exec(String(region || ''));
     return m ? m[1] : '1';
   }
-  // 프롬프트 질의(신규 CCTV) 모드로 동작하는 카메라 번호 — 중앙 전시홀(가운데) 마커.
-  // 전원선 제약으로 이 자리의 실 카메라가 CAM-2 → CAM-3(172.16.0.20)로 교체됨
-  // (2026-08-03). kiosk.html의 openCCTVFor('CAM-3 · 중앙 전시홀', 'center') 와
-  // 반드시 같이 맞춰야 한다 — 하나만 바꾸면 화면(cam)과 분석 호출(camera_id)이
-  // 서로 다른 카메라를 가리키게 된다.
-  const PROMPT_CAM_NUM = '3';
+  // 프롬프트 질의(신규 CCTV) 모드로 동작하는 카메라 번호들 — 우측 CAM-2(부스 C)와
+  // 중앙 전시홀 마커. 전원선 제약으로 중앙 전시홀의 실 카메라가 CAM-2 → CAM-3
+  // (172.16.0.20)로 교체됐지만(2026-08-03) 우측 아이콘은 그대로 CAM-2라, 두 번호
+  // 모두 프롬프트 모드로 취급한다. API 호출 시 camera_id는 이 상수가 아니라 실제
+  // 열린 카메라(currentCctvCam)를 그대로 써야 화면과 분석 대상이 어긋나지 않는다.
+  const PROMPT_CAM_NUMS = ['2', '3'];
   // 현재 열려 있는 CCTV 모달의 카메라 번호. 탐지 오버레이는 CAM-2가 아닌 모달에서만
   // 노출한다(분석 대상은 CAM-1이라, CAM-2 모달엔 탐지 결과를 띄우지 않음).
   let currentCctvCam = null;
@@ -456,7 +456,7 @@
     const resp = await fetch(API + '/vlm/vehicle-safety', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ camera_id: 'CAM-' + PROMPT_CAM_NUM }),
+      body: JSON.stringify({ camera_id: 'CAM-' + currentCctvCam }),
     });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     return resp.json();
@@ -465,7 +465,7 @@
     const resp = await fetch(API + '/vlm/prompt', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ camera_id: 'CAM-' + PROMPT_CAM_NUM, prompt: currentPromptText() }),
+      body: JSON.stringify({ camera_id: 'CAM-' + currentCctvCam, prompt: currentPromptText() }),
     });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     return resp.json();
@@ -536,8 +536,8 @@
     clearCaption();
     if (image) { image.style.display = 'block'; image.src = cctvLiveSrc(cam); }
     document.getElementById('cctvOverlay').classList.add('open');
-    if (cam === PROMPT_CAM_NUM) {
-      // CAM-2 is prompt/vehicle-only, so stop CAM-1 safety analysis when opened.
+    if (PROMPT_CAM_NUMS.includes(cam)) {
+      // CAM-2/CAM-3 is prompt/vehicle-only, so stop CAM-1 safety analysis when opened.
       setVlmEnabled(false);
       // 신규 CCTV: 프롬프트 입력 바만 노출 — API 호출은 [분석 시작] 버튼을 눌러야 시작된다.
       if (bar) bar.style.display = 'flex';
@@ -652,7 +652,7 @@
   // 탐지 오버레이를 띄워도 되는 상태: CCTV 모달이 열려 있고, 그게 CAM-2(프롬프트
   // 전용)가 아닐 때만. CAM-2 모달에는 분석 결과를 노출하지 않는다.
   function analysisModalOpen() {
-    return cctvModalOpen() && currentCctvCam !== PROMPT_CAM_NUM;
+    return cctvModalOpen() && !PROMPT_CAM_NUMS.includes(currentCctvCam);
   }
 
   let vlmResultDisplayTimer = null;

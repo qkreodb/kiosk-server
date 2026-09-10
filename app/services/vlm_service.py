@@ -554,16 +554,11 @@ class VlmService:
                 path = cam.get("frame_dir") or None
         path = path or self._settings.vlm_frame_dir
 
-        # 재생 세대값을 질의 시작 시점에 캡처 — CCTV 모달 종료(flush_tts) 시 이 요청의
-        # 늦은 TTS 재생은 폐기된다(infer()와 동일 패턴).
-        play_epoch = self._speaker.current_epoch()
-
         result = await self._vlm.prompt(path, prompt)
         answer_text = str(result.get("text") or "")
 
-        tts_result = await self._tts.synthesize(answer_text)
-        if tts_result.status in {"synthesized", "stubbed"}:
-            self._speaker.play_async(tts_result.audio_path, tts_result.text, epoch=play_epoch)
+        # CAM-2 자유 프롬프트 질의는 자막 표시 전용 — 스피커로 읽어주지 않는다.
+        tts_result = await self._tts.synthesize("")
 
         return VlmPromptResponse(
             camera_id=camera_id,
